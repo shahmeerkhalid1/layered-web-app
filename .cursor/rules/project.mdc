@@ -1,0 +1,104 @@
+---
+description: Pilates platform project overview, tech stack, structure, commands, and conventions
+alwaysApply: true
+---
+
+# Pilates Platform
+
+A SaaS MVP for Pilates instructors — centralizes scheduling, class plans (templates + per-instance), exercise library with progressions, client roster/attendance, and session notes.
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 16 (App Router), React 19, TypeScript 5 |
+| Styling | Tailwind CSS v4 (PostCSS), shadcn UI (base-nova style) |
+| State | React Context (`AuthProvider`), no external state library |
+| API Client | Custom `fetch` wrapper (`src/lib/api.ts`) with `credentials: "include"` |
+| Backend | Express 4, TypeScript 5, `express-async-errors` |
+| Database | PostgreSQL + Prisma 7 ORM |
+| Auth | Better Auth (cookie-based sessions, email/password, Prisma adapter) |
+| Validation | Zod 4 (server-side request validation) |
+| Uploads | Cloudinary + multer (exercise images) |
+| Monorepo | Root `package.json` with `concurrently` |
+
+## Project Structure
+
+```
+pilates-platform/
+├── client/                          # Next.js frontend
+│   └── src/
+│       ├── app/                     # App Router
+│       │   ├── layout.tsx           # Root layout (fonts, AuthProvider, Toaster)
+│       │   ├── globals.css          # Tailwind + shadcn theme
+│       │   ├── (dashboard)/         # Route group — renders at /
+│       │   │   ├── layout.tsx       # AppLayout wrapper (sidebar, topbar, auth gate)
+│       │   │   └── page.tsx         # Dashboard home
+│       │   ├── login/page.tsx
+│       │   └── register/page.tsx
+│       ├── components/
+│       │   ├── layout/              # App shell (app-layout, sidebar, top-bar)
+│       │   └── ui/                  # shadcn primitives (card, dialog, table, etc.)
+│       ├── context/                 # React context providers (auth-context)
+│       └── lib/                     # Utilities (api.ts, auth-client.ts, utils.ts)
+├── server/                          # Express API
+│   ├── prisma/
+│   │   └── schema.prisma           # Database models
+│   ├── prisma.config.ts            # Prisma 7 defineConfig
+│   └── src/
+│       ├── index.ts                # Server entrypoint (PORT 5000)
+│       ├── app.ts                  # Express app, CORS, routes, error handler
+│       ├── generated/prisma/       # Prisma client (auto-generated)
+│       ├── lib/                    # prisma.ts, auth.ts, errors.ts, cloudinary.ts
+│       ├── middleware/             # auth, error, validate
+│       └── modules/               # Feature modules
+└── package.json                    # Root — concurrently runs client + server
+```
+
+## Development Commands
+
+```bash
+# Root (runs both client and server concurrently)
+npm run dev
+
+# Client only
+npm run dev --prefix client        # next dev
+npm run build --prefix client      # next build
+npm run lint --prefix client       # eslint
+
+# Server only
+npm run dev --prefix server        # tsx watch src/index.ts
+npm run build --prefix server      # tsc
+npm run start --prefix server      # node dist/index.js
+```
+
+## Key Conventions
+
+### General
+- **TypeScript everywhere**: all code (client and server) must be written in TypeScript with strict mode enabled — no plain `.js` files, no `any` unless absolutely unavoidable
+- **Documentation lookup**: always use the **Context7 MCP** (`resolve-library-id` → `get-library-docs`) to fetch up-to-date documentation before using or advising on any library, framework, or tool — even well-known ones (Next.js, React, Prisma, Tailwind, Express, Zod, etc.)
+
+### Backend
+- **Modular structure**: each feature lives in `server/src/modules/<feature>/` with `routes`, `service`, and `validation` files
+- **Validation**: Zod schemas validate request bodies via `validate()` middleware
+- **Error handling**: throw `AppError` subclasses (`ConflictError`, `UnauthorizedError`) — caught by global `errorHandler`; ZodError → 400 with `details`
+- **Auth**: Better Auth handles `/api/auth/*` via `toNodeHandler`; protected routes use `authenticate` middleware which reads the session cookie via `auth.api.getSession()`; `req.user` is `{ instructorId, email }`; routes mount at `/api/<module>`
+- **Prisma**: client imported from `src/lib/prisma.ts`; generated output at `src/generated/prisma`
+- **Soft deletes**: `deletedAt` field on applicable models
+
+### Frontend
+- **"use client"** directive on interactive pages and layout components
+- **Auth gate**: `AppLayout` redirects unauthenticated users to `/login`; `AuthProvider` wraps Better Auth's `useSession()` hook
+- **Auth client**: `authClient` from `@/lib/auth-client` — provides `signIn.email()`, `signUp.email()`, `signOut()`, `useSession()`
+- **Path alias**: `@/*` maps to `./src/*`
+- **Component organization**: layout shell in `components/layout/`, shadcn primitives in `components/ui/`
+- **API calls**: use the `api` helper from `@/lib/api` — sends `credentials: "include"` for cookie-based auth; resolves the base URL from `NEXT_PUBLIC_API_URL`
+
+### Database Models (Prisma)
+- `Instructor` — identity & auth (mapped as Better Auth's `user` via `user.modelName`)
+- `Session`, `Account`, `Verification` — Better Auth managed tables
+- `ExerciseFolder`, `Exercise`, `ExerciseImage` — exercise library with progressions
+- `ClassPlanTemplate`, `PlanSection`, `PlanSectionExercise` — class plan templates
+- `Class`, `ClassInstance` — scheduling (GROUP/PRIVATE, recurrence)
+- `Client`, `Enrollment`, `Attendance` — client roster
+- `SessionNote`, `SessionNoteExercise` — per-instance notes
