@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { admin } from "better-auth/plugins/admin";
 import { prisma } from "./prisma";
 
 export const auth = betterAuth({
@@ -23,6 +24,36 @@ export const auth = betterAuth({
     cookieCache: {
       enabled: true,
       maxAge: 60 * 5, // 5 minutes
+    },
+  },
+  plugins: [
+    admin({
+      defaultRole: "INSTRUCTOR",
+      adminRole: "ADMIN",
+    }),
+  ],
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          // If user signed up with an email that has a pending invitation, accept it and apply the role
+          const invitation = await prisma.invitation.findFirst({
+            where: { email: user.email, status: "PENDING" },
+          });
+          if (invitation) {
+            await prisma.$transaction([
+              prisma.invitation.update({
+                where: { id: invitation.id },
+                data: { status: "ACCEPTED" },
+              }),
+              prisma.instructor.update({
+                where: { id: user.id },
+                data: { role: invitation.role },
+              }),
+            ]);
+          }
+        },
+      },
     },
   },
   advanced: {

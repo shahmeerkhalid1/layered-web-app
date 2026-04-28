@@ -12,12 +12,14 @@ interface Instructor {
   id: string;
   email: string;
   name: string;
+  role: string;
 }
 
 interface AuthContextType {
   instructor: Instructor | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -28,9 +30,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, isPending } = authClient.useSession();
 
-  const instructor: Instructor | null = session?.user
-    ? { id: session.user.id, email: session.user.email, name: session.user.name }
+  const user = session?.user as
+    | { id: string; email: string; name: string; role?: string }
+    | undefined;
+
+  const instructor: Instructor | null = user
+    ? { id: user.id, email: user.email, name: user.name, role: user.role ?? "INSTRUCTOR" }
     : null;
+
+  const isAdmin = instructor?.role === "ADMIN";
 
   const login = useCallback(async (email: string, password: string) => {
     const { error } = await authClient.signIn.email({ email, password });
@@ -56,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         instructor,
         isLoading: isPending,
         isAuthenticated: !!session?.user,
+        isAdmin,
         login,
         register,
         logout,

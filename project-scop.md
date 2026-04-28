@@ -113,6 +113,34 @@ grow in one place.
 
 ## User Roles
 
-- **Instructor (Solo)** --- Default MVP role. Full access to their own classes, templates, library, and clients.
-- **Admin** *(Future)* --- Platform-level management for studio/team accounts.
+- **Instructor** --- Default MVP role. Full access to their own classes, templates, library, and clients.
+- **Admin** --- Platform-level management. See capabilities below.
 - **Team Member** *(Future)* --- Secondary instructors under a studio account with scoped access.
+
+### Admin Capabilities (MVP)
+
+**User Management**
+
+- Invite instructors via email (invite link triggers registration flow)
+- Signup toggle --- Enable or disable the public signup form (off by default; invite-only when disabled)
+- View all registered instructor accounts
+- Activate / deactivate accounts (soft-disable, not delete)
+- Trigger password reset emails
+- View account details (email, join date, last active)
+
+**Content Oversight**
+
+- Add, edit, or remove exercises from the shared starter/seed exercise library
+- Instructors retain exclusive control over their personal exercise additions
+
+**Platform Stats**
+
+- Total instructors registered
+- Active vs. inactive account counts
+- Platform-wide usage overview (classes created, sessions logged)
+
+### Out of Admin Scope (MVP)
+
+- Cannot access instructor-specific data (clients, session notes, class plans) --- instructors own their data
+- No billing or subscription management
+- No instructor impersonation

@@ -6,6 +6,7 @@ import { UnauthorizedError } from "../lib/errors";
 export interface AuthPayload {
   instructorId: string;
   email: string;
+  role: string;
 }
 
 declare global {
@@ -28,6 +29,7 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
   req.user = {
     instructorId: session.user.id,
     email: session.user.email,
+    role: (session.user as { role?: string }).role ?? "INSTRUCTOR",
   };
 
   next();

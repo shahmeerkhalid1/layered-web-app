@@ -11,26 +11,41 @@ import {
   BarChart3,
   Menu,
   X,
+  Shield,
+  Settings,
+  UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
+import { useAuth } from "@/context/auth-context";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/calendar", label: "Calendar", icon: Calendar },
-  { href: "/exercises", label: "Exercises", icon: Dumbbell },
-  { href: "/templates", label: "Templates", icon: FileText },
-  { href: "/clients", label: "Clients", icon: Users },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
+  // { href: "/calendar", label: "Calendar", icon: Calendar },
+  // { href: "/exercises", label: "Exercises", icon: Dumbbell },
+  // { href: "/templates", label: "Templates", icon: FileText },
+  // { href: "/clients", label: "Clients", icon: Users },
+  // { href: "/reports", label: "Reports", icon: BarChart3 },
+];
+
+const adminNavItems = [
+  { href: "/admin", label: "Admin Dashboard", icon: Shield },
+  { href: "/admin/users", label: "User Management", icon: UserPlus },
+  { href: "/admin/exercises", label: "Seed Exercises", icon: Dumbbell },
+  { href: "/admin/stats", label: "Platform Stats", icon: BarChart3 },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isAdmin } = useAuth();
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
+    if (href === "/admin") return pathname === "/admin";
     return pathname.startsWith(href);
   };
 
@@ -59,6 +74,35 @@ export function Sidebar() {
           </Link>
         );
       })}
+
+      {isAdmin && (
+        <>
+          <Separator className="my-4" />
+          <span className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Admin
+          </span>
+          {adminNavItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                <Icon className="size-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </>
+      )}
     </nav>
   );
 

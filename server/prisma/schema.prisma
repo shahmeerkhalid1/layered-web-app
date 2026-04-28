@@ -7,6 +7,19 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  INSTRUCTOR
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+}
+
 // ─── Auth (Better Auth) ─────────────────────────────────────────────────────
 
 model Instructor {
@@ -15,11 +28,16 @@ model Instructor {
   emailVerified Boolean   @default(false)
   name          String
   avatarUrl     String?
+  role          Role      @default(INSTRUCTOR)
+  banned        Boolean?  @default(false)
+  banReason     String?
+  banExpires    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   sessions     Session[]
   accounts     Account[]
+  invitations  Invitation[] @relation("InvitedBy")
 }
 
 model Session {
@@ -64,5 +82,28 @@ model Verification {
   expiresAt  DateTime
   createdAt  DateTime? @default(now())
   updatedAt  DateTime? @updatedAt
+}
+
+// ─── Admin ──────────────────────────────────────────────────────────────────
+
+model Invitation {
+  id          String           @id @default(cuid())
+  email       String
+  role        Role             @default(INSTRUCTOR)
+  token       String           @unique @default(cuid())
+  invitedById String
+  invitedBy   Instructor       @relation("InvitedBy", fields: [invitedById], references: [id])
+  status      InvitationStatus @default(PENDING)
+  expiresAt   DateTime
+  createdAt   DateTime         @default(now())
+
+  @@index([token])
+  @@index([email])
+}
+
+model PlatformSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
 }
 
