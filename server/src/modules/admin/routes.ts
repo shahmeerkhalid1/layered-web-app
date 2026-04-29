@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { validate } from "../../middleware/validate.middleware";
 import { inviteSchema, settingsPatchSchema } from "./validation";
 import * as adminService from "./service";
+import { isMailConfigured, sendInviteEmail } from "../../lib/mail";
 
 const router = Router();
 
@@ -18,7 +19,21 @@ router.post("/invite", validate(inviteSchema), async (req: Request, res: Respons
   const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
   const inviteLink = `${clientUrl}/register?token=${invitation.token}`;
 
-  res.status(201).json({ invitation, inviteLink });
+  let emailSent = false;
+  let emailError: string | undefined;
+
+  if (!isMailConfigured()) {
+    emailError = "SMTP is not configured";
+  } else {
+    const result = await sendInviteEmail({ to: email, inviteLink, role });
+    console.log(result);
+    emailSent = result.ok;
+    if (!result.ok) {
+      emailError = result.message;
+    }
+  }
+
+  res.status(201).json({ invitation, inviteLink, emailSent, ...(emailError ? { emailError } : {}) });
 });
 
 router.get("/invitations", async (_req: Request, res: Response) => {

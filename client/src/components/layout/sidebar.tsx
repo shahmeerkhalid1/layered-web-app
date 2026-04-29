@@ -4,11 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  Calendar,
-  Dumbbell,
-  FileText,
-  Users,
-  BarChart3,
   Menu,
   X,
   Shield,
@@ -33,8 +28,6 @@ const navItems = [
 const adminNavItems = [
   { href: "/admin", label: "Admin Dashboard", icon: Shield },
   { href: "/admin/users", label: "User Management", icon: UserPlus },
-  { href: "/admin/exercises", label: "Seed Exercises", icon: Dumbbell },
-  { href: "/admin/stats", label: "Platform Stats", icon: BarChart3 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

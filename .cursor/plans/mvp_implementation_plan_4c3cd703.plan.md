@@ -33,11 +33,13 @@ isProject: false
 
 ## Current State
 
-The repo is a monorepo with two scaffolded apps and no real feature code yet:
-- **Server** ([server/src/app.ts](server/src/app.ts)): Express with Better Auth mounted at `/api/auth/*`, health endpoint, CORS with credentials, Prisma 7 + PostgreSQL, modular feature structure.
-- **Client** ([client/src/app/(dashboard)/page.tsx](client/src/app/(dashboard)/page.tsx)): Next.js 16 App Router with dashboard layout, auth pages (login/register), Better Auth React client, sidebar + topbar shell.
-- **Auth**: Better Auth with cookie-based sessions, email/password, Prisma adapter. `Instructor` model mapped as Better Auth's user. Session/Account/Verification tables managed by Better Auth.
-- **Docs**: [project-scop.md](project-scop.md) defines the full MVP scope.
+The repo is a monorepo with two scaffolded apps:
+- **Server** ([server/src/app.ts](server/src/app.ts)): Express with Better Auth mounted at `/api/auth/*`, health endpoint, CORS with credentials, Prisma 7 + PostgreSQL, modular feature structure. Admin module at `/api/admin/*` with invitation, settings, and stats endpoints.
+- **Client** ([client/src/app/(dashboard)/page.tsx](client/src/app/(dashboard)/page.tsx)): Next.js 16 App Router with dashboard layout, auth pages (login/register), Better Auth React client, sidebar + topbar shell with role-aware admin navigation.
+- **Auth**: Better Auth with cookie-based sessions, email/password, Prisma adapter, **admin plugin** (`defaultRole: "INSTRUCTOR"`, `adminRole: "ADMIN"`). `Instructor` model mapped as Better Auth's user with `Role` enum (`ADMIN`/`INSTRUCTOR`), ban fields, and invitation support. Session/Account/Verification tables managed by Better Auth.
+- **Admin**: `Role` and `InvitationStatus` enums, `Invitation` and `PlatformSetting` models, `requireAdmin` middleware, signup toggle (off by default, invite-only), invitation flow with token verification and auto-accept on registration, `adminClient` plugin on frontend, `isAdmin` in auth context. Admin pages (UI) deferred to a later task.
+- **Seed**: [server/prisma/seed.ts](server/prisma/seed.ts) seeds default platform settings and promotes the first user to ADMIN. Run via `npm run seed --prefix server`.
+- **Docs**: [project-scop.md](project-scop.md) defines the full MVP scope including Admin role capabilities.
 
 ---
 
@@ -47,6 +49,7 @@ The repo is a monorepo with two scaffolded apps and no real feature code yet:
 erDiagram
     Instructor ||--o{ Session : has
     Instructor ||--o{ Account : has
+    Instructor ||--o{ Invitation : invites
     Instructor ||--o{ Class : creates
     Instructor ||--o{ ClassPlanTemplate : creates
     Instructor ||--o{ Exercise : creates
@@ -73,9 +76,9 @@ erDiagram
 
 ---
 
-## Phase 0 -- Foundation (Database, Auth, App Shell)
+## Phase 0 -- Foundation (Database, Auth, App Shell, Admin Role)
 
-Set up Prisma, PostgreSQL, Better Auth (cookie-based sessions), and the shared app layout that every subsequent phase depends on.
+Set up Prisma, PostgreSQL, Better Auth (cookie-based sessions), the shared app layout, and admin role infrastructure that every subsequent phase depends on.
 
 ### Server
 
@@ -92,9 +95,20 @@ Set up Prisma, PostgreSQL, Better Auth (cookie-based sessions), and the shared a
 
 - **0.3 -- Server structure and error handling**
   - Establish folder convention: `modules/<domain>/{routes,service,validation}.ts`
-  - `authenticate` middleware reads session cookie via `auth.api.getSession()` and attaches `req.user` (`{ instructorId, email }`)
+  - `authenticate` middleware reads session cookie via `auth.api.getSession()` and attaches `req.user` (`{ instructorId, email, role }`)
   - Global error handler middleware and custom `AppError` class
   - Request validation with `zod`
+
+- **0.6 -- Admin role and user management infrastructure** *(completed)*
+  - `Role` enum (`ADMIN`/`INSTRUCTOR`) and `InvitationStatus` enum (`PENDING`/`ACCEPTED`/`EXPIRED`) in Prisma schema
+  - Admin fields on `Instructor`: `role`, `banned`, `banReason`, `banExpires`
+  - `Invitation` and `PlatformSetting` models
+  - Better Auth admin plugin (`defaultRole: "INSTRUCTOR"`, `adminRole: "ADMIN"`) providing `/api/auth/admin/*` endpoints (listUsers, banUser, unbanUser, setRole, createUser)
+  - `requireAdmin` middleware for custom admin routes
+  - Admin module at `/api/admin/*`: invitation CRUD, platform settings (signup toggle), platform stats
+  - Public endpoints: `/api/signup-status`, `/api/invite/verify`
+  - Database hook to auto-accept invitations and apply role on user registration
+  - Seed script (`server/prisma/seed.ts`) to bootstrap first admin and default settings
 
 ### Client
 
@@ -104,11 +118,20 @@ Set up Prisma, PostgreSQL, Better Auth (cookie-based sessions), and the shared a
   - Install and configure additional shadcn components needed across the app (Input, Card, Dialog, DropdownMenu, Table, Tabs, Badge, etc.)
 
 - **0.5 -- Auth pages and client-side auth state**
-  - Install `better-auth`; create `client/src/lib/auth-client.ts` with `createAuthClient` from `better-auth/react`
+  - Install `better-auth`; create `client/src/lib/auth-client.ts` with `createAuthClient` from `better-auth/react` and `adminClient` plugin
   - Create `/login` and `/register` pages using `authClient.signIn.email()` and `authClient.signUp.email()`
-  - Set up `AuthProvider` context wrapping Better Auth's `useSession()` hook; expose `useAuth()` for components
+  - Register page supports signup toggle check and `?token=` invitation flow
+  - Set up `AuthProvider` context wrapping Better Auth's `useSession()` hook; expose `useAuth()` with `isAdmin` for components
   - Create a shared API client (`client/src/lib/api.ts`) with `credentials: "include"` for cookie-based auth
   - Implement protected route wrapper (`AppLayout`) that redirects unauthenticated users to `/login`
+  - Role-aware sidebar with admin navigation section (Admin Dashboard, User Management, Seed Exercises, Platform Stats, Settings)
+
+- **0.7 -- Admin pages (UI)** *(deferred -- to be built in a later task)*
+  - `/admin` dashboard with key stats cards
+  - `/admin/users` user management table with invite, activate/deactivate, role change, view details
+  - `/admin/exercises` seed exercise library management
+  - `/admin/stats` platform-wide usage stats
+  - `/admin/settings` signup toggle and platform configuration
 
 ---
 
@@ -280,8 +303,8 @@ Home dashboard and basic analytics.
 
 Final quality pass and starter content.
 
-- **7.1 -- Starter exercise library seed script**
-  - Create `server/prisma/seed.ts` with common Pilates exercises, organized into equipment-based folders (Mat, Reformer, Cadillac, Chair, Barrel)
+- **7.1 -- Starter exercise library seed data**
+  - Extend existing [server/prisma/seed.ts](server/prisma/seed.ts) (already seeds admin user + platform settings) with common Pilates exercises, organized into equipment-based folders (Mat, Reformer, Cadillac, Chair, Barrel)
   - Include progressions, descriptions, cueing
 
 - **7.2 -- Responsive design pass**
