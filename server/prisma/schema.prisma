@@ -107,3 +107,72 @@ model PlatformSetting {
   value String
 }
 
+
+// ─── Exercise Library ────────────────────────────────────────────────────────
+
+
+model Exercise {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  cueing          String?
+  tags            String[]  @default([])
+  folderId        String?
+  instructorId    String
+  progressionOfId String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+
+  @@index([instructorId])
+  @@index([folderId])
+}
+
+// ─── Class Plan Templates ────────────────────────────────────────────────────
+
+model ClassPlanTemplate {
+  id           String    @id @default(cuid())
+  name         String
+  instructorId String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+
+  @@index([instructorId])
+}
+
+// ─── Calendar & Scheduling ───────────────────────────────────────────────────
+
+enum ClassType {
+  GROUP
+  PRIVATE
+}
+
+enum InstanceStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+model Class {
+  id               String    @id @default(cuid())
+  title            String
+  type             ClassType @default(GROUP)
+  isRecurring      Boolean   @default(false)
+  recurrenceRule   Json?
+  startDate        DateTime
+  endDate          DateTime?
+  time             DateTime @db.Timestamptz()
+  durationMinutes  Int       @default(60)
+  templateId       String?
+  syncWithTemplate Boolean   @default(false)
+  instructorId     String
+  createdAt        DateTime  @default(now())
+  deletedAt        DateTime?
+
+
+  @@index([instructorId])
+  @@index([startDate])
+}
