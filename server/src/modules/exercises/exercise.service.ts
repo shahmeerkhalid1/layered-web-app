@@ -1,0 +1,230 @@
+import { prisma } from "../../lib/prisma";
+import { NotFoundError } from "../../lib/errors";
+import type { CreateExerciseInput, UpdateExerciseInput } from "./exercise.validation";
+
+const activeFilter = { deletedAt: null };
+
+export async function listExercises(
+  instructorId: string,
+  query?: { search?: string; folderId?: string; tag?: string }
+) {
+  const where: Record<string, unknown> = {
+    instructorId,
+    ...activeFilter,
+  };
+
+  if (query?.folderId) where.folderId = query.folderId;
+  if (query?.tag) where.tags = { has: query.tag };
+  if (query?.search) {
+    where.OR = [
+      { name: { contains: query.search, mode: "insensitive" } },
+      { description: { contains: query.search, mode: "insensitive" } },
+    ];
+  }
+
+  return prisma.exercise.findMany({
+    where,
+    include: { images: { orderBy: { order: "asc" } }, folder: true },
+    orderBy: { name: "asc" },
+  });
+}
+
+export async function getExercise(id: string, instructorId: string) {
+  const exercise = await prisma.exercise.findFirst({
+    where: { id, instructorId, ...activeFilter },
+    include: {
+      images: { orderBy: { order: "asc" } },
+      folder: true,
+      progressionOf: { select: { id: true, name: true } },
+      progressions: { select: { id: true, name: true } },
+    },
+  });
+  if (!exercise) throw new NotFoundError("Exercise");
+  return exercise;
+}
+
+export async function createExercise(
+  instructorId: string,
+  data: CreateExerciseInput
+) {
+  return prisma.exercise.create({
+    data: { ...data, instructorId },
+    include: { images: true, folder: true },
+  });
+}
+
+export async function updateExercise(
+  id: string,
+  instructorId: string,
+  data: UpdateExerciseInput
+) {
+  const exercise = await prisma.exercise.findFirst({
+    where: { id, instructorId, ...activeFilter },
+  });
+  if (!exercise) throw new NotFoundError("Exercise");
+
+  return prisma.exercise.update({
+    where: { id },
+    data,
+    include: { images: true, folder: true },
+  });
+}
+
+export async function deleteExercise(id: string, instructorId: string) {
+  const exercise = await prisma.exercise.findFirst({
+    where: { id, instructorId, ...activeFilter },
+  });
+  if (!exercise) throw new NotFoundError("Exercise");
+
+  return prisma.exercise.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
+}
+
+export async function setProgression(
+  id: string,
+  instructorId: string,
+  progressionOfId: string | null
+) {
+  const exercise = await prisma.exercise.findFirst({
+    where: { id, instructorId, ...activeFilter },
+  });
+  if (!exercise) throw new NotFoundError("Exercise");
+
+  return prisma.exercise.update({
+    where: { id },
+    data: { progressionOfId },
+  });
+}
+
+export async function getProgressionChain(id: string, instructorId: string) {
+  const chain: { id: string; name: string; level: number }[] = [];
+
+  let current = await prisma.exercise.findFirst({
+    where: { id, instructorId, ...activeFilter },
+    select: { id: true, name: true, progressionOfId: true },
+  });
+  if (!current) throw new NotFoundError("Exercise");
+
+  // Walk backward to the root
+  const visited = new Set<string>();
+  while (current?.progressionOfId && !visited.has(current.progressionOfId)) {
+    visited.add(current.id);
+    current = await prisma.exercise.findFirst({
+      where: { id: current.progressionOfId, ...activeFilter },
+      select: { id: true, name: true, progressionOfId: true },
+    });
+  }
+
+  // Walk forward from root
+  if (current) {
+    let level = 1;
+    let node: typeof current | null = current;
+    const forwardVisited = new Set<string>();
+    while (node && !forwardVisited.has(node.id)) {
+      forwardVisited.add(node.id);
+      chain.push({ id: node.id, name: node.name, level });
+      level++;
+      // need optimization here, will do later
+      node = await prisma.exercise.findFirst({
+        where: { progressionOfId: node.id, instructorId, ...activeFilter },
+        select: { id: true, name: true, progressionOfId: true },
+      });
+    }
+  }
+
+  return chain;
+}
+
+// ─── Folder operations ───────────────────────────────────────────────────────
+
+export async function listFolders(instructorId: string) {
+  return prisma.exerciseFolder.findMany({
+    where: { instructorId, ...activeFilter },
+    include: { _count: { select: { exercises: { where: activeFilter } } } },
+    orderBy: { name: "asc" },
+  });
+}
+
+export async function createFolder(instructorId: string, name: string) {
+  return prisma.exerciseFolder.create({
+    data: { name, instructorId },
+  });
+}
+
+export async function updateFolder(
+  id: string,
+  instructorId: string,
+  name: string
+) {
+  const folder = await prisma.exerciseFolder.findFirst({
+    where: { id, instructorId, ...activeFilter },
+  });
+  if (!folder) throw new NotFoundError("Folder");
+
+  return prisma.exerciseFolder.update({ where: { id }, data: { name } });
+}
+
+export async function deleteFolder(id: string, instructorId: string) {
+  const folder = await prisma.exerciseFolder.findFirst({
+    where: { id, instructorId, ...activeFilter },
+  });
+  if (!folder) throw new NotFoundError("Folder");
+
+  await prisma.exercise.updateMany({
+    where: { folderId: id },
+    data: { folderId: null },
+  });
+
+  return prisma.exerciseFolder.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
+}
+
+// ─── Image operations ────────────────────────────────────────────────────────
+
+export async function addImage(
+  exerciseId: string,
+  instructorId: string,
+  url: string,
+  publicId: string
+) {
+  const exercise = await prisma.exercise.findFirst({
+    where: { id: exerciseId, instructorId, ...activeFilter },
+    include: { images: true },
+  });
+  if (!exercise) throw new NotFoundError("Exercise");
+  if (exercise.images.length >= 3) {
+    throw new Error("Maximum 3 images per exercise");
+  }
+
+  return prisma.exerciseImage.create({
+    data: {
+      exerciseId,
+      url,
+      publicId,
+      order: exercise.images.length,
+    },
+  });
+}
+
+export async function removeImage(
+  exerciseId: string,
+  imageId: string,
+  instructorId: string
+) {
+  const exercise = await prisma.exercise.findFirst({
+    where: { id: exerciseId, instructorId, ...activeFilter },
+  });
+  if (!exercise) throw new NotFoundError("Exercise");
+
+  const image = await prisma.exerciseImage.findFirst({
+    where: { id: imageId, exerciseId },
+  });
+  if (!image) throw new NotFoundError("Image");
+
+  await prisma.exerciseImage.delete({ where: { id: imageId } });
+  return image;
+}
