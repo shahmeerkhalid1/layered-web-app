@@ -38,6 +38,9 @@ model Instructor {
   sessions     Session[]
   accounts     Account[]
   invitations  Invitation[] @relation("InvitedBy")
+
+  exercises       Exercise[]
+  exerciseFolders ExerciseFolder[]
 }
 
 model Session {
@@ -110,6 +113,18 @@ model PlatformSetting {
 
 // ─── Exercise Library ────────────────────────────────────────────────────────
 
+model ExerciseFolder {
+  id           String    @id @default(cuid())
+  name         String
+  instructorId String
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
+
+  instructor Instructor @relation(fields: [instructorId], references: [id])
+  exercises  Exercise[]
+
+  @@index([instructorId])
+}
 
 model Exercise {
   id              String    @id @default(cuid())
@@ -124,9 +139,26 @@ model Exercise {
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
 
+  instructor    Instructor      @relation(fields: [instructorId], references: [id])
+  folder        ExerciseFolder? @relation(fields: [folderId], references: [id])
+  progressionOf Exercise?       @relation("ExerciseProgression", fields: [progressionOfId], references: [id])
+  progressions  Exercise[]      @relation("ExerciseProgression")
+  images        ExerciseImage[]
 
   @@index([instructorId])
   @@index([folderId])
+}
+
+model ExerciseImage {
+  id         String @id @default(cuid())
+  exerciseId String
+  url        String
+  publicId   String?
+  order      Int    @default(0)
+
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@index([exerciseId])
 }
 
 // ─── Class Plan Templates ────────────────────────────────────────────────────

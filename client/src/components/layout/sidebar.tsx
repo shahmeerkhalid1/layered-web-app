@@ -9,6 +9,11 @@ import {
   Shield,
   Settings,
   UserPlus,
+  Calendar,
+  Dumbbell,
+  FileText,
+  Users,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -18,11 +23,10 @@ import { useAuth } from "@/context/auth-context";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  // { href: "/calendar", label: "Calendar", icon: Calendar },
-  // { href: "/exercises", label: "Exercises", icon: Dumbbell },
-  // { href: "/templates", label: "Templates", icon: FileText },
-  // { href: "/clients", label: "Clients", icon: Users },
-  // { href: "/reports", label: "Reports", icon: BarChart3 },
+  { href: "/calendar", label: "Calendar", icon: Calendar },
+  { href: "/exercises", label: "Exercises", icon: Dumbbell },
+  { href: "/templates", label: "Templates", icon: FileText },
+  { href: "/clients", label: "Clients", icon: Users },
 ];
 
 const adminNavItems = [
@@ -35,6 +39,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isAdmin } = useAuth();
+  const isAdminRoute = pathname.startsWith("/admin");
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -47,26 +52,27 @@ export function Sidebar() {
       <div className="mb-6 px-3">
         <h1 className="text-lg font-bold tracking-tight">Pilates Platform</h1>
       </div>
-      {navItems.map((item) => {
-        const Icon = item.icon;
-        const active = isActive(item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={() => setMobileOpen(false)}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              active
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-          >
-            <Icon className="size-4" />
-            {item.label}
-          </Link>
-        );
-      })}
+      {!isAdminRoute &&
+        navItems.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <Icon className="size-4" />
+              {item.label}
+            </Link>
+          );
+        })}
 
       {isAdmin && (
         <>
