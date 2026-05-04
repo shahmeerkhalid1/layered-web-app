@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { adminApi, type AdminStats, type InvitationRow } from "@/lib/admin-api";
+import {
+  adminApi,
+  type AdminStats,
+  type InvitationRow,
+} from "@/services/admin-api";
 import { ApiError } from "@/lib/api";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

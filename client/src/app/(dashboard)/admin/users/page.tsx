@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
-import { adminApi } from "@/lib/admin-api";
+import { adminApi } from "@/services/admin-api";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
