@@ -292,7 +292,7 @@ export default function AdminUsersPage() {
 
       <div className="relative grid gap-4 md:grid-cols-[1fr_auto_auto]">
         <div className="rounded-3xl border border-border bg-card p-4 shadow-lg">
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row items-stretch sm:items-center">
             <div className="relative flex-1">
               <Search className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -310,7 +310,7 @@ export default function AdminUsersPage() {
               type="button"
               variant="outline"
               onClick={applySearch}
-              className="rounded-full border-border bg-transparent px-5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              className="rounded-full h-auto sm:h-11  border-border bg-transparent px-5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             >
               Search
             </Button>

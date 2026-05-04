@@ -30,7 +30,7 @@ export function ExerciseFolderSidebar({
     <aside className="w-full shrink-0 space-y-3 rounded-3xl border border-border bg-card p-3 shadow-lg lg:w-60">
       <div className="flex items-center justify-between px-1">
         <div>
-          <h3 className="mt-1 text-sm font-semibold text-card-foreground">
+          <h3 className="mt-1 text-md font-semibold text-card-foreground">
             Folders
           </h3>
         </div>
