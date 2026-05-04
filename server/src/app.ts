@@ -8,6 +8,7 @@ import { requireAdmin } from "./middleware/admin.middleware";
 import { errorHandler } from "./middleware/error.middleware";
 import adminRoutes from "./modules/admin/routes";
 import * as adminService from "./modules/admin/service";
+import exerciseRoutes from "./modules/exercises/exercise.routes";
 
 const app = express();
 
@@ -43,6 +44,8 @@ app.get("/api/invite/verify", async (req, res) => {
 // Admin routes (protected)
 app.use("/api/admin", authenticate, requireAdmin, adminRoutes);
 
+// Exercise routes
+app.use("/api/exercises", exerciseRoutes);
 app.use(errorHandler);
 
 export default app;
