@@ -29,26 +29,42 @@ export function FolderDialog({
 }: FolderDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl">
         <DialogHeader>
-          <DialogTitle>{editingFolder ? "Rename Folder" : "New Folder"}</DialogTitle>
+          <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
+            Studio Set
+          </p>
+          <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-popover-foreground">
+            {editingFolder ? "Rename Folder" : "New Folder"}
+          </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-5">
           <div className="space-y-2">
-            <Label htmlFor="folder-name">Folder Name</Label>
+            <Label htmlFor="folder-name" className="text-sm font-medium text-foreground">
+              Folder Name
+            </Label>
             <Input
               id="folder-name"
               value={folderName}
               onChange={(event) => onFolderNameChange(event.target.value)}
               placeholder="e.g. Reformer, Mat, Chair"
+              className="h-11 rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          >
             Cancel
           </Button>
-          <Button onClick={onSave} disabled={!folderName.trim()}>
+          <Button
+            onClick={onSave}
+            disabled={!folderName.trim()}
+            className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
+          >
             {editingFolder ? "Save" : "Create"}
           </Button>
         </DialogFooter>

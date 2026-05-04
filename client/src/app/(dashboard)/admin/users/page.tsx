@@ -41,7 +41,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, UserPlus, Copy, Loader2 } from "lucide-react";
+import {
+  MoreHorizontal,
+  UserPlus,
+  Copy,
+  Loader2,
+  Search,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -250,62 +258,126 @@ export default function AdminUsersPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const isSelf = (u: AdminListUser) => u.id === selfId;
+  const activeVisibleCount = users.filter((u) => !u.banned).length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">User management</h2>
-          <p className="text-muted-foreground">
-            Invite instructors, update roles, and activate or deactivate accounts.
-          </p>
+    <div className="relative space-y-6 overflow-hidden rounded-[2rem] bg-background p-1">
+      <div className="pointer-events-none absolute top-24 right-10 h-52 w-52 rounded-full bg-secondary/70 blur-3xl" />
+
+      <div className="relative rounded-3xl border border-border bg-card/90 p-5 shadow-lg">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="mb-2 text-xs font-semibold tracking-[0.24em] text-muted-foreground uppercase">
+              Instructor Directory
+            </p>
+            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-card-foreground sm:text-3xl">
+              User management
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Invite instructors, update roles, and keep access aligned with your
+              studio operations.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={openInvite}
+            className="rounded-full bg-primary px-5 text-primary-foreground shadow-md hover:bg-primary/90"
+          >
+            <UserPlus className="size-4" />
+            Invite user
+          </Button>
         </div>
-        <Button type="button" size="sm" onClick={openInvite}>
-          <UserPlus className="size-4" />
-          Invite user
-        </Button>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="flex max-w-md flex-1 flex-col gap-1.5">
-          <Label htmlFor="user-search">Search by email</Label>
-          <div className="flex gap-2">
-            <Input
-              id="user-search"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") applySearch();
-              }}
-              placeholder="contains…"
-            />
-            <Button type="button" variant="secondary" onClick={applySearch}>
+      <div className="relative grid gap-4 md:grid-cols-[1fr_auto_auto]">
+        <div className="rounded-3xl border border-border bg-card p-4 shadow-lg">
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="user-search"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") applySearch();
+                }}
+                placeholder="contains..."
+                className="h-11 rounded-2xl border-input bg-background/70 pr-4 pl-11 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={applySearch}
+              className="rounded-full border-border bg-transparent px-5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            >
               Search
             </Button>
           </div>
         </div>
+
+        <div className="flex min-w-36 items-center gap-3 rounded-3xl border border-border bg-card p-4 shadow-lg">
+          <div className="flex size-10 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+            <Users className="size-5" />
+          </div>
+          <div>
+            <p className="text-2xl font-semibold tracking-[-0.03em] text-card-foreground">
+              {total}
+            </p>
+            <p className="text-xs text-muted-foreground">Total users</p>
+          </div>
+        </div>
+
+        <div className="flex min-w-36 items-center gap-3 rounded-3xl border border-border bg-card p-4 shadow-lg">
+          <div className="flex size-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground">
+            <ShieldCheck className="size-5" />
+          </div>
+          <div>
+            <p className="text-2xl font-semibold tracking-[-0.03em] text-card-foreground">
+              {activeVisibleCount}
+            </p>
+            <p className="text-xs text-muted-foreground">Active here</p>
+          </div>
+        </div>
       </div>
 
-      <div className="rounded-lg border bg-card">
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-lg">
         {loading ? (
           <div className="flex justify-center py-16">
-            <Loader2 className="size-8 animate-spin text-muted-foreground" />
+            <div className="flex items-center gap-3 rounded-full border border-border bg-background/75 px-4 py-2 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin text-muted-foreground" />
+              Loading instructors
+            </div>
           </div>
         ) : (
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-12 text-right">Actions</TableHead>
+            <TableHeader className="bg-accent">
+              <TableRow className="border-border hover:bg-transparent">
+                <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                  Name
+                </TableHead>
+                <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                  Email
+                </TableHead>
+                <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                  Role
+                </TableHead>
+                <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                  Status
+                </TableHead>
+                <TableHead className="w-12 px-4 py-3 text-right text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
+                <TableRow className="border-border hover:bg-transparent">
+                  <TableCell
+                    colSpan={5}
+                    className="py-14 text-center text-sm text-muted-foreground"
+                  >
                     No users match this search.
                   </TableCell>
                 </TableRow>
@@ -314,36 +386,66 @@ export default function AdminUsersPage() {
                   const banned = Boolean(u.banned);
                   const self = isSelf(u);
                   return (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium">{u.name}</TableCell>
-                      <TableCell>{u.email}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{u.role ?? "INSTRUCTOR"}</Badge>
+                    <TableRow
+                      key={u.id}
+                      className="border-border hover:bg-accent/70"
+                    >
+                      <TableCell className="px-4 py-3 font-semibold text-card-foreground">
+                        {u.name}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="px-4 py-3 text-muted-foreground">
+                        {u.email}
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "border-border bg-accent text-[11px] font-semibold text-accent-foreground",
+                            u.role === "ADMIN" &&
+                              "border-primary bg-primary text-primary-foreground"
+                          )}
+                        >
+                          {u.role ?? "INSTRUCTOR"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         {banned ? (
-                          <Badge variant="destructive">Inactive</Badge>
+                          <Badge variant="destructive" className="rounded-full">
+                            Inactive
+                          </Badge>
                         ) : (
-                          <Badge variant="outline">Active</Badge>
+                          <Badge
+                            variant="outline"
+                            className="rounded-full border-border bg-secondary text-secondary-foreground"
+                          >
+                            Active
+                          </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="px-4 py-3 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger
                             className={cn(
                               buttonVariants({ variant: "ghost", size: "icon-sm" }),
-                              "shrink-0"
+                              "shrink-0 rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground data-popup-open:bg-accent"
                             )}
                             aria-label="Open row menu"
                           >
                             <MoreHorizontal className="size-4" />
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setDetailsUser(u)}>
+                          <DropdownMenuContent
+                            align="end"
+                            className="rounded-2xl border-border bg-popover p-1 shadow-xl"
+                          >
+                            <DropdownMenuItem
+                              className="rounded-xl"
+                              onClick={() => setDetailsUser(u)}
+                            >
                               View details
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
+                              className="rounded-xl"
                               disabled={self || u.role === "ADMIN"}
                               onClick={() =>
                                 setConfirmRole({ user: u, nextRole: "ADMIN" })
@@ -352,6 +454,7 @@ export default function AdminUsersPage() {
                               Make admin
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              className="rounded-xl"
                               disabled={self || u.role !== "ADMIN"}
                               onClick={() =>
                                 setConfirmRole({ user: u, nextRole: "INSTRUCTOR" })
@@ -363,6 +466,7 @@ export default function AdminUsersPage() {
                             {!banned ? (
                               <DropdownMenuItem
                                 variant="destructive"
+                                className="rounded-xl"
                                 disabled={self}
                                 onClick={() => setConfirmBan(u)}
                               >
@@ -370,6 +474,7 @@ export default function AdminUsersPage() {
                               </DropdownMenuItem>
                             ) : (
                               <DropdownMenuItem
+                                className="rounded-xl"
                                 disabled={self}
                                 onClick={() => setConfirmUnban(u)}
                               >
@@ -388,8 +493,8 @@ export default function AdminUsersPage() {
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-        <span>
+      <div className="relative flex flex-col gap-3 rounded-3xl border border-border bg-card p-3 text-sm text-muted-foreground shadow-lg sm:flex-row sm:items-center sm:justify-between">
+        <span className="px-2">
           Page {page} of {totalPages} ({total} users)
         </span>
         <div className="flex gap-2">
@@ -399,6 +504,7 @@ export default function AdminUsersPage() {
             size="sm"
             disabled={page <= 1 || loading}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           >
             Previous
           </Button>
@@ -408,6 +514,7 @@ export default function AdminUsersPage() {
             size="sm"
             disabled={page >= totalPages || loading}
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           >
             Next
           </Button>
@@ -415,29 +522,45 @@ export default function AdminUsersPage() {
       </div>
 
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Invite user</DialogTitle>
-            <DialogDescription>
+            <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
+              New Instructor
+            </p>
+            <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-popover-foreground">
+              Invite user
+            </DialogTitle>
+            <DialogDescription className="leading-6 text-muted-foreground">
               Creates an invitation link. The user registers with the same email.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-2">
+          <div className="grid gap-4 py-3">
             <div className="grid gap-2">
-              <Label htmlFor="invite-email">Email</Label>
+              <Label
+                htmlFor="invite-email"
+                className="text-sm font-medium text-foreground"
+              >
+                Email
+              </Label>
               <Input
                 id="invite-email"
                 type="email"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 autoComplete="off"
+                className="h-11 rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="invite-role">Role</Label>
+              <Label
+                htmlFor="invite-role"
+                className="text-sm font-medium text-foreground"
+              >
+                Role
+              </Label>
               <select
                 id="invite-role"
-                className="h-8 rounded-lg border border-input bg-background px-2 text-sm"
+                className="h-11 rounded-2xl border border-input bg-background/70 px-3 text-sm text-foreground shadow-none outline-none focus-visible:ring-2 focus-visible:ring-ring/35"
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value as Role)}
               >
@@ -446,14 +569,16 @@ export default function AdminUsersPage() {
               </select>
             </div>
             {inviteLinkResult && (
-              <div className="rounded-md border bg-muted/50 p-3 text-xs break-all">
-                <p className="mb-2 font-medium text-foreground">Invite link</p>
+              <div className="rounded-2xl border border-border bg-accent p-3 text-xs break-all">
+                <p className="mb-2 font-semibold text-accent-foreground">
+                  Invite link
+                </p>
                 <p className="text-muted-foreground">{inviteLinkResult}</p>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="mt-2"
+                  className="mt-3 rounded-full border-border bg-transparent text-muted-foreground hover:bg-background hover:text-foreground"
                   onClick={() => void copyLink(inviteLinkResult)}
                 >
                   <Copy className="size-3.5" />
@@ -467,6 +592,7 @@ export default function AdminUsersPage() {
               type="button"
               variant="outline"
               onClick={() => setInviteOpen(false)}
+              className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             >
               Close
             </Button>
@@ -474,6 +600,7 @@ export default function AdminUsersPage() {
               type="button"
               disabled={inviteSubmitting || !inviteEmail.trim()}
               onClick={() => void submitInvite()}
+              className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
             >
               {inviteSubmitting ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -486,44 +613,82 @@ export default function AdminUsersPage() {
       </Dialog>
 
       <Sheet open={!!detailsUser} onOpenChange={(o) => !o && setDetailsUser(null)}>
-        <SheetContent side="right" className="sm:max-w-md">
+        <SheetContent
+          side="right"
+          className="border-border bg-background sm:max-w-md"
+        >
           <SheetHeader>
-            <SheetTitle>User details</SheetTitle>
-            <SheetDescription>Information from the directory.</SheetDescription>
+            <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
+              Directory Record
+            </p>
+            <SheetTitle className="text-xl font-semibold tracking-[-0.02em] text-foreground">
+              User details
+            </SheetTitle>
+            <SheetDescription className="text-muted-foreground">
+              Information from the instructor directory.
+            </SheetDescription>
           </SheetHeader>
           {detailsUser && (
             <dl className="grid gap-3 px-4 text-sm">
-              <div>
-                <dt className="text-muted-foreground">Name</dt>
-                <dd className="font-medium">{detailsUser.name}</dd>
+              <div className="rounded-2xl border border-border bg-card/60 p-3">
+                <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                  Name
+                </dt>
+                <dd className="mt-1 font-semibold text-card-foreground">
+                  {detailsUser.name}
+                </dd>
               </div>
-              <div>
-                <dt className="text-muted-foreground">Email</dt>
-                <dd>{detailsUser.email}</dd>
+              <div className="rounded-2xl border border-border bg-card/60 p-3">
+                <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                  Email
+                </dt>
+                <dd className="mt-1 text-muted-foreground">
+                  {detailsUser.email}
+                </dd>
               </div>
-              <div>
-                <dt className="text-muted-foreground">Role</dt>
-                <dd>{detailsUser.role ?? "INSTRUCTOR"}</dd>
+              <div className="rounded-2xl border border-border bg-card/60 p-3">
+                <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                  Role
+                </dt>
+                <dd className="mt-1 text-muted-foreground">
+                  {detailsUser.role ?? "INSTRUCTOR"}
+                </dd>
               </div>
-              <div>
-                <dt className="text-muted-foreground">Status</dt>
-                <dd>{detailsUser.banned ? "Inactive (banned)" : "Active"}</dd>
+              <div className="rounded-2xl border border-border bg-card/60 p-3">
+                <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                  Status
+                </dt>
+                <dd className="mt-1 text-muted-foreground">
+                  {detailsUser.banned ? "Inactive (banned)" : "Active"}
+                </dd>
               </div>
               {detailsUser.banReason ? (
-                <div>
-                  <dt className="text-muted-foreground">Ban reason</dt>
-                  <dd>{detailsUser.banReason}</dd>
+                <div className="rounded-2xl border border-border bg-card/60 p-3">
+                  <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                    Ban reason
+                  </dt>
+                  <dd className="mt-1 text-muted-foreground">
+                    {detailsUser.banReason}
+                  </dd>
                 </div>
               ) : null}
               {detailsUser.createdAt ? (
-                <div>
-                  <dt className="text-muted-foreground">Created</dt>
-                  <dd>{new Date(detailsUser.createdAt).toLocaleString()}</dd>
+                <div className="rounded-2xl border border-border bg-card/60 p-3">
+                  <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                    Created
+                  </dt>
+                  <dd className="mt-1 text-muted-foreground">
+                    {new Date(detailsUser.createdAt).toLocaleString()}
+                  </dd>
                 </div>
               ) : null}
-              <div>
-                <dt className="text-muted-foreground">Email verified</dt>
-                <dd>{detailsUser.emailVerified ? "Yes" : "No"}</dd>
+              <div className="rounded-2xl border border-border bg-card/60 p-3">
+                <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                  Email verified
+                </dt>
+                <dd className="mt-1 text-muted-foreground">
+                  {detailsUser.emailVerified ? "Yes" : "No"}
+                </dd>
               </div>
             </dl>
           )}
@@ -531,15 +696,22 @@ export default function AdminUsersPage() {
       </Sheet>
 
       <Dialog open={!!confirmBan} onOpenChange={(o) => !o && setConfirmBan(null)}>
-        <DialogContent>
+        <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl">
           <DialogHeader>
-            <DialogTitle>Deactivate user?</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-popover-foreground">
+              Deactivate user?
+            </DialogTitle>
+            <DialogDescription className="leading-6 text-muted-foreground">
               {confirmBan?.email} will not be able to sign in until reactivated.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setConfirmBan(null)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmBan(null)}
+              className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            >
               Cancel
             </Button>
             <Button
@@ -547,6 +719,7 @@ export default function AdminUsersPage() {
               variant="destructive"
               disabled={actionLoading}
               onClick={() => void runBan()}
+              className="rounded-full"
             >
               Deactivate
             </Button>
@@ -555,21 +728,29 @@ export default function AdminUsersPage() {
       </Dialog>
 
       <Dialog open={!!confirmUnban} onOpenChange={(o) => !o && setConfirmUnban(null)}>
-        <DialogContent>
+        <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl">
           <DialogHeader>
-            <DialogTitle>Activate user?</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-popover-foreground">
+              Activate user?
+            </DialogTitle>
+            <DialogDescription className="leading-6 text-muted-foreground">
               {confirmUnban?.email} will be able to sign in again.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setConfirmUnban(null)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmUnban(null)}
+              className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            >
               Cancel
             </Button>
             <Button
               type="button"
               disabled={actionLoading}
               onClick={() => void runUnban()}
+              className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90"
             >
               Activate
             </Button>
@@ -578,22 +759,30 @@ export default function AdminUsersPage() {
       </Dialog>
 
       <Dialog open={!!confirmRole} onOpenChange={(o) => !o && setConfirmRole(null)}>
-        <DialogContent>
+        <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl">
           <DialogHeader>
-            <DialogTitle>Change role?</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-popover-foreground">
+              Change role?
+            </DialogTitle>
+            <DialogDescription className="leading-6 text-muted-foreground">
               Set {confirmRole?.user.email} to{" "}
               <strong>{confirmRole?.nextRole}</strong>?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setConfirmRole(null)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmRole(null)}
+              className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            >
               Cancel
             </Button>
             <Button
               type="button"
               disabled={actionLoading}
               onClick={() => void runSetRole()}
+              className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90"
             >
               Confirm
             </Button>

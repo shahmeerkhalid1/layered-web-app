@@ -8,21 +8,22 @@ interface ExerciseSearchProps {
 
 export function ExerciseSearch({ value, onChange }: ExerciseSearchProps) {
   return (
-    <div className="relative">
-      <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+    <div className="relative rounded-2xl border border-border bg-card shadow-md">
+      <Search className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input
-        placeholder="Search exercises..."
+        placeholder="Search by movement, apparatus, or cue..."
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="pl-9"
+        className="h-12 rounded-2xl border-0 bg-transparent pr-11 pl-11 text-sm shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
       />
       {value && (
         <button
           onClick={() => onChange("")}
-          className="absolute right-3 top-1/2 -translate-y-1/2"
+          className="absolute top-1/2 right-4 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           type="button"
+          aria-label="Clear exercise search"
         >
-          <X className="size-4 text-muted-foreground" />
+          <X className="size-4" />
         </button>
       )}
     </div>

@@ -83,49 +83,72 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Card>
-        <CardContent className="space-y-6 pt-6">
+    <form onSubmit={handleSubmit} className="max-w-3xl">
+      <Card className="border-border bg-card shadow-xl">
+        <CardContent className="space-y-6 p-5 sm:p-6">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
+              Movement Notes
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-card-foreground">
+              {isEdit ? "Refine Exercise" : "Create Exercise"}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Keep cues precise, readable, and easy to reuse during class planning.
+            </p>
+          </div>
+
           <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
+            <Label htmlFor="name" className="text-sm font-medium text-foreground">
+              Name *
+            </Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Hundred"
               required
+              className="h-11 rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description" className="text-sm font-medium text-foreground">
+              Description
+            </Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the exercise..."
+              placeholder="Describe the movement, setup, and intention..."
               rows={4}
+              className="rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="cueing">Cueing Ideas</Label>
+            <Label htmlFor="cueing" className="text-sm font-medium text-foreground">
+              Cueing Ideas
+            </Label>
             <Textarea
               id="cueing"
               value={cueing}
               onChange={(e) => setCueing(e.target.value)}
-              placeholder="Cueing notes for teaching..."
+              placeholder="Breath, tempo, tactile cues, and common corrections..."
               rows={3}
+              className="rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="folder">Folder</Label>
+            <Label htmlFor="folder" className="text-sm font-medium text-foreground">
+              Folder
+            </Label>
             <Select
               value={folderId}
               onValueChange={(value) => setFolderId(value ?? "none")}
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-11 rounded-2xl border-input bg-background/70 shadow-none focus-visible:ring-ring/35">
                 <SelectValue placeholder="No folder" />
               </SelectTrigger>
               <SelectContent>
@@ -140,29 +163,45 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Tags</Label>
+            <Label className="text-sm font-medium text-foreground">
+              Tags
+            </Label>
             <div className="flex gap-2">
               <Input
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
-                placeholder="Add a tag..."
+                placeholder="Add apparatus, level, or focus..."
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
                     addTag();
                   }
                 }}
+                className="h-11 rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
               />
-              <Button type="button" variant="outline" onClick={addTag}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addTag}
+                className="rounded-full border-border bg-transparent px-5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              >
                 Add
               </Button>
             </div>
             {tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-2">
+              <div className="flex flex-wrap gap-1.5 pt-2">
                 {tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="gap-1">
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="gap-1 border-border bg-accent text-accent-foreground"
+                  >
                     {tag}
-                    <button type="button" onClick={() => removeTag(tag)}>
+                    <button
+                      type="button"
+                      onClick={() => removeTag(tag)}
+                      aria-label={`Remove ${tag} tag`}
+                    >
                       <X className="size-3" />
                     </button>
                   </Badge>
@@ -173,16 +212,21 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
         </CardContent>
       </Card>
 
-      <div className="mt-6 flex items-center gap-4">
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <Button
           type="button"
           variant="outline"
           onClick={() => router.back()}
+          className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         >
           <ArrowLeft className="mr-2 size-4" />
           Cancel
         </Button>
-        <Button type="submit" disabled={saving || !name.trim()}>
+        <Button
+          type="submit"
+          disabled={saving || !name.trim()}
+          className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
+        >
           {saving ? "Saving..." : isEdit ? "Update Exercise" : "Create Exercise"}
         </Button>
       </div>

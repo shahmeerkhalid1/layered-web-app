@@ -12,10 +12,11 @@ export default function ExercisesPage() {
   const { folderDialog } = library;
 
   return (
-    <div className="space-y-6">
+    <div className="relative space-y-6 overflow-hidden rounded-[2rem] bg-background p-1">
+      <div className="pointer-events-none absolute top-16 right-10 h-48 w-48 rounded-full bg-secondary/60 blur-3xl" />
       <ExerciseLibraryHeader />
 
-      <div className="flex flex-col gap-6 lg:flex-row">
+      <div className="relative flex flex-col gap-6 lg:flex-row">
         <ExerciseFolderSidebar
           folders={library.folders}
           selectedFolder={library.selectedFolder}
@@ -25,7 +26,7 @@ export default function ExercisesPage() {
           onDeleteFolder={folderDialog.delete}
         />
 
-        <main className="flex-1 space-y-4">
+        <main className="min-w-0 flex-1 space-y-5">
           <ExerciseSearch value={library.search} onChange={library.setSearch} />
           <ExerciseList
             exercises={library.exercises}
