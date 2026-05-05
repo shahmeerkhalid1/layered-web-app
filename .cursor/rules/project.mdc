@@ -14,7 +14,7 @@ A SaaS MVP for Pilates instructors — centralizes scheduling, class plans (temp
 | Frontend | Next.js 16 (App Router), React 19, TypeScript 5 |
 | Styling | Tailwind CSS v4 (PostCSS), shadcn UI (base-nova style) |
 | State | React Context (`AuthProvider`), no external state library |
-| API Client | Custom `fetch` wrapper (`src/lib/api.ts`) with `credentials: "include"` |
+| API Client | Custom `fetch` wrapper (`src/lib/api.ts`) with `credentials: "include"`; domain clients in `src/services/*` |
 | Backend | Express 4, TypeScript 5, `express-async-errors` |
 | Database | PostgreSQL + Prisma 7 ORM |
 | Auth | Better Auth (cookie-based sessions, email/password, admin plugin, Prisma adapter) |
@@ -27,40 +27,47 @@ A SaaS MVP for Pilates instructors — centralizes scheduling, class plans (temp
 
 ```
 pilates-platform/
-├── client/                          # Next.js frontend
+├── client/                              # Next.js frontend
 │   └── src/
-│       ├── app/                     # App Router
-│       │   ├── layout.tsx           # Root layout (fonts, AuthProvider, Toaster)
-│       │   ├── globals.css          # Tailwind + shadcn theme
-│       │   ├── (dashboard)/         # Route group — renders at /
-│       │   │   ├── layout.tsx       # AppLayout wrapper (sidebar, topbar, auth gate)
-│       │   │   ├── page.tsx         # Dashboard home
-│       │   │   └── admin/           # Admin pages (layout guard + sub-routes)
-│       │   │       ├── layout.tsx   # Admin layout (redirects non-admins)
-│       │   │     y  ├── page.tsx     # Admin dashboard
-│       │   │       ├── users/       # User management
-│       │   │       └── settings/    # Platform settings
+│       ├── app/                         # App Router
+│       │   ├── layout.tsx               # Root layout (fonts, AuthProvider, Toaster)
+│       │   ├── globals.css              # Tailwind + shadcn theme tokens
+│       │   ├── (dashboard)/             # Route group — URL still at /
+│       │   │   ├── layout.tsx           # AppLayout (sidebar, topbar, auth gate)
+│       │   │   ├── page.tsx             # Dashboard home
+│       │   │   ├── exercises/           # Exercise library (list, new, detail, edit)
+│       │   │   └── admin/               # Admin (layout guard + sub-routes)
+│       │   │       ├── layout.tsx       # Redirects non-admins
+│       │   │       ├── page.tsx         # Admin home
+│       │   │       ├── users/           # User management
+│       │   │       └── settings/        # Platform settings
 │       │   ├── login/page.tsx
-│       │   └── register/page.tsx    # Supports invite token + signup toggle
+│       │   └── register/page.tsx        # Invite token + signup toggle
 │       ├── components/
-│       │   ├── layout/              # App shell (app-layout, sidebar, top-bar)
-│       │   └── ui/                  # shadcn primitives (card, dialog, table, etc.)
-│       ├── context/                 # React context providers (auth-context)
-│       └── lib/                     # Utilities (api.ts, admin-api.ts, auth-client.ts, utils.ts)
-├── server/                          # Express API
+│       │   ├── layout/                  # App shell (app-layout, sidebar, top-bar)
+│       │   ├── ui/                      # shadcn primitives (@/components/ui/*)
+│       │   ├── dashboard/               # Dashboard-specific composites
+│       │   └── exercises/               # Exercise library composites
+│       ├── context/                     # e.g. auth-context (AuthProvider)
+│       ├── hooks/                       # Shared + feature hooks (e.g. hooks/exercises/)
+│       ├── lib/                         # api.ts, auth-client.ts, utils.ts, types.ts
+│       └── services/                    # Typed API modules (admin-api, exercise-api)
+├── server/                              # Express API
 │   ├── prisma/
-│   │   ├── schema.prisma           # Database models
-│   │   └── seed.ts                 # Seeds admin user + platform settings
-│   ├── prisma.config.ts            # Prisma 7 defineConfig
+│   │   ├── schema.prisma                # Database models
+│   │   └── seed.ts                      # Admin user + platform settings
+│   ├── prisma.config.ts                 # Prisma 7 defineConfig
 │   └── src/
-│       ├── index.ts                # Server entrypoint (PORT 5000)
-│       ├── app.ts                  # Express app, CORS, public invite/signup routes, admin mount, error handler
-│       ├── generated/prisma/       # Prisma client (auto-generated)
-│       ├── lib/                    # prisma.ts, auth.ts, errors.ts, cloudinary.ts, mail.ts
-│       ├── middleware/             # auth, admin, error, validate
-│       └── modules/               # Feature modules
-│           └── admin/              # Admin module (routes, service, validation)
-└── package.json                    # Root — concurrently runs client + server
+│       ├── index.ts                     # Entry (PORT 5000)
+│       ├── app.ts                       # Express, CORS, auth handler, route mounts, error handler
+│       ├── generated/prisma/            # Prisma client (generated)
+│       ├── lib/                         # prisma, auth, errors, cloudinary, mail
+│       ├── middleware/                  # auth, admin, error, validate (*.middleware.ts)
+│       └── modules/                     # Feature modules
+│           ├── admin/                   # routes.ts, service.ts, validation.ts
+│           └── exercises/               # exercise.routes.ts, exercise.service.ts,
+│                                        # exercise.validation.ts, folder.routes.ts
+└── package.json                         # Root — concurrently runs client + server
 ```
 
 ## Development Commands
@@ -88,11 +95,12 @@ npm run seed --prefix server       # tsx prisma/seed.ts (bootstrap admin + setti
 - **Documentation lookup**: always use the **Context7 MCP** (`resolve-library-id` → `get-library-docs`) to fetch up-to-date documentation before using or advising on any library, framework, or tool — even well-known ones (Next.js, React, Prisma, Tailwind, Express, Zod, etc.)
 
 ### Backend
-- **Modular structure**: each feature lives in `server/src/modules/<feature>/` with `routes`, `service`, and `validation` files
+- **Modular structure**: each feature lives in `server/src/modules/<feature>/` with `service` and `validation` files; **routes** may be one or more routers (e.g. `exercise.routes.ts`, `folder.routes.ts`) mounted from `app.ts` under `/api/<segment>`
 - **Validation**: Zod schemas validate request bodies via `validate()` middleware
 - **Error handling**: throw `AppError` subclasses (`ConflictError`, `UnauthorizedError`) — caught by global `errorHandler`; `ZodError` → 400 with `details` (Zod 4 exposes issues on `err.issues`, not `errors`)
+- **Health**: `GET /api/health` — lightweight status JSON for uptime checks
 - **Email (invitations)**: `server/src/lib/mail.ts` — Nodemailer SMTP from env (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, optional `SMTP_SECURE`, `MAIL_FROM`). When fully configured, `POST /api/admin/invite` sends the register link after creating the row; response always includes `inviteLink` plus `emailSent` / `emailError` for the UI. `CLIENT_URL` builds the invite URL (same origin the user should open in the browser)
-- **Auth**: Better Auth handles `/api/auth/*` via `toNodeHandler`; protected routes use `authenticate` middleware which reads the session cookie via `auth.api.getSession()`; `req.user` is `{ instructorId, email, role }`; routes mount at `/api/<module>`
+- **Auth**: Better Auth handles `/api/auth/*` via `toNodeHandler`; protected routes use `authenticate` middleware which reads the session cookie via `auth.api.getSession()`; `req.user` is `{ instructorId, email, role }`; feature routes mount at `/api/<module>` (e.g. `/api/exercises`, `/api/admin`)
 - **Public registration helpers**: `app.ts` exposes `/api/signup-status` and `/api/invite/verify` (query `token`) for the register page; invitation creation and listing live under `/api/admin/*`
 - **Admin plugin**: Better Auth admin plugin (`defaultRole: "INSTRUCTOR"`, `adminRole: "ADMIN"`) provides `/api/auth/admin/*` endpoints (listUsers, banUser, unbanUser, setRole); custom admin routes at `/api/admin/*` use `authenticate` + `requireAdmin` middleware
 - **Roles**: `Role` enum (`ADMIN` | `INSTRUCTOR`); default is `INSTRUCTOR`; admin guard via `requireAdmin` middleware
@@ -105,8 +113,10 @@ npm run seed --prefix server       # tsx prisma/seed.ts (bootstrap admin + setti
 - **Auth client**: `authClient` from `@/lib/auth-client` — provides `signIn.email()`, `signUp.email()`, `signOut()`, `useSession()`, plus `admin.*` methods via `adminClient` plugin
 - **Roles**: `useAuth()` exposes `isAdmin` boolean and `instructor.role`; sidebar conditionally renders admin navigation; admin routes under `(dashboard)/admin/` have a layout guard redirecting non-admins
 - **Path alias**: `@/*` maps to `./src/*`
-- **Component organization**: layout shell in `components/layout/`, shadcn primitives in `components/ui/`
-- **API calls**: use the `api` helper from `@/lib/api` — sends `credentials: "include"` for cookie-based auth; resolves the base URL from `NEXT_PUBLIC_API_URL`; admin-specific helpers in `@/lib/admin-api`
+- **UI components**: use **shadcn/ui** for all UI primitives and patterns that shadcn provides; import from `@/components/ui/*`. Build feature-specific composites under `components/<feature>/` (and `components/layout/`) rather than reimplementing primitives inline
+- **Theming / colors**: prefer shadcn **semantic tokens** (`bg-background`, `text-foreground`, `text-muted-foreground`, `text-destructive`, `border-border`, `bg-card`, etc.) over hardcoded Tailwind palette utilities (e.g. `bg-gray-900`, `text-red-500`) so light/dark and theme tweaks stay consistent
+- **Component layout**: shell in `components/layout/`; dashboard composites in `components/dashboard/`; domain UI in `components/<domain>/`; shared hooks in `hooks/`
+- **API calls**: use the `api` helper from `@/lib/api` for generic requests; prefer typed modules in `@/services/*` (e.g. `admin-api`, `exercise-api`) for feature endpoints — all use `credentials: "include"` via the shared client; base URL from `NEXT_PUBLIC_API_URL`
 
 ### Database Models (Prisma)
 - `Instructor` — identity & auth (mapped as Better Auth's `user` via `user.modelName`); has `role` (`Role` enum: `ADMIN`/`INSTRUCTOR`), `banned`, `banReason`, `banExpires`
