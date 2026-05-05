@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   Menu,
   X,
-  Shield,
   Settings,
   UserPlus,
   Calendar,
@@ -29,7 +28,7 @@ const navItems = [
 ];
 
 const adminNavItems = [
-  { href: "/admin", label: "Admin Dashboard", icon: Shield },
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/users", label: "User Management", icon: UserPlus },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
@@ -38,11 +37,10 @@ export function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isAdmin } = useAuth();
-  const isAdminRoute = pathname.startsWith("/admin");
+  // const isAdminRoute = pathname.startsWith("/admin");
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
-    if (href === "/admin") return pathname === "/admin";
     return pathname.startsWith(href);
   };
 
@@ -63,13 +61,13 @@ export function Sidebar() {
           </div>
         </div>
       </div>
-      {!isAdminRoute &&
+      {!isAdmin &&
         navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
           return (
             <Link
-              key={item.href}
+              key={`main-${item.label}`}
               href={item.href}
               onClick={() => setMobileOpen(false)}
               className={cn(
@@ -103,7 +101,7 @@ export function Sidebar() {
             const active = isActive(item.href);
             return (
               <Link
-                key={item.href}
+                key={`admin-${item.label}`}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={cn(

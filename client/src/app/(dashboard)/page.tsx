@@ -1,11 +1,16 @@
 "use client";
 
+import { AdminHome } from "@/components/dashboard/admin-home";
 import { useAuth } from "@/context/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Dumbbell, Users, FileText } from "lucide-react";
 
 export default function DashboardPage() {
-  const { instructor } = useAuth();
+  const { instructor, isAdmin } = useAuth();
+
+  if (isAdmin) {
+    return <AdminHome />;
+  }
 
   return (
     <div className="space-y-6">
