@@ -9,6 +9,7 @@ import { errorHandler } from "./middleware/error.middleware";
 import adminRoutes from "./modules/admin/routes";
 import * as adminService from "./modules/admin/service";
 import exerciseRoutes from "./modules/exercises/exercise.routes";
+import folderRoutes from "./modules/exercises/folder.routes";
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use("/api/admin", authenticate, requireAdmin, adminRoutes);
 
 // Exercise routes
 app.use("/api/exercises", exerciseRoutes);
+app.use("/api/exercise-folders", folderRoutes);
 app.use(errorHandler);
 
 export default app;
