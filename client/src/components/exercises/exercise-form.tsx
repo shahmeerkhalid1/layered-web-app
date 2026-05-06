@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useDropzone, type FileRejection } from "react-dropzone";
 import { exerciseApi } from "@/services/exercise-api";
-import type { Exercise, ExerciseFolder } from "@/lib/types";
+import type { TempUploadedImage } from "@/services/exercise-api";
+import type { Exercise, ExerciseFolder, ExerciseImage } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,13 +14,25 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { X, ArrowLeft } from "lucide-react";
+import { X, ArrowLeft, Plus, ImagePlus, Loader2, GripVertical } from "lucide-react";
 import { toast } from "sonner";
+
+const MAX_IMAGES = 3;
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+type ImageItem =
+  | { type: "saved"; data: ExerciseImage }
+  | { type: "temp"; data: TempUploadedImage };
+
+function imageKey(item: ImageItem): string {
+  return item.type === "saved" ? item.data.id : item.data.publicId;
+}
 
 interface ExerciseFormProps {
   exercise?: Exercise;
@@ -36,10 +50,30 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
   const [folderId, setFolderId] = useState<string>(exercise?.folderId ?? "none");
   const [folders, setFolders] = useState<ExerciseFolder[]>([]);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const [images, setImages] = useState<ImageItem[]>(() => {
+    const saved: ImageItem[] = (exercise?.images ?? []).map((img) => ({
+      type: "saved",
+      data: img,
+    }));
+    return saved;
+  });
+
+  const totalImages = images.length;
+  const availableSlots = MAX_IMAGES - totalImages;
 
   useEffect(() => {
     exerciseApi.getFolders().then(setFolders).catch(() => {});
   }, []);
+
+  const folderTriggerLabel = useMemo(() => {
+    if (folderId === "none") return "No folder";
+    const fromList = folders.find((f) => f.id === folderId);
+    if (fromList) return fromList.name;
+    if (exercise?.folder?.id === folderId) return exercise.folder.name;
+    return "No folder";
+  }, [folderId, folders, exercise?.folder?.id, exercise?.folder?.name]);
 
   const addTag = () => {
     const tag = tagInput.trim();
@@ -53,9 +87,137 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
     setTags(tags.filter((t) => t !== tag));
   };
 
+  // ─── Dropzone ────────────────────────────────────────────────────────────
+
+  const onDrop = useCallback(
+    async (accepted: File[], rejections: FileRejection[]) => {
+      for (const r of rejections) {
+        for (const err of r.errors) {
+          if (err.code === "file-too-large") {
+            toast.error(`${r.file.name} exceeds the 5 MB limit`);
+          } else if (err.code === "file-invalid-type") {
+            toast.error(`${r.file.name} is not a supported image type`);
+          } else if (err.code === "too-many-files") {
+            toast.error(`You can add up to ${availableSlots} more image(s)`);
+          } else {
+            toast.error(err.message);
+          }
+        }
+      }
+
+      if (accepted.length === 0) return;
+
+      const formData = new FormData();
+      for (const file of accepted) {
+        formData.append("images", file);
+      }
+
+      setUploading(true);
+      try {
+        const res = await exerciseApi.uploadTempImages(formData);
+        setImages((prev) => [
+          ...prev,
+          ...res.images.map(
+            (img): ImageItem => ({ type: "temp", data: img })
+          ),
+        ]);
+      } catch {
+        toast.error("Failed to upload images");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [availableSlots]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      "image/jpeg": [],
+      "image/png": [],
+      "image/webp": [],
+    },
+    maxSize: MAX_FILE_SIZE,
+    maxFiles: Math.max(availableSlots, 0),
+    multiple: true,
+    disabled: uploading || availableSlots <= 0,
+  });
+
+  // ─── Remove images ──────────────────────────────────────────────────────
+
+  const removeImage = async (item: ImageItem) => {
+    if (item.type === "temp") {
+      try {
+        await exerciseApi.deleteTempImage(item.data.publicId);
+        setImages((prev) => prev.filter((i) => imageKey(i) !== imageKey(item)));
+      } catch {
+        toast.error("Failed to remove image — try again");
+      }
+    } else if (isEdit) {
+      try {
+        await exerciseApi.deleteImage(exercise.id, item.data.id);
+        setImages((prev) => prev.filter((i) => imageKey(i) !== imageKey(item)));
+        toast.success("Image removed");
+      } catch {
+        toast.error("Failed to remove image — try again");
+      }
+    }
+  };
+
+  // ─── Drag-to-sort ───────────────────────────────────────────────────────
+
+  const dragIdx = useRef<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const handleDragStart = (index: number) => {
+    dragIdx.current = index;
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIdx(index);
+  };
+
+  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    setDragOverIdx(null);
+    const from = dragIdx.current;
+    dragIdx.current = null;
+    if (from === null || from === dropIndex) return;
+
+    const reordered = [...images];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(dropIndex, 0, moved);
+    setImages(reordered);
+
+    if (isEdit) {
+      const savedIds = reordered
+        .filter((i): i is ImageItem & { type: "saved" } => i.type === "saved")
+        .map((i) => i.data.id);
+      if (savedIds.length > 1) {
+        try {
+          await exerciseApi.reorderImages(exercise.id, savedIds);
+        } catch {
+          toast.error("Failed to save new image order");
+        }
+      }
+    }
+  };
+
+  const handleDragEnd = () => {
+    dragIdx.current = null;
+    setDragOverIdx(null);
+  };
+
+  // ─── Submit ──────────────────────────────────────────────────────────────
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+
+    const tempPublicIds = images
+      .filter((i): i is ImageItem & { type: "temp" } => i.type === "temp")
+      .map((i) => i.data.publicId);
 
     const body = {
       name,
@@ -63,6 +225,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
       cueing: cueing || undefined,
       tags,
       folderId: folderId === "none" ? null : folderId,
+      ...(tempPublicIds.length > 0 ? { publicIds: tempPublicIds } : {}),
     };
 
     try {
@@ -99,7 +262,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-medium text-foreground">
+            <Label htmlFor="name" className="pl-1.5 text-sm font-medium text-foreground">
               Name *
             </Label>
             <Input
@@ -108,12 +271,12 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Hundred"
               required
-              className="h-11 rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+              className="h-12 rounded-2xl border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-sm font-medium text-foreground">
+            <Label htmlFor="description" className="pl-1.5 text-sm font-medium text-foreground">
               Description
             </Label>
             <Textarea
@@ -122,12 +285,12 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the movement, setup, and intention..."
               rows={4}
-              className="rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+              className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="cueing" className="text-sm font-medium text-foreground">
+            <Label htmlFor="cueing" className="pl-1.5 text-sm font-medium text-foreground">
               Cueing Ideas
             </Label>
             <Textarea
@@ -136,37 +299,51 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
               onChange={(e) => setCueing(e.target.value)}
               placeholder="Breath, tempo, tactile cues, and common corrections..."
               rows={3}
-              className="rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+              className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="folder" className="text-sm font-medium text-foreground">
+            <Label htmlFor="folder" className="pl-1.5 text-sm font-medium text-foreground">
               Folder
             </Label>
             <Select
               value={folderId}
               onValueChange={(value) => setFolderId(value ?? "none")}
             >
-              <SelectTrigger className="h-11 rounded-2xl border-input bg-background/70 shadow-none focus-visible:ring-ring/35">
-                <SelectValue placeholder="No folder" />
+              <SelectTrigger
+                id="folder"
+                className="h-12 w-full min-w-0 rounded-2xl border-input bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+              >
+                <SelectValue placeholder="No folder">{folderTriggerLabel}</SelectValue>
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No folder</SelectItem>
-                {folders.map((f) => (
-                  <SelectItem key={f.id} value={f.id}>
-                    {f.name}
-                  </SelectItem>
-                ))}
+              <SelectContent
+                align="start"
+                sideOffset={6}
+                className="max-h-72 rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+              >
+                <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                  No folder
+                </SelectItem>
+                {folders.length > 0 && (
+                  <>
+                    <SelectSeparator className="mx-1 bg-border/70" />
+                    {folders.map((f) => (
+                      <SelectItem key={f.id} value={f.id} className="rounded-xl py-2.5 pl-3">
+                        {f.name}
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-foreground">
+            <Label className="pl-1.5 text-sm font-medium text-foreground">
               Tags
             </Label>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <Input
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
@@ -177,14 +354,15 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                     addTag();
                   }
                 }}
-                className="h-11 rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                className="h-12 min-w-0 flex-1 rounded-2xl border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
               />
               <Button
                 type="button"
                 variant="outline"
                 onClick={addTag}
-                className="rounded-full border-border bg-transparent px-5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                className="h-12 shrink-0 gap-2 rounded-2xl border-input bg-background/70 px-5 text-sm font-medium text-foreground shadow-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring/35"
               >
+                <Plus className="size-5 shrink-0" aria-hidden />
                 Add
               </Button>
             </div>
@@ -209,10 +387,92 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
               </div>
             )}
           </div>
+
+          {/* ─── Image Dropzone ──────────────────────────────────────── */}
+          <div className="space-y-2">
+            <Label className="pl-1.5 text-sm font-medium text-foreground">
+              Images
+              <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                ({totalImages}/{MAX_IMAGES})
+              </span>
+            </Label>
+
+            {totalImages > 0 && (
+              <div className="grid grid-cols-3 gap-3">
+                {images.map((item, index) => (
+                  <div
+                    key={imageKey(item)}
+                    draggable
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                    className={`group relative aspect-square overflow-hidden rounded-2xl border bg-muted transition-all ${
+                      dragOverIdx === index
+                        ? "border-primary ring-2 ring-primary/30"
+                        : "border-border"
+                    }`}
+                  >
+                    <img
+                      src={item.data.url}
+                      alt=""
+                      className="size-full object-cover"
+                      draggable={false}
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100" />
+                    <div className="absolute left-1.5 top-1.5 flex size-6 cursor-grab items-center justify-center rounded-full bg-black text-white opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing">
+                      <GripVertical className="size-3.5" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeImage(item)}
+                      className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                      aria-label="Remove image"
+                    >
+                      <X className="size-3.5 text-white" />
+                    </button>
+                    {item.type === "temp" && (
+                      <span className="absolute bottom-1.5 left-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                        New
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {availableSlots > 0 && (
+              <div
+                {...getRootProps()}
+                className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-8 transition-colors ${
+                  isDragActive
+                    ? "border-primary bg-primary/5"
+                    : "border-input bg-background/70 hover:border-muted-foreground/40"
+                } ${uploading ? "pointer-events-none opacity-60" : ""}`}
+              >
+                <input {...getInputProps()} />
+                {uploading ? (
+                  <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                ) : (
+                  <ImagePlus className="size-6 text-muted-foreground" />
+                )}
+                <p className="text-center text-sm text-muted-foreground">
+                  {uploading
+                    ? "Uploading..."
+                    : isDragActive
+                      ? "Drop images here"
+                      : `Drag & drop or click to add (max ${availableSlots} more)`}
+                </p>
+                <p className="text-center text-xs text-muted-foreground/70">
+                  JPG, PNG, or WebP up to 5 MB each
+                </p>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="mt-6 flex flex-row flex-wrap items-center justify-end gap-3">
         <Button
           type="button"
           variant="outline"
@@ -224,7 +484,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
         </Button>
         <Button
           type="submit"
-          disabled={saving || !name.trim()}
+          disabled={saving || uploading || !name.trim()}
           className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
         >
           {saving ? "Saving..." : isEdit ? "Update Exercise" : "Create Exercise"}

@@ -19,6 +19,12 @@ export type SaveExerciseBody = {
   tags?: string[];
   folderId?: string | null;
   progressionOfId?: string | null;
+  publicIds?: string[];
+};
+
+export type TempUploadedImage = {
+  publicId: string;
+  url: string;
 };
 
 export const exerciseApi = {
@@ -38,10 +44,17 @@ export const exerciseApi = {
     api.post<ExerciseImage>(`/exercises/${id}/images`, image),
   deleteImage: (id: string, imageId: string) =>
     api.delete<void>(`/exercises/${id}/images/${imageId}`),
+  reorderImages: (id: string, imageIds: string[]) =>
+    api.patch<ExerciseImage[]>(`/exercises/${id}/images/reorder`, { imageIds }),
   getFolders: () => api.get<ExerciseFolder[]>("/exercise-folders"),
   createFolder: (body: { name: string }) =>
     api.post<ExerciseFolder>("/exercise-folders", body),
   updateFolder: (id: string, body: { name?: string }) =>
     api.patch<ExerciseFolder>(`/exercise-folders/${id}`, body),
   deleteFolder: (id: string) => api.delete<void>(`/exercise-folders/${id}`),
+
+  uploadTempImages: (formData: FormData) =>
+    api.post<{ images: TempUploadedImage[] }>("/uploads/temp", formData),
+  deleteTempImage: (publicId: string) =>
+    api.delete<void>(`/uploads/temp/${encodeURIComponent(publicId)}`),
 };

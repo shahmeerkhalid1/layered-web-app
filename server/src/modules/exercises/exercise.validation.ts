@@ -21,5 +21,9 @@ export const setProgressionSchema = z.object({
   progressionOfId: z.string().nullable(),
 });
 
+export const reorderImagesSchema = z.object({
+  imageIds: z.array(z.string()).min(1, "At least one image ID is required"),
+});
+
 export type CreateExerciseInput = z.infer<typeof createExerciseSchema>;
 export type UpdateExerciseInput = z.infer<typeof updateExerciseSchema>;

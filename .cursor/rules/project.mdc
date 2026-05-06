@@ -19,7 +19,8 @@ A SaaS MVP for Pilates instructors — centralizes scheduling, class plans (temp
 | Database | PostgreSQL + Prisma 7 ORM |
 | Auth | Better Auth (cookie-based sessions, email/password, admin plugin, Prisma adapter) |
 | Validation | Zod 4 (server-side request validation) |
-| Uploads | Cloudinary + multer (exercise images) |
+| Uploads | Cloudinary + multer (exercise images); hybrid temp-upload flow with `react-dropzone` |
+| Scheduling | `node-cron` (hourly temp image cleanup) |
 | Email | Nodemailer (SMTP via env — invitation emails from admin invite) |
 | Monorepo | Root `package.json` with `concurrently` |
 
@@ -58,15 +59,18 @@ pilates-platform/
 │   │   └── seed.ts                      # Admin user + platform settings
 │   ├── prisma.config.ts                 # Prisma 7 defineConfig
 │   └── src/
-│       ├── index.ts                     # Entry (PORT 5000)
+│       ├── index.ts                     # Entry (PORT 5000), starts cron jobs
 │       ├── app.ts                       # Express, CORS, auth handler, route mounts, error handler
 │       ├── generated/prisma/            # Prisma client (generated)
 │       ├── lib/                         # prisma, auth, errors, cloudinary, mail
 │       ├── middleware/                  # auth, admin, error, validate (*.middleware.ts)
+│       ├── jobs/                        # Cron jobs (cleanup-temp-uploads.ts)
+│       ├── types/                       # Declaration merging (express.d.ts)
 │       └── modules/                     # Feature modules
 │           ├── admin/                   # routes.ts, service.ts, validation.ts
-│           └── exercises/               # exercise.routes.ts, exercise.service.ts,
-│                                        # exercise.validation.ts, folder.routes.ts
+│           ├── exercises/               # exercise.routes.ts, exercise.service.ts,
+│           │                            # exercise.validation.ts, folder.routes.ts
+│           └── uploads/                 # upload.routes.ts (temp image upload/delete)
 └── package.json                         # Root — concurrently runs client + server
 ```
 
@@ -105,7 +109,9 @@ npm run seed --prefix server       # tsx prisma/seed.ts (bootstrap admin + setti
 - **Admin plugin**: Better Auth admin plugin (`defaultRole: "INSTRUCTOR"`, `adminRole: "ADMIN"`) provides `/api/auth/admin/*` endpoints (listUsers, banUser, unbanUser, setRole); custom admin routes at `/api/admin/*` use `authenticate` + `requireAdmin` middleware
 - **Roles**: `Role` enum (`ADMIN` | `INSTRUCTOR`); default is `INSTRUCTOR`; admin guard via `requireAdmin` middleware
 - **Prisma**: client imported from `src/lib/prisma.ts`; generated output at `src/generated/prisma`
-- **Soft deletes**: `deletedAt` field on applicable models
+- **Soft deletes**: `deletedAt` field on applicable models; soft-deleting an exercise also removes its Cloudinary assets and `ExerciseImage` rows
+- **Image uploads (hybrid flow)**: images are uploaded to Cloudinary `temp/` folder via `POST /api/uploads/temp` (multer, 5 MB limit, JPEG/PNG/WebP); on exercise create/update, `publicIds[]` in the request body triggers promotion from `temp/` to `exercises/<exerciseId>/` via `cloudinary.uploader.rename` with UUID-based collision-resistant naming and all-or-nothing compensation; `DELETE /api/uploads/temp/:publicId` removes temp images; `PATCH /api/exercises/:id/images/reorder` reorders saved images; an hourly `node-cron` job deletes temp images older than 6 hours
+- **Express type augmentation**: `server/src/types/express.d.ts` adds `imagePublicIds?: string[]` to `Request` via declaration merging; an inline middleware in exercise routes extracts `publicIds` from the body before Zod validation so schemas stay unchanged
 
 ### Frontend
 - **"use client"** directive on interactive pages and layout components
@@ -117,6 +123,7 @@ npm run seed --prefix server       # tsx prisma/seed.ts (bootstrap admin + setti
 - **Theming / colors**: prefer shadcn **semantic tokens** (`bg-background`, `text-foreground`, `text-muted-foreground`, `text-destructive`, `border-border`, `bg-card`, etc.) over hardcoded Tailwind palette utilities (e.g. `bg-gray-900`, `text-red-500`) so light/dark and theme tweaks stay consistent
 - **Component layout**: shell in `components/layout/`; dashboard composites in `components/dashboard/`; domain UI in `components/<domain>/`; shared hooks in `hooks/`
 - **API calls**: use the `api` helper from `@/lib/api` for generic requests; prefer typed modules in `@/services/*` (e.g. `admin-api`, `exercise-api`) for feature endpoints — all use `credentials: "include"` via the shared client; base URL from `NEXT_PUBLIC_API_URL`
+- **Exercise image dropzone**: `exercise-form.tsx` uses `react-dropzone` (`useDropzone`) for drag-and-drop image uploads to temp storage; saved and temp images are unified into a single sortable list with HTML5 drag-to-reorder; both saved and temp images can be deleted from the form; temp images include `publicIds[]` on form submit
 
 ### Database Models (Prisma)
 - `Instructor` — identity & auth (mapped as Better Auth's `user` via `user.modelName`); has `role` (`Role` enum: `ADMIN`/`INSTRUCTOR`), `banned`, `banReason`, `banExpires`

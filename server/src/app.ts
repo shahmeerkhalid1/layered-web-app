@@ -10,6 +10,7 @@ import adminRoutes from "./modules/admin/routes";
 import * as adminService from "./modules/admin/service";
 import exerciseRoutes from "./modules/exercises/exercise.routes";
 import folderRoutes from "./modules/exercises/folder.routes";
+import uploadRoutes from "./modules/uploads/upload.routes";
 
 const app = express();
 
@@ -44,6 +45,9 @@ app.get("/api/invite/verify", async (req, res) => {
 
 // Admin routes (protected)
 app.use("/api/admin", authenticate, requireAdmin, adminRoutes);
+
+// Upload routes (temp images)
+app.use("/api/uploads", authenticate, uploadRoutes);
 
 // Exercise routes
 app.use("/api/exercises", exerciseRoutes);

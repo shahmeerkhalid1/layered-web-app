@@ -1,5 +1,6 @@
 import { prisma } from "../../lib/prisma";
 import { NotFoundError } from "../../lib/errors";
+import { promoteImage, deleteImage } from "../../lib/cloudinary";
 import type { CreateExerciseInput, UpdateExerciseInput } from "./exercise.validation";
 
 const activeFilter = { deletedAt: null };
@@ -73,8 +74,17 @@ export async function updateExercise(
 export async function deleteExercise(id: string, instructorId: string) {
   const exercise = await prisma.exercise.findFirst({
     where: { id, instructorId, ...activeFilter },
+    include: { images: true },
   });
   if (!exercise) throw new NotFoundError("Exercise");
+
+  for (const img of exercise.images) {
+    if (img.publicId) {
+      await deleteImage(img.publicId).catch(() => {});
+    }
+  }
+
+  await prisma.exerciseImage.deleteMany({ where: { exerciseId: id } });
 
   return prisma.exercise.update({
     where: { id },
@@ -183,6 +193,66 @@ export async function deleteFolder(id: string, instructorId: string) {
   });
 }
 
+// ─── Temp image promotion ────────────────────────────────────────────────────
+
+export async function attachTempImagesToExercise(
+  exerciseId: string,
+  instructorId: string,
+  publicIds: string[]
+) {
+  const exercise = await prisma.exercise.findFirst({
+    where: { id: exerciseId, instructorId, ...activeFilter },
+    include: { images: true },
+  });
+  if (!exercise) throw new NotFoundError("Exercise");
+
+  const invalid = publicIds.filter((id) => !id.startsWith("temp/"));
+  if (invalid.length > 0) {
+    throw new Error("Only temp/ images can be promoted");
+  }
+
+  const currentCount = exercise.images.length;
+  if (currentCount + publicIds.length > 3) {
+    throw new Error(
+      `Maximum 3 images per exercise (currently ${currentCount})`
+    );
+  }
+
+  const promoted: { url: string; publicId: string }[] = [];
+
+  try {
+    for (const tempId of publicIds) {
+      const result = await promoteImage(tempId, exerciseId);
+      promoted.push(result);
+    }
+  } catch (err) {
+    for (const p of promoted) {
+      await deleteImage(p.publicId).catch(() => {});
+    }
+    throw err;
+  }
+
+  try {
+    await prisma.$transaction(
+      promoted.map((p, i) =>
+        prisma.exerciseImage.create({
+          data: {
+            exerciseId,
+            url: p.url,
+            publicId: p.publicId,
+            order: currentCount + i,
+          },
+        })
+      )
+    );
+  } catch (err) {
+    for (const p of promoted) {
+      await deleteImage(p.publicId).catch(() => {});
+    }
+    throw err;
+  }
+}
+
 // ─── Image operations ────────────────────────────────────────────────────────
 
 export async function addImage(
@@ -227,4 +297,35 @@ export async function removeImage(
 
   await prisma.exerciseImage.delete({ where: { id: imageId } });
   return image;
+}
+
+export async function reorderImages(
+  exerciseId: string,
+  instructorId: string,
+  imageIds: string[]
+) {
+  const exercise = await prisma.exercise.findFirst({
+    where: { id: exerciseId, instructorId, ...activeFilter },
+    include: { images: true },
+  });
+  if (!exercise) throw new NotFoundError("Exercise");
+
+  const existingIds = new Set(exercise.images.map((img) => img.id));
+  for (const id of imageIds) {
+    if (!existingIds.has(id)) throw new NotFoundError("Image");
+  }
+
+  await prisma.$transaction(
+    imageIds.map((id, index) =>
+      prisma.exerciseImage.update({
+        where: { id },
+        data: { order: index },
+      })
+    )
+  );
+
+  return prisma.exerciseImage.findMany({
+    where: { exerciseId },
+    orderBy: { order: "asc" },
+  });
 }

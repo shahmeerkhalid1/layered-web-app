@@ -8,6 +8,7 @@ import {
   updateExerciseSchema,
   createFolderSchema,
   setProgressionSchema,
+  reorderImagesSchema,
 } from "./exercise.validation";
 import { uploadImage, deleteImage } from "../../lib/cloudinary";
 
@@ -15,6 +16,15 @@ const router = Router();
 const upload = multer({ dest: "uploads/" });
 
 router.use(authenticate);
+
+function extractImagePublicIds(req: Request, _res: Response, next: () => void) {
+  const { publicIds, ...rest } = req.body ?? {};
+  if (Array.isArray(publicIds) && publicIds.every((id: unknown) => typeof id === "string")) {
+    req.imagePublicIds = publicIds as string[];
+  }
+  req.body = rest;
+  next();
+}
 
 // ─── Exercises ───────────────────────────────────────────────────────────────
 
@@ -40,26 +50,54 @@ router.get("/:id", async (req: Request, res: Response) => {
 
 router.post(
   "/",
+  extractImagePublicIds,
   validate(createExerciseSchema),
   async (req: Request, res: Response) => {
     const exercise = await exerciseService.createExercise(
       req.user!.instructorId,
       req.body
     );
-    res.status(201).json(exercise);
+
+    if (req.imagePublicIds?.length) {
+      await exerciseService.attachTempImagesToExercise(
+        exercise.id,
+        req.user!.instructorId,
+        req.imagePublicIds
+      );
+    }
+
+    const result = await exerciseService.getExercise(
+      exercise.id,
+      req.user!.instructorId
+    );
+    res.status(201).json(result);
   }
 );
 
 router.patch(
   "/:id",
+  extractImagePublicIds,
   validate(updateExerciseSchema),
   async (req: Request, res: Response) => {
-    const exercise = await exerciseService.updateExercise(
+    await exerciseService.updateExercise(
       req.params.id as string,
       req.user!.instructorId,
       req.body
     );
-    res.json(exercise);
+
+    if (req.imagePublicIds?.length) {
+      await exerciseService.attachTempImagesToExercise(
+        req.params.id as string,
+        req.user!.instructorId,
+        req.imagePublicIds
+      );
+    }
+
+    const result = await exerciseService.getExercise(
+      req.params.id as string,
+      req.user!.instructorId
+    );
+    res.json(result);
   }
 );
 
@@ -124,6 +162,19 @@ router.delete(
       await deleteImage(image.publicId);
     }
     res.status(204).send();
+  }
+);
+
+router.patch(
+  "/:id/images/reorder",
+  validate(reorderImagesSchema),
+  async (req: Request, res: Response) => {
+    const images = await exerciseService.reorderImages(
+      req.params.id as string,
+      req.user!.instructorId,
+      req.body.imageIds
+    );
+    res.json(images);
   }
 );
 
