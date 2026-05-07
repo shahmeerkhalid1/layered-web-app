@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { useDropzone, type FileRejection } from "react-dropzone";
 import { exerciseApi } from "@/services/exercise-api";
 import type { TempUploadedImage } from "@/services/exercise-api";
-import type { Exercise, ExerciseFolder, ExerciseImage } from "@/lib/types";
+import type {
+  Exercise,
+  ExerciseFolder,
+  ExerciseImage,
+} from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,7 +52,15 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
   const [tags, setTags] = useState<string[]>(exercise?.tags ?? []);
   const [tagInput, setTagInput] = useState("");
   const [folderId, setFolderId] = useState<string>(exercise?.folderId ?? "none");
+  const [progressionOfId, setProgressionOfId] = useState<string>(
+    exercise?.progressionOfId ?? "none"
+  );
   const [folders, setFolders] = useState<ExerciseFolder[]>([]);
+  const [allExercises, setAllExercises] = useState<Exercise[]>([]);
+  /** Edit only: cannot pick self or a harder step in the same chain (would cycle). */
+  const [blockedParentIds, setBlockedParentIds] = useState<Set<string>>(() =>
+    exercise?.id ? new Set([exercise.id]) : new Set()
+  );
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -65,7 +77,27 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
 
   useEffect(() => {
     exerciseApi.getFolders().then(setFolders).catch(() => {});
+    exerciseApi.getExercises().then(setAllExercises).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!exercise?.id) return;
+    exerciseApi
+      .getProgressionChain(exercise.id)
+      .then((chain) => {
+        const i = chain.findIndex((c) => c.id === exercise.id);
+        const blocked = new Set<string>([exercise.id]);
+        if (i >= 0) {
+          for (let j = i + 1; j < chain.length; j++) {
+            blocked.add(chain[j].id);
+          }
+        }
+        setBlockedParentIds(blocked);
+      })
+      .catch(() => {
+        setBlockedParentIds(new Set([exercise.id]));
+      });
+  }, [exercise?.id]);
 
   const folderTriggerLabel = useMemo(() => {
     if (folderId === "none") return "No folder";
@@ -74,6 +106,35 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
     if (exercise?.folder?.id === folderId) return exercise.folder.name;
     return "No folder";
   }, [folderId, folders, exercise?.folder?.id, exercise?.folder?.name]);
+
+  const progressionParentOptions = useMemo(() => {
+    return allExercises
+      .filter((ex) => !blockedParentIds.has(ex.id))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [allExercises, blockedParentIds]);
+
+  const progressionTriggerLabel = useMemo(() => {
+    if (progressionOfId === "none") return "None — root level";
+    const ex = allExercises.find((e) => e.id === progressionOfId);
+    if (ex) return ex.name;
+    if (exercise?.progressionOf?.id === progressionOfId) {
+      return exercise.progressionOf.name;
+    }
+    return "Unknown exercise";
+  }, [progressionOfId, allExercises, exercise]);
+
+  const orphanProgressionParent = useMemo(() => {
+    if (
+      progressionOfId === "none" ||
+      allExercises.some((e) => e.id === progressionOfId)
+    ) {
+      return null;
+    }
+    return {
+      id: progressionOfId,
+      name: exercise?.progressionOf?.name ?? null,
+    };
+  }, [progressionOfId, allExercises, exercise]);
 
   const addTag = () => {
     const tag = tagInput.trim();
@@ -219,12 +280,22 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
       .filter((i): i is ImageItem & { type: "temp" } => i.type === "temp")
       .map((i) => i.data.publicId);
 
+    const nextProgressionOfId =
+      progressionOfId === "none" ? null : progressionOfId;
+
+    if (isEdit && nextProgressionOfId && blockedParentIds.has(nextProgressionOfId)) {
+      toast.error("That easier exercise would break the progression chain");
+      setSaving(false);
+      return;
+    }
+
     const body = {
       name,
       description: description || undefined,
       cueing: cueing || undefined,
       tags,
       folderId: folderId === "none" ? null : folderId,
+      progressionOfId: nextProgressionOfId,
       ...(tempPublicIds.length > 0 ? { publicIds: tempPublicIds } : {}),
     };
 
@@ -246,7 +317,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-3xl">
+    <form onSubmit={handleSubmit} className="w-fullmax-w-4xl">
       <Card className="border-border bg-card shadow-xl">
         <CardContent className="space-y-6 p-5 sm:p-6">
           <div>
@@ -337,6 +408,64 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                 )}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="progression" className="pl-1.5 text-sm font-medium text-foreground">
+              Easier version (progression)
+            </Label>
+            <Select
+              value={progressionOfId}
+              onValueChange={(value) => setProgressionOfId(value ?? "none")}
+            >
+              <SelectTrigger
+                id="progression"
+                className="h-12 w-full min-w-0 rounded-2xl border-input bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+              >
+                <SelectValue placeholder="None — root level">
+                  {progressionTriggerLabel}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent
+                align="start"
+                sideOffset={6}
+                className="max-h-72 rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+              >
+                <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                  None — this is the easiest step (root)
+                </SelectItem>
+                {orphanProgressionParent && (
+                  <>
+                    <SelectSeparator className="mx-1 bg-border/70" />
+                    <SelectItem
+                      value={orphanProgressionParent.id}
+                      className="rounded-xl py-2.5 pl-3 text-muted-foreground italic"
+                    >
+                      {orphanProgressionParent.name ?? "Missing exercise"} (restore
+                      or clear)
+                    </SelectItem>
+                  </>
+                )}
+                {progressionParentOptions.length > 0 && (
+                  <>
+                    <SelectSeparator className="mx-1 bg-border/70" />
+                    {progressionParentOptions.map((ex) => (
+                      <SelectItem
+                        key={ex.id}
+                        value={ex.id}
+                        className="rounded-xl py-2.5 pl-3"
+                      >
+                        {ex.name}
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+            <p className="pl-1.5 text-xs leading-relaxed text-muted-foreground">
+              Pick the movement clients do before this one. The detail page shows a
+              Level 1 → 2 → 3 chain from root to harder steps.
+            </p>
           </div>
 
           <div className="space-y-2">

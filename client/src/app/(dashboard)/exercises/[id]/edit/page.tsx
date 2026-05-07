@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { api } from "@/lib/api";
 import type { Exercise } from "@/lib/types";
+import { exerciseApi } from "@/services/exercise-api";
 import { ExerciseForm } from "@/components/exercises/exercise-form";
 import { toast } from "sonner";
 
@@ -14,8 +14,8 @@ export default function EditExercisePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api
-      .get<Exercise>(`/exercises/${params.id}`)
+    exerciseApi
+      .getExerciseById(params.id as string)
       .then(setExercise)
       .catch(() => {
         toast.error("Exercise not found");
@@ -35,7 +35,7 @@ export default function EditExercisePage() {
   if (!exercise) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Edit Exercise</h2>
         <p className="text-muted-foreground">Update {exercise.name}</p>
