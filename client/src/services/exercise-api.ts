@@ -12,13 +12,30 @@ export type ExerciseListParams = {
   tag?: string;
 };
 
+export type ExerciseLayerInput = {
+  content: string;
+  order?: number;
+};
+
 export type SaveExerciseBody = {
   name: string;
-  description?: string;
-  cueing?: string;
+  description?: string | null;
+  startingPosition?: string | null;
+  orientation?: string | null;
+  directionFaced?: string | null;
+  movementType?: string | null;
+  springs?: string | null;
+  equipment?: string | null;
+  machineSetup?: string | null;
+  transitionCues?: string | null;
+  cueing?: string | null;
+  spinalMovement?: string | null;
+  chainType?: string | null;
+  jointLoading?: string | null;
   tags?: string[];
   folderId?: string | null;
   progressionOfId?: string | null;
+  layers?: ExerciseLayerInput[];
   publicIds?: string[];
 };
 

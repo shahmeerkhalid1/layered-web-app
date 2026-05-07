@@ -25,7 +25,11 @@ export async function listExercises(
 
   return prisma.exercise.findMany({
     where,
-    include: { images: { orderBy: { order: "asc" } }, folder: true },
+    include: {
+      images: { orderBy: { order: "asc" } },
+      folder: true,
+      layers: { orderBy: { order: "asc" } },
+    },
     orderBy: { name: "asc" },
   });
 }
@@ -36,6 +40,7 @@ export async function getExercise(id: string, instructorId: string) {
     include: {
       images: { orderBy: { order: "asc" } },
       folder: true,
+      layers: { orderBy: { order: "asc" } },
       progressionOf: { select: { id: true, name: true } },
       progressions: { select: { id: true, name: true } },
     },
@@ -48,9 +53,23 @@ export async function createExercise(
   instructorId: string,
   data: CreateExerciseInput
 ) {
+  const { layers, ...rest } = data;
   return prisma.exercise.create({
-    data: { ...data, instructorId },
-    include: { images: true, folder: true },
+    data: {
+      ...rest,
+      instructorId,
+      layers: {
+        create: layers.map((l) => ({
+          content: l.content,
+          order: l.order,
+        })),
+      },
+    },
+    include: {
+      images: true,
+      folder: true,
+      layers: { orderBy: { order: "asc" } },
+    },
   });
 }
 
@@ -64,10 +83,27 @@ export async function updateExercise(
   });
   if (!exercise) throw new NotFoundError("Exercise");
 
+  const { layers, ...rest } = data;
+
   return prisma.exercise.update({
     where: { id },
-    data,
-    include: { images: true, folder: true },
+    data: {
+      ...rest,
+      ...(layers !== undefined && {
+        layers: {
+          deleteMany: {},
+          create: layers.map((l) => ({
+            content: l.content,
+            order: l.order,
+          })),
+        },
+      }),
+    },
+    include: {
+      images: true,
+      folder: true,
+      layers: { orderBy: { order: "asc" } },
+    },
   });
 }
 

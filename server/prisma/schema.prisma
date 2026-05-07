@@ -41,6 +41,7 @@ model Instructor {
 
   exercises       Exercise[]
   exerciseFolders ExerciseFolder[]
+  dropdownOptions DropdownOption[]
 }
 
 model Session {
@@ -127,26 +128,75 @@ model ExerciseFolder {
 }
 
 model Exercise {
-  id              String    @id @default(cuid())
-  name            String
-  description     String?
-  cueing          String?
-  tags            String[]  @default([])
-  folderId        String?
-  instructorId    String
-  progressionOfId String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime?
+  id               String    @id @default(cuid())
+  name             String
+  description      String?
+  startingPosition String?
+  orientation      String?
+  directionFaced   String?
+  movementType     String?
+  springs          String?
+  equipment        String?
+  machineSetup     String?
+  transitionCues   String?
+  cueing           String?
+  spinalMovement   String?
+  chainType        String?
+  jointLoading     String?
+  tags             String[]  @default([])
+  folderId         String?
+  instructorId     String
+  progressionOfId  String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
 
   instructor    Instructor      @relation(fields: [instructorId], references: [id])
   folder        ExerciseFolder? @relation(fields: [folderId], references: [id])
   progressionOf Exercise?       @relation("ExerciseProgression", fields: [progressionOfId], references: [id])
   progressions  Exercise[]      @relation("ExerciseProgression")
   images        ExerciseImage[]
+  layers        ExerciseLayer[]
 
   @@index([instructorId])
   @@index([folderId])
+}
+
+model ExerciseLayer {
+  id         String   @id @default(cuid())
+  exerciseId String
+  order      Int      @default(0)
+  content    String
+  createdAt  DateTime @default(now())
+
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@index([exerciseId])
+}
+
+model DropdownCategory {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  createdAt DateTime @default(now())
+
+  options DropdownOption[]
+}
+
+model DropdownOption {
+  id           String   @id @default(cuid())
+  categoryId   String
+  label        String
+  value        String
+  order        Int      @default(0)
+  instructorId String?
+  createdAt    DateTime @default(now())
+
+  category   DropdownCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  instructor Instructor?      @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@index([instructorId])
 }
 
 model ExerciseImage {

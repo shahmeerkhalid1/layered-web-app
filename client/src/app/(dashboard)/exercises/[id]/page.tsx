@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
@@ -12,6 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Pencil, Trash2, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
+import { getLayerStepTitle, isFinisherLayerIndex } from "@/lib/exercise-layer-labels";
+import { useFancybox } from "@/hooks/use-fancybox";
+
+const EXERCISE_DETAIL_IMAGE_GALLERY = "exercise-detail-images";
 
 export default function ExerciseDetailPage() {
   const params = useParams();
@@ -19,6 +23,12 @@ export default function ExerciseDetailPage() {
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [chain, setChain] = useState<ProgressionChainItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const imageGalleryFancyboxKey = useMemo(
+    () => (exercise?.images ?? []).map((i) => i.id).join("|"),
+    [exercise?.images]
+  );
+  const bindImageGallery = useFancybox(imageGalleryFancyboxKey);
 
   useEffect(() => {
     async function load() {
@@ -59,6 +69,23 @@ export default function ExerciseDetailPage() {
 
   if (!exercise) return null;
 
+  const sortedLayers = [...(exercise.layers ?? [])].sort((a, b) => a.order - b.order);
+
+  const setupRows: { label: string; value: string | null | undefined }[] = [
+    { label: "Orientation", value: exercise.orientation },
+    { label: "Direction faced", value: exercise.directionFaced },
+    { label: "Movement type", value: exercise.movementType },
+    { label: "Springs", value: exercise.springs },
+    { label: "Equipment", value: exercise.equipment },
+    { label: "Machine setup", value: exercise.machineSetup },
+  ].filter((r) => r.value != null && String(r.value).trim() !== "");
+
+  const movementRows = [
+    { label: "Spinal movement", value: exercise.spinalMovement },
+    { label: "Chain type", value: exercise.chainType },
+    { label: "Joint loading", value: exercise.jointLoading },
+  ].filter((r) => r.value != null && String(r.value).trim() !== "");
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -89,17 +116,31 @@ export default function ExerciseDetailPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           {exercise.images.length > 0 && (
-            <div className="flex gap-4 overflow-x-auto">
-              {exercise.images.map((img) => (
+            <div
+              ref={bindImageGallery}
+              className="flex gap-4 overflow-x-auto pb-1"
+            >
+              {exercise.images.map((img, index) => (
                 <div
                   key={img.id}
                   className="h-48 w-64 shrink-0 overflow-hidden rounded-lg bg-muted"
                 >
-                  <img
-                    src={img.url}
-                    alt={exercise.name}
-                    className="h-full w-full object-cover"
-                  />
+                  <a
+                    href={img.url}
+                    data-fancybox={EXERCISE_DETAIL_IMAGE_GALLERY}
+                    data-caption={`${exercise.name} — Image ${index + 1}`}
+                    title="View full size"
+                    className="block h-full w-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+                    draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
+                  >
+                    <img
+                      src={img.url}
+                      alt={exercise.name}
+                      className="h-full w-full object-cover"
+                      draggable={false}
+                    />
+                  </a>
                 </div>
               ))}
             </div>
@@ -118,13 +159,116 @@ export default function ExerciseDetailPage() {
             </Card>
           )}
 
+          {exercise.startingPosition && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Starting Position</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap text-sm">{exercise.startingPosition}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {setupRows.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Setup</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-2">
+                {setupRows.map((row) => (
+                  <div key={row.label}>
+                    <p className="text-xs font-medium text-muted-foreground">{row.label}</p>
+                    <p className="text-sm text-foreground">{row.value}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {sortedLayers.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Layers</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-4">
+                  {sortedLayers.map((layer, index) => {
+                    const total = sortedLayers.length;
+                    const title = getLayerStepTitle(index, total);
+                    const finisher = isFinisherLayerIndex(index, total);
+                    return (
+                      <li
+                        key={layer.id}
+                        className={
+                          finisher
+                            ? "rounded-2xl border border-border bg-card/40 p-4 sm:p-5"
+                            : "border-b border-border/60 pb-4 last:border-0 last:pb-0"
+                        }
+                      >
+                        {finisher ? (
+                          <div className="mb-3 flex items-center justify-between">
+                            <span className="text-base font-semibold text-foreground">
+                              Finisher
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {title}
+                          </p>
+                        )}
+                        <p
+                          className={
+                            finisher
+                              ? "whitespace-pre-wrap text-sm text-foreground"
+                              : "mt-1.5 whitespace-pre-wrap text-sm text-foreground"
+                          }
+                        >
+                          {layer.content}
+                        </p>
+                        
+                      </li>
+                    );
+                  })}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {exercise.transitionCues && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Transition Cues</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap text-sm">{exercise.transitionCues}</p>
+              </CardContent>
+            </Card>
+          )}
+
           {exercise.cueing && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Cueing Ideas</CardTitle>
+                <CardTitle className="text-base">Cues / Notes</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="whitespace-pre-wrap text-sm">{exercise.cueing}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {movementRows.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Movement Analysis</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {movementRows.map((row) => (
+                  <div key={row.label}>
+                    <p className="text-xs font-medium text-muted-foreground">{row.label}</p>
+                    <p className="text-sm text-foreground">{row.value}</p>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           )}

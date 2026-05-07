@@ -6,6 +6,7 @@ import { useDropzone, type FileRejection } from "react-dropzone";
 import { exerciseApi } from "@/services/exercise-api";
 import type { TempUploadedImage } from "@/services/exercise-api";
 import type {
+  DropdownOptionRow,
   Exercise,
   ExerciseFolder,
   ExerciseImage,
@@ -24,10 +25,15 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { X, ArrowLeft, Plus, ImagePlus, Loader2, GripVertical } from "lucide-react";
+import { X, ArrowLeft, Plus, ImagePlus, Loader2, GripVertical, Mic } from "lucide-react";
 import { toast } from "sonner";
+import { useDropdownOptions } from "@/hooks/use-dropdown-options";
+import { useFancybox } from "@/hooks/use-fancybox";
+import { Separator } from "@/components/ui/separator";
+import { getLayerStepTitle, isFinisherLayerIndex } from "@/lib/exercise-layer-labels";
 
 const MAX_IMAGES = 3;
+const EXERCISE_FORM_IMAGE_GALLERY = "exercise-form-images";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 type ImageItem =
@@ -36,6 +42,23 @@ type ImageItem =
 
 function imageKey(item: ImageItem): string {
   return item.type === "saved" ? item.data.id : item.data.publicId;
+}
+
+function optionalField(s: string): string | undefined {
+  const t = s.trim();
+  return t.length > 0 ? t : undefined;
+}
+
+function setupDropdownLabel(
+  value: string,
+  placeholder: string,
+  options: DropdownOptionRow[],
+  loading: boolean
+): string {
+  if (loading && options.length === 0) return "Loading options…";
+  if (value === "none" || value === "") return placeholder;
+  const found = options.find((o) => o.value === value);
+  return found?.label ?? value;
 }
 
 interface ExerciseFormProps {
@@ -48,7 +71,35 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
 
   const [name, setName] = useState(exercise?.name ?? "");
   const [description, setDescription] = useState(exercise?.description ?? "");
+  const [startingPosition, setStartingPosition] = useState(
+    exercise?.startingPosition ?? ""
+  );
+  const [orientation, setOrientation] = useState(exercise?.orientation ?? "none");
+  const [directionFaced, setDirectionFaced] = useState(
+    exercise?.directionFaced ?? "none"
+  );
+  const [movementType, setMovementType] = useState(
+    exercise?.movementType ?? "none"
+  );
+  const [springs, setSprings] = useState(exercise?.springs ?? "");
+  const [equipment, setEquipment] = useState(exercise?.equipment ?? "none");
+  const [machineSetup, setMachineSetup] = useState(exercise?.machineSetup ?? "none");
+  const [layerContents, setLayerContents] = useState<string[]>(() => {
+    const layers = exercise?.layers ?? [];
+    if (layers.length === 0) return [""];
+    return [...layers]
+      .sort((a, b) => a.order - b.order)
+      .map((l) => l.content);
+  });
+  const [transitionCues, setTransitionCues] = useState(
+    exercise?.transitionCues ?? ""
+  );
   const [cueing, setCueing] = useState(exercise?.cueing ?? "");
+  const [spinalMovement, setSpinalMovement] = useState(
+    exercise?.spinalMovement ?? "none"
+  );
+  const [chainType, setChainType] = useState(exercise?.chainType ?? "none");
+  const [jointLoading, setJointLoading] = useState(exercise?.jointLoading ?? "none");
   const [tags, setTags] = useState<string[]>(exercise?.tags ?? []);
   const [tagInput, setTagInput] = useState("");
   const [folderId, setFolderId] = useState<string>(exercise?.folderId ?? "none");
@@ -74,6 +125,21 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
 
   const totalImages = images.length;
   const availableSlots = MAX_IMAGES - totalImages;
+
+  const imageGalleryFancyboxKey = useMemo(
+    () => images.map(imageKey).join("|"),
+    [images]
+  );
+  const bindExerciseImageGallery = useFancybox(imageGalleryFancyboxKey);
+
+  const orientationDd = useDropdownOptions("orientation");
+  const directionDd = useDropdownOptions("direction_faced");
+  const movementTypeDd = useDropdownOptions("movement_type");
+  const equipmentDd = useDropdownOptions("equipment");
+  const machineSetupDd = useDropdownOptions("machine_setup");
+  const spinalDd = useDropdownOptions("spinal_movement");
+  const chainDd = useDropdownOptions("chain_type");
+  const jointDd = useDropdownOptions("joint_loading");
 
   useEffect(() => {
     exerciseApi.getFolders().then(setFolders).catch(() => {});
@@ -135,6 +201,61 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
       name: exercise?.progressionOf?.name ?? null,
     };
   }, [progressionOfId, allExercises, exercise]);
+
+  const orientationLabel = useMemo(
+    () =>
+      setupDropdownLabel(
+        orientation,
+        "Select orientation",
+        orientationDd.options,
+        orientationDd.loading
+      ),
+    [orientation, orientationDd.options, orientationDd.loading]
+  );
+
+  const directionLabel = useMemo(
+    () =>
+      setupDropdownLabel(
+        directionFaced,
+        "Select direction",
+        directionDd.options,
+        directionDd.loading
+      ),
+    [directionFaced, directionDd.options, directionDd.loading]
+  );
+
+  const movementTypeLabel = useMemo(
+    () =>
+      setupDropdownLabel(
+        movementType,
+        "Select movement type",
+        movementTypeDd.options,
+        movementTypeDd.loading
+      ),
+    [movementType, movementTypeDd.options, movementTypeDd.loading]
+  );
+
+  const equipmentLabel = useMemo(
+    () =>
+      setupDropdownLabel(
+        equipment,
+        "Select equipment",
+        equipmentDd.options,
+        equipmentDd.loading
+      ),
+    [equipment, equipmentDd.options, equipmentDd.loading]
+  );
+
+  const machineSetupLabel = useMemo(
+    () =>
+      setupDropdownLabel(
+        machineSetup,
+        "Select setup",
+        machineSetupDd.options,
+        machineSetupDd.loading
+      ),
+    [machineSetup, machineSetupDd.options, machineSetupDd.loading]
+  );
 
   const addTag = () => {
     const tag = tagInput.trim();
@@ -291,11 +412,26 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
 
     const body = {
       name,
-      description: description || undefined,
-      cueing: cueing || undefined,
+      description: optionalField(description) ?? null,
+      startingPosition: optionalField(startingPosition) ?? null,
+      orientation: orientation === "none" ? null : orientation,
+      directionFaced: directionFaced === "none" ? null : directionFaced,
+      movementType: movementType === "none" ? null : movementType,
+      springs: optionalField(springs) ?? null,
+      equipment: equipment === "none" ? null : equipment,
+      machineSetup: machineSetup === "none" ? null : machineSetup,
+      transitionCues: optionalField(transitionCues) ?? null,
+      cueing: optionalField(cueing) ?? null,
+      spinalMovement: spinalMovement === "none" ? null : spinalMovement,
+      chainType: chainType === "none" ? null : chainType,
+      jointLoading: jointLoading === "none" ? null : jointLoading,
       tags,
       folderId: folderId === "none" ? null : folderId,
       progressionOfId: nextProgressionOfId,
+      layers: layerContents
+        .map((c) => c.trim())
+        .filter((c) => c.length > 0)
+        .map((content, i) => ({ content, order: i })),
       ...(tempPublicIds.length > 0 ? { publicIds: tempPublicIds } : {}),
     };
 
@@ -317,7 +453,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-fullmax-w-4xl">
+    <form onSubmit={handleSubmit} className="w-full max-w-4xl">
       <Card className="border-border bg-card shadow-xl">
         <CardContent className="space-y-6 p-5 sm:p-6">
           <div>
@@ -361,17 +497,503 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
           </div>
 
           <div className="space-y-2">
+            <Label
+              htmlFor="startingPosition"
+              className="pl-1.5 text-sm font-medium text-foreground"
+            >
+              Starting Position
+            </Label>
+            <Textarea
+              id="startingPosition"
+              value={startingPosition}
+              onChange={(e) => setStartingPosition(e.target.value)}
+              placeholder="e.g., Supine, feet on footbar"
+              rows={3}
+              className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+            />
+          </div>
+
+          <div className="space-y-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="exercise-orientation"
+                    className="pl-1.5 text-sm font-medium text-foreground"
+                  >
+                    Orientation
+                  </Label>
+                  <Select
+                    value={orientation}
+                    onValueChange={(v) => setOrientation(v ?? "none")}
+                    disabled={orientationDd.loading && orientationDd.options.length === 0}
+                  >
+                    <SelectTrigger
+                      id="exercise-orientation"
+                      className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+                    >
+                      <SelectValue placeholder="Select orientation">
+                        <span
+                          className={
+                            orientation === "none" ||
+                            (orientationDd.loading && orientationDd.options.length === 0)
+                              ? "text-muted-foreground"
+                              : undefined
+                          }
+                        >
+                          {orientationLabel}
+                        </span>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent
+                      align="start"
+                      sideOffset={6}
+                      className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                    >
+                      <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                        <span className="text-muted-foreground">Select orientation</span>
+                      </SelectItem>
+                      {orientationDd.options.length > 0 && (
+                        <SelectSeparator className="mx-1 bg-border/70" />
+                      )}
+                      {orientationDd.options.map((o) => (
+                        <SelectItem key={o.id} value={o.value} className="rounded-xl py-2.5 pl-3">
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="exercise-direction"
+                    className="pl-1.5 text-sm font-medium text-foreground"
+                  >
+                    Direction Faced
+                  </Label>
+                  <Select
+                    value={directionFaced}
+                    onValueChange={(v) => setDirectionFaced(v ?? "none")}
+                    disabled={directionDd.loading && directionDd.options.length === 0}
+                  >
+                    <SelectTrigger
+                      id="exercise-direction"
+                      className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+                    >
+                      <SelectValue placeholder="Select direction">
+                        <span
+                          className={
+                            directionFaced === "none" ||
+                            (directionDd.loading && directionDd.options.length === 0)
+                              ? "text-muted-foreground"
+                              : undefined
+                          }
+                        >
+                          {directionLabel}
+                        </span>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent
+                      align="start"
+                      sideOffset={6}
+                      className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                    >
+                      <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                        <span className="text-muted-foreground">Select direction</span>
+                      </SelectItem>
+                      {directionDd.options.length > 0 && (
+                        <SelectSeparator className="mx-1 bg-border/70" />
+                      )}
+                      {directionDd.options.map((o) => (
+                        <SelectItem key={o.id} value={o.value} className="rounded-xl py-2.5 pl-3">
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="exercise-movement-type"
+                  className="pl-1.5 text-sm font-medium text-foreground"
+                >
+                  Movement Type <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={movementType}
+                  onValueChange={(v) => setMovementType(v ?? "none")}
+                  disabled={movementTypeDd.loading && movementTypeDd.options.length === 0}
+                >
+                  <SelectTrigger
+                    id="exercise-movement-type"
+                    className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+                  >
+                    <SelectValue placeholder="Select movement type">
+                      <span
+                        className={
+                          movementType === "none" ||
+                          (movementTypeDd.loading && movementTypeDd.options.length === 0)
+                            ? "text-muted-foreground"
+                            : undefined
+                        }
+                      >
+                        {movementTypeLabel}
+                      </span>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent
+                    align="start"
+                    sideOffset={6}
+                    className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                  >
+                    <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                      <span className="text-muted-foreground">Select movement type</span>
+                    </SelectItem>
+                    {movementTypeDd.options.length > 0 && (
+                      <SelectSeparator className="mx-1 bg-border/70" />
+                    )}
+                    {movementTypeDd.options.map((o) => (
+                      <SelectItem key={o.id} value={o.value} className="rounded-xl py-2.5 pl-3">
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 sm:items-stretch">
+                <div className="flex min-h-0 flex-col gap-2">
+                  <Label htmlFor="springs" className="pl-1.5 text-sm font-medium text-foreground">
+                    Springs
+                  </Label>
+                  <Input
+                    id="springs"
+                    value={springs}
+                    onChange={(e) => setSprings(e.target.value)}
+                    placeholder="e.g., Medium (2 red)"
+                    className="box-border h-12 min-h-12 w-full shrink-0 rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                  />
+                </div>
+                <div className="flex min-h-0 flex-col gap-2">
+                  <Label
+                    htmlFor="exercise-equipment"
+                    className="pl-1.5 text-sm font-medium text-foreground"
+                  >
+                    Equipment Used
+                  </Label>
+                  <Select
+                    value={equipment}
+                    onValueChange={(v) => setEquipment(v ?? "none")}
+                    disabled={equipmentDd.loading && equipmentDd.options.length === 0}
+                  >
+                    <SelectTrigger
+                      id="exercise-equipment"
+                      className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+                    >
+                      <SelectValue placeholder="Select equipment">
+                        <span
+                          className={
+                            equipment === "none" ||
+                            (equipmentDd.loading && equipmentDd.options.length === 0)
+                              ? "text-muted-foreground"
+                              : undefined
+                          }
+                        >
+                          {equipmentLabel}
+                        </span>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent
+                      align="start"
+                      sideOffset={6}
+                      className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                    >
+                      <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                        <span className="text-muted-foreground">Select equipment</span>
+                      </SelectItem>
+                      {equipmentDd.options.length > 0 && (
+                        <SelectSeparator className="mx-1 bg-border/70" />
+                      )}
+                      {equipmentDd.options.map((o) => (
+                        <SelectItem key={o.id} value={o.value} className="rounded-xl py-2.5 pl-3">
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="exercise-machine-setup"
+                  className="pl-1.5 text-sm font-medium text-foreground"
+                >
+                  Machine Setup
+                </Label>
+                <Select
+                  value={machineSetup}
+                  onValueChange={(v) => setMachineSetup(v ?? "none")}
+                  disabled={machineSetupDd.loading && machineSetupDd.options.length === 0}
+                >
+                  <SelectTrigger
+                    id="exercise-machine-setup"
+                    className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+                  >
+                    <SelectValue placeholder="Select setup">
+                      <span
+                        className={
+                          machineSetup === "none" ||
+                          (machineSetupDd.loading && machineSetupDd.options.length === 0)
+                            ? "text-muted-foreground"
+                            : undefined
+                        }
+                      >
+                        {machineSetupLabel}
+                      </span>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent
+                    align="start"
+                    sideOffset={6}
+                    className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                  >
+                    <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                      <span className="text-muted-foreground">Select setup</span>
+                    </SelectItem>
+                    {machineSetupDd.options.length > 0 && (
+                      <SelectSeparator className="mx-1 bg-border/70" />
+                    )}
+                    {machineSetupDd.options.map((o) => (
+                      <SelectItem key={o.id} value={o.value} className="rounded-xl py-2.5 pl-3">
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="pl-1.5 text-sm font-medium text-foreground">Layers</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setLayerContents((prev) => {
+                    if (prev.length >= 3) {
+                      const next = [...prev];
+                      next.splice(prev.length - 1, 0, "");
+                      return next;
+                    }
+                    return [...prev, ""];
+                  })
+                }
+                className="h-9 gap-1.5 rounded-full border-input px-4 text-sm font-medium"
+              >
+                <Plus className="size-4 shrink-0" aria-hidden />
+                Add Layer
+              </Button>
+            </div>
+            {layerContents.map((content, index) => {
+              const total = layerContents.length;
+              const stepTitle = getLayerStepTitle(index, total);
+              const finisher = isFinisherLayerIndex(index, total);
+              return (
+                <div
+                  key={index}
+                  className={
+                    finisher
+                      ? "space-y-3"
+                      : "space-y-1.5"
+                  }
+                >
+                  <div className="flex items-center justify-between">
+                    {finisher ? (
+                      <span className="text-base font-semibold tracking-tight text-foreground">
+                        Finisher
+                      </span>
+                    ) : (
+                      <span className="pl-1.5 text-xs font-medium text-muted-foreground">
+                        {stepTitle}
+                      </span>
+                    )}
+                    {layerContents.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setLayerContents((prev) => prev.filter((_, i) => i !== index))
+                        }
+                        className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+                        aria-label={finisher ? "Remove finisher" : `Remove ${stepTitle}`}
+                      >
+                        <X className="size-4" />
+                      </button>
+                    )}
+                  </div>
+                  <Textarea
+                    value={content}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setLayerContents((prev) => {
+                        const next = [...prev];
+                        next[index] = v;
+                        return next;
+                      });
+                    }}
+                    placeholder={
+                      index === 0
+                        ? "e.g., Press out halfway, pause, return"
+                        : finisher
+                          ? "e.g., Add finisher movement"
+                          : "Build on the previous layer..."
+                    }
+                    rows={finisher ? 4 : 3}
+                    className="min-h-22 resize-y rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                  />
+                 
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="transitionCues" className="pl-1.5 text-sm font-medium text-foreground">
+              Transition Cues
+            </Label>
+            <Input
+              id="transitionCues"
+              value={transitionCues}
+              onChange={(e) => setTransitionCues(e.target.value)}
+              placeholder="e.g., Coming down from lunge"
+              className="h-12 rounded-2xl border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="cueing" className="pl-1.5 text-sm font-medium text-foreground">
-              Cueing Ideas
+              Cues / Notes
             </Label>
             <Textarea
               id="cueing"
               value={cueing}
               onChange={(e) => setCueing(e.target.value)}
-              placeholder="Breath, tempo, tactile cues, and common corrections..."
+              placeholder="Key coaching points, modifications, breathing cues..."
               rows={3}
               className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
             />
+          </div>
+
+          <Separator className="bg-border/70" />
+
+          <div className="space-y-6">
+            <h3 className="text-base font-semibold text-foreground">Movement Analysis</h3>
+
+            <fieldset className="space-y-2" disabled={spinalDd.loading}>
+              <legend className="mb-2 pl-1.5 text-sm font-medium text-foreground">
+                Spinal Movement
+              </legend>
+              <div className="space-y-2 pl-1">
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+                  <input
+                    type="radio"
+                    name="spinalMovement"
+                    checked={spinalMovement === "none"}
+                    onChange={() => setSpinalMovement("none")}
+                    className="size-4 accent-primary"
+                  />
+                  Not specified
+                </label>
+                {spinalDd.options.map((o) => (
+                  <label
+                    key={o.id}
+                    className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
+                  >
+                    <input
+                      type="radio"
+                      name="spinalMovement"
+                      checked={spinalMovement === o.value}
+                      onChange={() => setSpinalMovement(o.value)}
+                      className="size-4 accent-primary"
+                    />
+                    {o.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="space-y-2" disabled={chainDd.loading}>
+              <legend className="mb-2 pl-1.5 text-sm font-medium text-foreground">
+                Chain Type
+              </legend>
+              <div className="space-y-2 pl-1">
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+                  <input
+                    type="radio"
+                    name="chainType"
+                    checked={chainType === "none"}
+                    onChange={() => setChainType("none")}
+                    className="size-4 accent-primary"
+                  />
+                  Not specified
+                </label>
+                {chainDd.options.map((o) => (
+                  <label
+                    key={o.id}
+                    className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
+                  >
+                    <input
+                      type="radio"
+                      name="chainType"
+                      checked={chainType === o.value}
+                      onChange={() => setChainType(o.value)}
+                      className="size-4 accent-primary"
+                    />
+                    {o.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="space-y-2" disabled={jointDd.loading}>
+              <legend className="mb-2 pl-1.5 text-sm font-medium text-foreground">
+                Joint Loading
+              </legend>
+              <p className="mb-2 pl-1.5 text-xs text-muted-foreground">
+                Alternating loaded vs unloaded positions reduces cumulative stress and
+                supports client comfort, confidence, and joint resilience.
+              </p>
+              <div className="flex flex-wrap gap-4 pl-1">
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+                  <input
+                    type="radio"
+                    name="jointLoading"
+                    checked={jointLoading === "none"}
+                    onChange={() => setJointLoading("none")}
+                    className="size-4 accent-primary"
+                  />
+                  Not specified
+                </label>
+                {jointDd.options.map((o) => (
+                  <label
+                    key={o.id}
+                    className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
+                  >
+                    <input
+                      type="radio"
+                      name="jointLoading"
+                      checked={jointLoading === o.value}
+                      onChange={() => setJointLoading(o.value)}
+                      className="size-4 accent-primary"
+                    />
+                    {o.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           </div>
 
           <div className="space-y-2">
@@ -527,7 +1149,10 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
             </Label>
 
             {totalImages > 0 && (
-              <div className="grid grid-cols-3 gap-3">
+              <div
+                ref={bindExerciseImageGallery}
+                className="grid grid-cols-3 gap-3"
+              >
                 {images.map((item, index) => (
                   <div
                     key={imageKey(item)}
@@ -542,26 +1167,40 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                         : "border-border"
                     }`}
                   >
-                    <img
-                      src={item.data.url}
-                      alt=""
-                      className="size-full object-cover"
+                    <a
+                      href={item.data.url}
+                      data-fancybox={EXERCISE_FORM_IMAGE_GALLERY}
+                      data-caption={
+                        name.trim().length > 0
+                          ? `${name.trim()} — Image ${index + 1}${item.type === "temp" ? " (unsaved)" : ""}`
+                          : `Image ${index + 1}${item.type === "temp" ? " (unsaved)" : ""}`
+                      }
+                      title="View full size"
+                      className="relative block size-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
                       draggable={false}
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100" />
-                    <div className="absolute left-1.5 top-1.5 flex size-6 cursor-grab items-center justify-center rounded-full bg-black text-white opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing">
-                      <GripVertical className="size-3.5" />
+                      onDragStart={(e) => e.preventDefault()}
+                    >
+                      <img
+                        src={item.data.url}
+                        alt=""
+                        className="size-full object-cover"
+                        draggable={false}
+                      />
+                    </a>
+                    <div className="pointer-events-none absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100" />
+                    <div className="pointer-events-auto absolute left-1.5 top-1.5 flex size-6 cursor-grab items-center justify-center rounded-full bg-black text-white opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing">
+                      <GripVertical className="size-3.5" aria-hidden />
                     </div>
                     <button
                       type="button"
                       onClick={() => removeImage(item)}
-                      className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                      className="pointer-events-auto absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
                       aria-label="Remove image"
                     >
                       <X className="size-3.5 text-white" />
                     </button>
                     {item.type === "temp" && (
-                      <span className="absolute bottom-1.5 left-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                      <span className="pointer-events-none absolute bottom-1.5 left-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
                         New
                       </span>
                     )}

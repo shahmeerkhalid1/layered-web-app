@@ -11,6 +11,7 @@ import * as adminService from "./modules/admin/service";
 import exerciseRoutes from "./modules/exercises/exercise.routes";
 import folderRoutes from "./modules/exercises/folder.routes";
 import uploadRoutes from "./modules/uploads/upload.routes";
+import dropdownRoutes from "./modules/dropdowns/dropdown.routes";
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use("/api/uploads", authenticate, uploadRoutes);
 // Exercise routes
 app.use("/api/exercises", exerciseRoutes);
 app.use("/api/exercise-folders", folderRoutes);
+app.use("/api/dropdowns", authenticate, dropdownRoutes);
 app.use(errorHandler);
 
 export default app;

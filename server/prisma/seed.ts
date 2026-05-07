@@ -10,6 +10,117 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "admin@pilates.local";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "Admin12345";
 const ADMIN_NAME = process.env.ADMIN_NAME ?? "Platform Admin";
 
+const DROPDOWN_CATEGORIES: { key: string; name: string; defaults: string[] }[] = [
+  {
+    key: "orientation",
+    name: "Orientation",
+    defaults: [
+      "Prone",
+      "Supine",
+      "Sitting",
+      "Standing",
+      "Side-lying",
+      "Kneeling",
+      "All Fours",
+    ],
+  },
+  {
+    key: "direction_faced",
+    name: "Direction Faced",
+    defaults: ["Front-Facing", "Side-Facing", "Rear-Facing"],
+  },
+  {
+    key: "movement_type",
+    name: "Movement Type",
+    defaults: ["Bilateral", "Unilateral", "Alternating"],
+  },
+  {
+    key: "equipment",
+    name: "Equipment Used",
+    defaults: [
+      "Reformer",
+      "Cadillac",
+      "Chair",
+      "Barrel",
+      "Mat",
+      "Tower",
+      "Spine Corrector",
+    ],
+  },
+  {
+    key: "machine_setup",
+    name: "Machine Setup",
+    defaults: [
+      "Headrest Up",
+      "Headrest Down",
+      "Footbar High",
+      "Footbar Low",
+      "Long Box",
+      "Short Box",
+    ],
+  },
+  {
+    key: "spinal_movement",
+    name: "Spinal Movement",
+    defaults: [
+      "Flexion",
+      "Extension",
+      "Rotation",
+      "Lateral Flexion",
+      "Articulation",
+    ],
+  },
+  {
+    key: "chain_type",
+    name: "Chain Type",
+    defaults: [
+      "Open Chain",
+      "Closed Chain",
+      "Both",
+      "Lower Chain Closed",
+      "Upper Open",
+    ],
+  },
+  {
+    key: "joint_loading",
+    name: "Joint Loading",
+    defaults: ["Knee Loading", "Wrist Loading"],
+  },
+];
+
+async function seedDropdownDefaults() {
+  for (const cat of DROPDOWN_CATEGORIES) {
+    const category = await prisma.dropdownCategory.upsert({
+      where: { key: cat.key },
+      update: { name: cat.name },
+      create: { key: cat.key, name: cat.name },
+    });
+
+    for (let i = 0; i < cat.defaults.length; i++) {
+      const value = cat.defaults[i];
+      const existing = await prisma.dropdownOption.findFirst({
+        where: {
+          categoryId: category.id,
+          instructorId: null,
+          value,
+        },
+      });
+      if (!existing) {
+        await prisma.dropdownOption.create({
+          data: {
+            categoryId: category.id,
+            label: value,
+            value,
+            order: i,
+            instructorId: null,
+          },
+        });
+      }
+    }
+  }
+  console.log("Seeded dropdown categories and default options");
+}
+
 async function main() {
   // Seed default platform settings
   await prisma.platformSetting.upsert({
@@ -45,6 +156,7 @@ async function main() {
       console.log(
         "Admin password loaded from ADMIN_PASSWORD env or local seed default."
       );
+      await seedDropdownDefaults();
       return;
     }
 
@@ -64,6 +176,8 @@ async function main() {
   } else {
     console.log(`Admin already exists: ${adminExists.email}`);
   }
+
+  await seedDropdownDefaults();
 }
 
 main()
