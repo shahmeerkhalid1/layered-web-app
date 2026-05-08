@@ -3,20 +3,20 @@ name: MVP Implementation Plan
 overview: A phased implementation plan for the Pilates Platform MVP, breaking the full project scope into 7 phases and ~40 granular tasks — from database foundation through dashboard polish.
 todos:
   - id: phase-0-prisma-auth
-    content: "Phase 0: Prisma + PostgreSQL setup, auth module (register/login/JWT middleware), server structure, app shell, auth pages, API client (tasks 0.1 -- 0.5)"
+    content: "Phase 0: Prisma + PostgreSQL setup, auth module (register/login/JWT middleware), server structure, app shell, auth pages, API client, admin role + pages (tasks 0.1 -- 0.7)"
     status: completed
   - id: phase-1-exercise-lib
-    content: "Phase 1: Exercise Library -- schema, CRUD API, image uploads (Cloudinary), progression linking, library UI with search/filter/folders (tasks 1.1 -- 1.5)"
+    content: "Phase 1: Exercise Library -- schema (Exercise, ExerciseFolder, ExerciseImage, ExerciseLayer, DropdownCategory, DropdownOption), CRUD API, image uploads (Cloudinary hybrid temp flow), progression linking, dynamic dropdowns, extended fields, layer system, Fancybox lightbox, library UI with search/filter/folders (tasks 1.1 -- 1.8)"
     status: completed
   - id: phase-2-templates
-    content: "Phase 2: Class Plan Templates -- schema, template CRUD with nested sections/exercises, planner builder UI with drag-and-drop (tasks 2.1 -- 2.3)"
-    status: in_progress
+    content: "Phase 2: Class Plan Templates -- schema (PlanSection, PlanSectionExercise), template CRUD with nested sections/exercises, planner builder UI with drag-and-drop (tasks 2.1 -- 2.3)"
+    status: pending
   - id: phase-3-calendar
-    content: "Phase 3: Calendar and Scheduling -- Class/ClassInstance schema, scheduling API with recurrence, template copy-on-use, calendar UI, recurring class management (tasks 3.1 -- 3.5)"
+    content: "Phase 3: Calendar and Scheduling -- ClassInstance schema, scheduling API with recurrence, template copy-on-use, calendar UI, recurring class management (tasks 3.1 -- 3.5)"
     status: pending
   - id: phase-4-clients
     content: "Phase 4: Client Management -- Client/Enrollment/Attendance schema, CRUD API, enrollment and attendance APIs, client profile and attendance UI (tasks 4.1 -- 4.4)"
-    status: in_progress
+    status: pending
   - id: phase-5-session-notes
     content: "Phase 5: Session Notes -- SessionNote schema, notes API tied to class instances, note entry UI, client timeline view (tasks 5.1 -- 5.4)"
     status: pending
@@ -33,14 +33,17 @@ isProject: false
 
 ## Current State
 
-The repo is a monorepo with two scaffolded apps:
+The repo is a monorepo with two fully functional apps:
 
-- **Server** ([server/src/app.ts](server/src/app.ts)): Express with Better Auth mounted at `/api/auth/`*, health endpoint, CORS with credentials, Prisma 7 + PostgreSQL, modular feature structure. Admin module at `/api/admin/*` with invitation, settings, and stats endpoints.
-- **Client** ([client/src/app/(dashboard)/page.tsx](client/src/app/(dashboard)/page.tsx)): Next.js 16 App Router with dashboard layout, auth pages (login/register), Better Auth React client, sidebar + topbar shell with role-aware admin navigation.
+- **Server** ([server/src/app.ts](server/src/app.ts)): Express 4 with Better Auth mounted at `/api/auth/*`, health endpoint, CORS with credentials, Prisma 7 + PostgreSQL, modular feature structure under `server/src/modules/`. Modules: `admin/` (invitation, settings, stats), `exercises/` (full CRUD + folders + progression + images + reorder), `dropdowns/` (dynamic option API), `uploads/` (temp image upload/delete). Route mounts: `/api/admin`, `/api/uploads`, `/api/exercises`, `/api/exercise-folders`, `/api/dropdowns`, plus public helpers (`/api/signup-status`, `/api/invite/verify`).
+- **Client** ([client/src/app/(dashboard)/page.tsx](client/src/app/(dashboard)/page.tsx)): Next.js 16 App Router with dashboard layout, auth pages (login/register), Better Auth React client, sidebar + topbar shell with role-aware admin navigation. Full Exercise Library UI (list/grid views, create, edit, detail with Fancybox image lightbox, layers with Finisher styling, dropdown-driven fields, progression chain viewer). Admin pages (users, settings). Service modules: `exercise-api`, `admin-api`, `dropdown-api`. Custom hooks: `use-debounce`, `use-dropdown-options`, `use-fancybox`, and exercise-specific hooks (`use-exercise-folders`, `use-exercise-library`, `use-exercise-list`, `use-exercise-search`). Exercise components: `exercise-form`, `exercise-list`, `exercise-card`, `exercise-search`, `exercise-library-header`, `exercise-folder-sidebar`, `folder-dialog`, `progression-chain-viewer`.
 - **Auth**: Better Auth with cookie-based sessions, email/password, Prisma adapter, **admin plugin** (`defaultRole: "INSTRUCTOR"`, `adminRole: "ADMIN"`). `Instructor` model mapped as Better Auth's user with `Role` enum (`ADMIN`/`INSTRUCTOR`), ban fields, and invitation support. Session/Account/Verification tables managed by Better Auth.
-- **Admin**: `Role` and `InvitationStatus` enums, `Invitation` and `PlatformSetting` models, `requireAdmin` middleware, signup toggle (off by default, invite-only), invitation flow with token verification and auto-accept on registration, `adminClient` plugin on frontend, `isAdmin` in auth context. Admin pages (UI) deferred to a later task.
-- **Seed**: [server/prisma/seed.ts](server/prisma/seed.ts) seeds default platform settings and promotes the first user to ADMIN. Run via `npm run seed --prefix server`.
-- **Docs**: [project-scop.md](project-scop.md) defines the full MVP scope including Admin role capabilities.
+- **Admin**: `Role` and `InvitationStatus` enums, `Invitation` and `PlatformSetting` models, `requireAdmin` middleware, signup toggle (off by default, invite-only), invitation flow with token verification and auto-accept on registration, `adminClient` plugin on frontend, `isAdmin` in auth context. Admin pages: `/admin` (dashboard), `/admin/users` (user management), `/admin/settings` (platform config).
+- **Exercise Library** (Phase 1 — fully complete): Exercise CRUD with soft-delete (also cleans Cloudinary assets and ExerciseImage records), folder management, Cloudinary image uploads (hybrid temp flow: `POST /api/uploads/temp` with multer → promote on save via `extractImagePublicIds` middleware + two-phase compensation → `DELETE /api/uploads/temp/:publicId` → hourly `node-cron` cleanup of temp images older than 6 hours), image reordering (`PATCH /api/exercises/:id/images/reorder`), progression linking (chain viewer), ExerciseLayer system (dynamic layers with Finisher logic), DropdownCategory/DropdownOption system (8 seeded categories with instructor-scoped custom options), extended exercise fields (orientation, directionFaced, movementType, springs, equipment, machineSetup, transitionCues, cueing, spinalMovement, chainType, jointLoading), Fancybox lightbox for full-size image preview on detail page, react-dropzone with drag-to-sort in exercise form.
+- **Seed**: [server/prisma/seed.ts](server/prisma/seed.ts) seeds default platform settings, promotes first user to ADMIN, and initializes 8 dropdown categories with default options. Run via `npm run seed --prefix server`.
+- **Key dependencies**: Server — `express`, `better-auth`, `prisma`, `cloudinary`, `multer`, `node-cron`, `zod`, `nodemailer`. Client — `next`, `react`, `better-auth`, `react-dropzone`, `@fancyapps/ui`, `sonner`, `shadcn`, `lucide-react`.
+- **Partial schema**: `ClassPlanTemplate` and `Class` models with `ClassType`/`InstanceStatus` enums exist in schema but have **no API routes, services, or UI** yet. Relations on these models are not fully wired. `PlanSection`, `PlanSectionExercise`, `ClassInstance`, `Client`, `Enrollment`, `Attendance`, `SessionNote`, `SessionNoteExercise` models are **not yet created**.
+- **Docs**: [project-scop.md](project-scop.md) defines the full MVP scope. [HYBRID_IMAGE_UPLOAD.md](HYBRID_IMAGE_UPLOAD.md) documents the image upload architecture.
 
 ---
 
@@ -56,10 +59,14 @@ erDiagram
     Instructor ||--o{ Exercise : creates
     Instructor ||--o{ Client : manages
     Instructor ||--o{ ExerciseFolder : creates
+    Instructor ||--o{ DropdownOption : "custom options"
 
     ExerciseFolder ||--o{ Exercise : contains
     Exercise ||--o{ ExerciseImage : has
+    Exercise ||--o{ ExerciseLayer : has
     Exercise ||--o| Exercise : "progression_of"
+
+    DropdownCategory ||--o{ DropdownOption : has
 
     ClassPlanTemplate ||--o{ PlanSection : has
     PlanSection ||--o{ PlanSectionExercise : contains
@@ -124,41 +131,67 @@ Set up Prisma, PostgreSQL, Better Auth (cookie-based sessions), the shared app l
   - Create a shared API client (`client/src/lib/api.ts`) with `credentials: "include"` for cookie-based auth
   - Implement protected route wrapper (`AppLayout`) that redirects unauthenticated users to `/login`
   - Role-aware sidebar with admin navigation section (Admin Dashboard, User Management, Seed Exercises, Platform Stats, Settings)
-- **0.7 -- Admin pages (UI)** *(deferred -- to be built in a later task)*
-  - `/admin` dashboard with key stats cards
-  - `/admin/users` user management table with invite, activate/deactivate, role change, view details
-  - `/admin/exercises` seed exercise library management
-  - `/admin/stats` platform-wide usage stats
-  - `/admin/settings` signup toggle and platform configuration
+- **0.7 -- Admin pages (UI)** *(partially complete)*
+  - `/admin` dashboard with key stats cards ✓
+  - `/admin/users` user management table with invite, activate/deactivate, role change ✓
+  - `/admin/settings` signup toggle and platform configuration ✓
+  - `/admin/exercises` seed exercise library management *(deferred)*
+  - `/admin/stats` dedicated reporting page *(deferred)*
 
 ---
 
-## Phase 1 -- Exercise Library
+## Phase 1 -- Exercise Library *(COMPLETED)*
 
 The exercise library is the most self-contained domain and a dependency for class planning later.
 
-- **1.1 -- Prisma schema: Exercise, ExerciseFolder, ExerciseImage (Completed)**
+- **1.1 -- Prisma schema: Exercise, ExerciseFolder, ExerciseImage, ExerciseLayer ✓**
   - `ExerciseFolder`: id, name, instructorId, createdAt, deletedAt
-  - `Exercise`: id, name, description, cueing, tags (string[]), folderId, instructorId, progressionOfId (self-relation), createdAt, updatedAt, deletedAt
-  - `ExerciseImage`: id, exerciseId, url, order (max 3)
-  - Migrate
-- **1.2 -- Exercise CRUD API**
+  - `Exercise`: id, name, description, startingPosition, orientation, directionFaced, movementType, springs, equipment, machineSetup, transitionCues, cueing, spinalMovement, chainType, jointLoading, tags (string[]), folderId, instructorId, progressionOfId (self-relation), createdAt, updatedAt, deletedAt
+  - `ExerciseImage`: id, exerciseId, url, publicId, order
+  - `ExerciseLayer`: id, exerciseId, order, content, createdAt
+  - Migrated
+- **1.2 -- Exercise CRUD API ✓**
   - `POST/GET /api/exercises`, `GET/PATCH/DELETE /api/exercises/:id`
   - Folder endpoints: `POST/GET /api/exercise-folders`, `PATCH/DELETE /api/exercise-folders/:id`
-  - Soft-delete on DELETE (set `deletedAt`, filter in queries)
-  - Zod validation for all inputs
-- **1.3 -- Image upload endpoint**
-  - Install Cloudinary SDK; create `server/src/lib/cloudinary.ts` helper
-  - `POST /api/exercises/:id/images` (multipart, max 3 per exercise)
-  - `DELETE /api/exercises/:id/images/:imageId`
-- **1.4 -- Exercise progression linking API**
+  - Soft-delete on DELETE (set `deletedAt`, filter in queries, also removes Cloudinary assets and `ExerciseImage` records)
+  - Zod validation for all inputs (including layers and extended fields)
+  - `extractImagePublicIds` inline middleware moves `req.body.publicIds` to `req.imagePublicIds` before Zod validation (declaration merging in `src/types/express.d.ts`)
+- **1.3 -- Image upload (Cloudinary hybrid temp flow) ✓**
+  - `POST /api/uploads/temp` (multer, max 3 files, 5 MB each, JPEG/PNG/WebP) uploads to Cloudinary `temp/` folder with unique filenames
+  - On exercise create/update, `publicIds[]` triggers promotion from `temp/` to `exercises/<id>/` via `attachTempImagesToExercise` service with UUID-based naming (`overwrite: false`)
+  - Two-phase compensation flow: Cloudinary renames first, then Prisma transaction; rollback deletes already-moved assets on any failure
+  - `DELETE /api/uploads/temp/:publicId` removes temp images from Cloudinary immediately (guarded for `temp/` prefix)
+  - `PATCH /api/exercises/:id/images/reorder` reorders saved images (Zod-validated `imageIds[]`, Prisma transaction)
+  - Saved images can be deleted from edit mode (removes from Cloudinary + `ExerciseImage` row)
+  - Hourly `node-cron` job (`server/src/jobs/cleanup-temp-uploads.ts`) cleans temp images older than 6 hours with paginated Cloudinary API calls and batch deletion; `isCleanupRunning` manual flag prevents overlap
+- **1.4 -- Exercise progression linking API ✓**
   - `PATCH /api/exercises/:id/progression` -- set `progressionOfId`
-  - Query helper to return full progression chain (Level 1 -> 2 -> 3)
-- **1.5 -- Exercise Library UI**
-  - `/exercises` page: grid/list view with search bar, tag filter, folder sidebar
-  - `/exercises/new` and `/exercises/[id]/edit` forms with image upload dropzone
-  - Progression chain viewer component (visual Level 1 -> 2 -> 3 display)
-  - Folder management (create, rename, delete) in sidebar
+  - `GET /api/exercises/:id/progression-chain` returns `{ id, name, level }[]` from root to harder steps
+- **1.5 -- Exercise Library UI ✓**
+  - `/exercises` page: grid/list view with search bar, tag filter, folder sidebar (`exercise-folder-sidebar`, `exercise-search`, `exercise-library-header`, `exercise-list`, `exercise-card`)
+  - `/exercises/new` and `/exercises/[id]/edit` forms (`exercise-form`) with react-dropzone image upload (max 3, 5 MB), HTML5 drag-to-sort for both temp and saved images, remove button for both temp (API delete) and saved images
+  - `/exercises/[id]` detail page with Fancybox lightbox gallery for full-size image preview (`useFancybox` hook + `@fancyapps/ui`), organized setup/movement/layer cards
+  - `progression-chain-viewer` component (responsive, current exercise highlighted)
+  - Folder management (create, rename, delete) via `folder-dialog` in sidebar
+  - Custom hooks: `use-exercise-folders`, `use-exercise-library`, `use-exercise-list`, `use-exercise-search`, `use-debounce`
+  - Service module: `exercise-api` (CRUD, temp uploads, image reorder, progression chain)
+- **1.6 -- Dynamic Dropdown Options ✓**
+  - `DropdownCategory` and `DropdownOption` models (global + instructor-scoped)
+  - `GET /api/dropdowns/:categoryKey` returns options; `POST /api/dropdowns/:categoryKey` creates instructor-scoped option
+  - 8 seeded categories: orientation, directionFaced, movementType, springs, equipment, spinalMovement, chainType, jointLoading
+  - Frontend `useDropdownOptions(key)` hook with cache; `dropdownApi` service module
+- **1.7 -- Extended Exercise Fields ✓**
+  - 11 new optional fields on Exercise model (orientation through jointLoading)
+  - Dropdown-driven selects in ExerciseForm for each field
+  - Displayed on exercise detail page in organized sections (Setup card, Movement Analysis card)
+- **1.8 -- Exercise Layer System ✓**
+  - `ExerciseLayer` model with ordered content blocks
+  - Create/update endpoints accept `layers: { content, order }[]` — service replaces atomically via deleteMany + createMany
+  - Form renders dynamic layer rows (add/remove) with Finisher logic:
+    - <3 layers → Layer 1, Layer 2 only (no Finisher)
+    - ≥3 layers → last row is always Finisher; preceding rows are Layer 1, Layer 2, Layer 3…
+    - Add Layer inserts before the finisher when ≥3 layers
+  - Detail page displays layers with same Finisher styling (`getLayerStepTitle`, `isFinisherLayerIndex` from `exercise-layer-labels.ts`)
 
 ---
 
@@ -166,10 +199,12 @@ The exercise library is the most self-contained domain and a dependency for clas
 
 Reusable plan structures that can later be attached to scheduled classes.
 
-- **2.1 -- Prisma schema: ClassPlanTemplate, PlanSection, PlanSectionExercise**
-  - `ClassPlanTemplate`: id, name, instructorId, createdAt, updatedAt, deletedAt
+> **Status**: `ClassPlanTemplate` model exists in schema (id, name, instructorId, timestamps, deletedAt) but has no relations wired to sections yet. `PlanSection` and `PlanSectionExercise` models, API routes, services, and UI are **not yet built**. No `templates/` module in `server/src/modules/`, no `/templates` page in `client/src/app/(dashboard)/`.
+
+- **2.1 -- Prisma schema: PlanSection, PlanSectionExercise** *(ClassPlanTemplate already exists)*
   - `PlanSection`: id, templateId, name (e.g. "Warm-up"), order, createdAt
   - `PlanSectionExercise`: id, sectionId, exerciseId, order, duration, reps, notes
+  - Add relations on ClassPlanTemplate → PlanSection → PlanSectionExercise
   - Migrate
 - **2.2 -- Template CRUD API**
   - `POST/GET /api/templates`, `GET/PATCH/DELETE /api/templates/:id`
@@ -188,9 +223,11 @@ Reusable plan structures that can later be attached to scheduled classes.
 
 Scheduling engine for one-off and recurring classes, plus the calendar UI.
 
-- **3.1 -- Prisma schema: Class, ClassInstance**
-  - `Class`: id, title, type (GROUP/PRIVATE), isRecurring, recurrenceRule (JSON), startDate, endDate, time, durationMinutes, templateId (optional), syncWithTemplate (bool), instructorId, createdAt, deletedAt
+> **Status**: `Class` model with `ClassType` and `InstanceStatus` enums exist in schema but relations are incomplete. `ClassInstance` model, API routes, services, and UI are **not yet built**. No `classes/` module in `server/src/modules/`, no `/calendar` page in `client/src/app/(dashboard)/`.
+
+- **3.1 -- Prisma schema: ClassInstance** *(Class model + enums already exist)*
   - `ClassInstance`: id, classId, date, time, status (SCHEDULED/COMPLETED/CANCELLED), templateSnapshotId (nullable -- copied plan), instructorId, createdAt, deletedAt
+  - Add relations on Class → ClassInstance
   - Migrate
 - **3.2 -- Class scheduling API**
   - `POST /api/classes` -- create one-off or recurring class; if recurring, auto-generate `ClassInstance` rows for the next N weeks
