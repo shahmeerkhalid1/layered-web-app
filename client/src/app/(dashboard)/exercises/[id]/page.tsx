@@ -84,12 +84,18 @@ export default function ExerciseDetailPage() {
     (s) => s != null && String(s).trim() !== ""
   );
 
-  const movementRows = [
-    { label: "Chain type", value: exercise.chainType },
-    { label: "Joint loading", value: exercise.jointLoading },
-  ].filter((r) => r.value != null && String(r.value).trim() !== "");
+  const jointLoadingItems = (exercise.jointLoading ?? []).filter(
+    (s) => s != null && String(s).trim() !== ""
+  );
 
-  const showMovementAnalysis = spinalItems.length > 0 || movementRows.length > 0;
+  const movementRows = [{ label: "Chain type", value: exercise.chainType }].filter(
+    (r) => r.value != null && String(r.value).trim() !== ""
+  );
+
+  const showMovementAnalysis =
+    spinalItems.length > 0 ||
+    jointLoadingItems.length > 0 ||
+    movementRows.length > 0;
 
   return (
     <div className="space-y-6">
@@ -274,6 +280,18 @@ export default function ExerciseDetailPage() {
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {spinalItems.map((value, i) => (
                         <Badge key={`${value}-${i}`} variant="secondary">
+                          {value}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {jointLoadingItems.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Joint loading</p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {jointLoadingItems.map((value, i) => (
+                        <Badge key={`joint-${value}-${i}`} variant="secondary">
                           {value}
                         </Badge>
                       ))}

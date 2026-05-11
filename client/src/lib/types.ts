@@ -41,7 +41,7 @@ export interface Exercise {
   cueing?: string | null;
   spinalMovement?: string[];
   chainType?: string | null;
-  jointLoading?: string | null;
+  jointLoading?: string[];
   tags: string[];
   folderId?: string | null;
   instructorId: string;

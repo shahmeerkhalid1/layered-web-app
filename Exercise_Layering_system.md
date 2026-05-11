@@ -81,9 +81,9 @@ New optional metadata fields on `Exercise` for comprehensive Pilates documentati
 | `cueing` | Teaching cues and instructions |
 | `spinalMovement` | Spinal movement categories (`String[]`, multiselect) |
 | `chainType` | Open / Closed chain classification |
-| `jointLoading` | Joints bearing load |
+| `jointLoading` | Joints bearing load (`String[]`, multiselect) |
 
-Most fields are nullable strings, populated from dropdown-driven selects in the form. **`spinalMovement`** is a `String[]` (PostgreSQL `TEXT[]`, default `[]`) supporting multiselect — the form uses checkboxes and the detail page renders selected values as badges. All fields are stored directly on the `Exercise` model and returned in API responses.
+Most fields are nullable strings, populated from dropdown-driven selects in the form. **`spinalMovement`** and **`jointLoading`** are `String[]` (PostgreSQL `TEXT[]`, default `[]`) supporting multiselect — the form uses checkboxes and the detail page renders selected values as badges. All fields are stored directly on the `Exercise` model and returned in API responses.
 
 ---
 
@@ -92,7 +92,7 @@ Most fields are nullable strings, populated from dropdown-driven selects in the 
 - Removed bordered "Class setup" card wrapper — orientation, direction faced, and machine setup fields now flow naturally.
 - **Springs + Equipment row** aligned to equal height (`h-12`, `sm:items-stretch`).
 - **Select trigger values** no longer clip at the bottom — replaced `line-clamp-1` with `truncate` + `leading-snug`.
-- **Movement Analysis** section: spinal movement (multiselect checkboxes), chain type, and joint loading grouped logically. Spinal movement values displayed as badges on the detail page.
+- **Movement Analysis** section: spinal movement (multiselect checkboxes), chain type, and joint loading (multiselect checkboxes) grouped logically. Spinal movement and joint loading values displayed as badges on the detail page.
 - Form sections: Basic Info → Orientation & Setup → Springs & Equipment → Transition & Cueing → Layers → Movement Analysis → Images → Progression.
 
 ---

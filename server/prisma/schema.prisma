@@ -142,7 +142,7 @@ model Exercise {
   cueing           String?
   spinalMovement   String[]  @default([])
   chainType        String?
-  jointLoading     String?
+  jointLoading     String[]  @default([])
   tags             String[]  @default([])
   folderId         String?
   instructorId     String

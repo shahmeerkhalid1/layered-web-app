@@ -32,7 +32,7 @@ export type SaveExerciseBody = {
   cueing?: string | null;
   spinalMovement?: string[];
   chainType?: string | null;
-  jointLoading?: string | null;
+  jointLoading?: string[];
   tags?: string[];
   folderId?: string | null;
   progressionOfId?: string | null;

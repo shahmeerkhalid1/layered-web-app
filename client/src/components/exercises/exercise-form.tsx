@@ -99,7 +99,9 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
     exercise?.spinalMovement ?? []
   );
   const [chainType, setChainType] = useState(exercise?.chainType ?? "none");
-  const [jointLoading, setJointLoading] = useState(exercise?.jointLoading ?? "none");
+  const [jointLoading, setJointLoading] = useState<string[]>(
+    exercise?.jointLoading ?? []
+  );
   const [tags, setTags] = useState<string[]>(exercise?.tags ?? []);
   const [tagInput, setTagInput] = useState("");
   const [folderId, setFolderId] = useState<string>(exercise?.folderId ?? "none");
@@ -278,6 +280,12 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
     );
   };
 
+  const toggleJointLoading = (value: string) => {
+    setJointLoading((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    );
+  };
+
   // ─── Dropzone ────────────────────────────────────────────────────────────
 
   const onDrop = useCallback(
@@ -433,7 +441,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
       cueing: optionalField(cueing) ?? null,
       spinalMovement,
       chainType: chainType === "none" ? null : chainType,
-      jointLoading: jointLoading === "none" ? null : jointLoading,
+      jointLoading,
       tags,
       folderId: folderId === "none" ? null : folderId,
       progressionOfId: nextProgressionOfId,
@@ -968,28 +976,18 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                 Alternating loaded vs unloaded positions reduces cumulative stress and
                 supports client comfort, confidence, and joint resilience.
               </p>
-              <div className="flex flex-wrap gap-4 pl-1">
-                <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-                  <input
-                    type="radio"
-                    name="jointLoading"
-                    checked={jointLoading === "none"}
-                    onChange={() => setJointLoading("none")}
-                    className="size-4 accent-primary"
-                  />
-                  Not specified
-                </label>
+              <div className="space-y-2 pl-1">
                 {jointDd.options.map((o) => (
                   <label
                     key={o.id}
                     className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
                   >
                     <input
-                      type="radio"
-                      name="jointLoading"
-                      checked={jointLoading === o.value}
-                      onChange={() => setJointLoading(o.value)}
-                      className="size-4 accent-primary"
+                      type="checkbox"
+                      name={`jointLoading-${o.value}`}
+                      checked={jointLoading.includes(o.value)}
+                      onChange={() => toggleJointLoading(o.value)}
+                      className="size-4 rounded border-input accent-primary"
                     />
                     {o.label}
                   </label>
