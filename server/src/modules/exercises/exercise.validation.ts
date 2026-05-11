@@ -31,7 +31,7 @@ export const createExerciseSchema = z.object({
   machineSetup: nullableStr,
   transitionCues: nullableStr,
   cueing: nullableStr,
-  spinalMovement: nullableStr,
+  spinalMovement: z.array(z.string()).default([]),
   chainType: nullableStr,
   jointLoading: nullableStr,
   tags: z.array(z.string()).default([]),

@@ -140,7 +140,7 @@ model Exercise {
   machineSetup     String?
   transitionCues   String?
   cueing           String?
-  spinalMovement   String?
+  spinalMovement   String[]  @default([])
   chainType        String?
   jointLoading     String?
   tags             String[]  @default([])

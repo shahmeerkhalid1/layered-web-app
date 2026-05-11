@@ -27,7 +27,7 @@ export function useExerciseLibrary() {
       toast.success("Exercise deleted");
       void Promise.all([
         exerciseList.refreshExercises(),
-        // folderState.refreshFolders(),
+        folderState.refreshFolders(),
       ]);
     } catch {
       toast.error("Failed to delete exercise");
@@ -37,6 +37,7 @@ export function useExerciseLibrary() {
   return {
     exercises: exerciseList.exercises,
     folders: folderState.folders,
+    totalExerciseCount: folderState.totalExerciseCount,
     search,
     setSearch,
     selectedFolder,

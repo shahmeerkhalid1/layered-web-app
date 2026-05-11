@@ -186,11 +186,17 @@ export async function getProgressionChain(id: string, instructorId: string) {
 // ─── Folder operations ───────────────────────────────────────────────────────
 
 export async function listFolders(instructorId: string) {
-  return prisma.exerciseFolder.findMany({
-    where: { instructorId, ...activeFilter },
-    include: { _count: { select: { exercises: { where: activeFilter } } } },
-    orderBy: { name: "asc" },
-  });
+  const [folders, totalExercises] = await Promise.all([
+    prisma.exerciseFolder.findMany({
+      where: { instructorId, ...activeFilter },
+      include: { _count: { select: { exercises: { where: activeFilter } } } },
+      orderBy: { name: "asc" },
+    }),
+    prisma.exercise.count({
+      where: { instructorId, ...activeFilter },
+    }),
+  ]);
+  return { folders, totalExercises };
 }
 
 export async function createFolder(instructorId: string, name: string) {

@@ -21,6 +21,11 @@ export interface ExerciseFolder {
   _count?: { exercises: number };
 }
 
+export interface ExerciseFoldersResponse {
+  folders: ExerciseFolder[];
+  totalExercises: number;
+}
+
 export interface Exercise {
   id: string;
   name: string;
@@ -34,7 +39,7 @@ export interface Exercise {
   machineSetup?: string | null;
   transitionCues?: string | null;
   cueing?: string | null;
-  spinalMovement?: string | null;
+  spinalMovement?: string[];
   chainType?: string | null;
   jointLoading?: string | null;
   tags: string[];

@@ -17,14 +17,18 @@ export function useExerciseFolders({
   refreshExercises,
 }: UseExerciseFoldersOptions) {
   const [folders, setFolders] = useState<ExerciseFolder[]>([]);
+  const [totalExerciseCount, setTotalExerciseCount] = useState<number | undefined>(
+    undefined
+  );
   const [folderDialogOpen, setFolderDialogOpen] = useState(false);
   const [folderName, setFolderName] = useState("");
   const [editingFolder, setEditingFolder] = useState<ExerciseFolder | null>(null);
 
   const refreshFolders = useCallback(async () => {
     try {
-      const folderData = await exerciseApi.getFolders();
+      const { folders: folderData, totalExercises } = await exerciseApi.getFolders();
       setFolders(folderData);
+      setTotalExerciseCount(totalExercises);
     } catch {
       toast.error("Failed to load folders");
     }
@@ -96,6 +100,7 @@ export function useExerciseFolders({
 
   return {
     folders,
+    totalExerciseCount,
     refreshFolders,
     folderDialog: {
       open: folderDialogOpen,

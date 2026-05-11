@@ -95,8 +95,8 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
     exercise?.transitionCues ?? ""
   );
   const [cueing, setCueing] = useState(exercise?.cueing ?? "");
-  const [spinalMovement, setSpinalMovement] = useState(
-    exercise?.spinalMovement ?? "none"
+  const [spinalMovement, setSpinalMovement] = useState<string[]>(
+    exercise?.spinalMovement ?? []
   );
   const [chainType, setChainType] = useState(exercise?.chainType ?? "none");
   const [jointLoading, setJointLoading] = useState(exercise?.jointLoading ?? "none");
@@ -142,7 +142,10 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
   const jointDd = useDropdownOptions("joint_loading");
 
   useEffect(() => {
-    exerciseApi.getFolders().then(setFolders).catch(() => {});
+    exerciseApi
+      .getFolders()
+      .then((data) => setFolders(data.folders))
+      .catch(() => {});
     exerciseApi.getExercises().then(setAllExercises).catch(() => {});
   }, []);
 
@@ -267,6 +270,12 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
 
   const removeTag = (tag: string) => {
     setTags(tags.filter((t) => t !== tag));
+  };
+
+  const toggleSpinalMovement = (value: string) => {
+    setSpinalMovement((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    );
   };
 
   // ─── Dropzone ────────────────────────────────────────────────────────────
@@ -422,7 +431,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
       machineSetup: machineSetup === "none" ? null : machineSetup,
       transitionCues: optionalField(transitionCues) ?? null,
       cueing: optionalField(cueing) ?? null,
-      spinalMovement: spinalMovement === "none" ? null : spinalMovement,
+      spinalMovement,
       chainType: chainType === "none" ? null : chainType,
       jointLoading: jointLoading === "none" ? null : jointLoading,
       tags,
@@ -453,7 +462,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-4xl">
+    <form onSubmit={handleSubmit} className="w-full min-w-0">
       <Card className="border-border bg-card shadow-xl">
         <CardContent className="space-y-6 p-5 sm:p-6">
           <div>
@@ -896,28 +905,21 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
               <legend className="mb-2 pl-1.5 text-sm font-medium text-foreground">
                 Spinal Movement
               </legend>
+              <p className="mb-2 pl-1.5 text-xs text-muted-foreground">
+                Select all that apply. Leave none checked if not specified.
+              </p>
               <div className="space-y-2 pl-1">
-                <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-                  <input
-                    type="radio"
-                    name="spinalMovement"
-                    checked={spinalMovement === "none"}
-                    onChange={() => setSpinalMovement("none")}
-                    className="size-4 accent-primary"
-                  />
-                  Not specified
-                </label>
                 {spinalDd.options.map((o) => (
                   <label
                     key={o.id}
                     className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
                   >
                     <input
-                      type="radio"
-                      name="spinalMovement"
-                      checked={spinalMovement === o.value}
-                      onChange={() => setSpinalMovement(o.value)}
-                      className="size-4 accent-primary"
+                      type="checkbox"
+                      name={`spinalMovement-${o.value}`}
+                      checked={spinalMovement.includes(o.value)}
+                      onChange={() => toggleSpinalMovement(o.value)}
+                      className="size-4 rounded border-input accent-primary"
                     />
                     {o.label}
                   </label>

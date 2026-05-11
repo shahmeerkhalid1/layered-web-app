@@ -2,6 +2,7 @@ import { api } from "@/lib/api";
 import type {
   Exercise,
   ExerciseFolder,
+  ExerciseFoldersResponse,
   ExerciseImage,
   ProgressionChainItem,
 } from "@/lib/types";
@@ -29,7 +30,7 @@ export type SaveExerciseBody = {
   machineSetup?: string | null;
   transitionCues?: string | null;
   cueing?: string | null;
-  spinalMovement?: string | null;
+  spinalMovement?: string[];
   chainType?: string | null;
   jointLoading?: string | null;
   tags?: string[];
@@ -63,7 +64,7 @@ export const exerciseApi = {
     api.delete<void>(`/exercises/${id}/images/${imageId}`),
   reorderImages: (id: string, imageIds: string[]) =>
     api.patch<ExerciseImage[]>(`/exercises/${id}/images/reorder`, { imageIds }),
-  getFolders: () => api.get<ExerciseFolder[]>("/exercise-folders"),
+  getFolders: () => api.get<ExerciseFoldersResponse>("/exercise-folders"),
   createFolder: (body: { name: string }) =>
     api.post<ExerciseFolder>("/exercise-folders", body),
   updateFolder: (id: string, body: { name?: string }) =>

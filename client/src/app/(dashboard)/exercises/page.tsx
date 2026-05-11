@@ -12,13 +12,14 @@ export default function ExercisesPage() {
   const { folderDialog } = library;
 
   return (
-    <div className="relative space-y-6 overflow-hidden rounded-[2rem] bg-background p-1">
+    <div className="relative space-y-6 rounded-[2rem] bg-background px-2 pb-6 pt-2 sm:px-4">
       <div className="pointer-events-none absolute top-16 right-10 h-48 w-48 rounded-full bg-secondary/60 blur-3xl" />
       <ExerciseLibraryHeader />
 
       <div className="relative flex flex-col gap-6 lg:flex-row">
         <ExerciseFolderSidebar
           folders={library.folders}
+          totalExerciseCount={library.totalExerciseCount}
           selectedFolder={library.selectedFolder}
           onSelectFolder={library.setSelectedFolder}
           onCreateFolder={folderDialog.openCreate}

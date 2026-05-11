@@ -80,11 +80,16 @@ export default function ExerciseDetailPage() {
     { label: "Machine setup", value: exercise.machineSetup },
   ].filter((r) => r.value != null && String(r.value).trim() !== "");
 
+  const spinalItems = (exercise.spinalMovement ?? []).filter(
+    (s) => s != null && String(s).trim() !== ""
+  );
+
   const movementRows = [
-    { label: "Spinal movement", value: exercise.spinalMovement },
     { label: "Chain type", value: exercise.chainType },
     { label: "Joint loading", value: exercise.jointLoading },
   ].filter((r) => r.value != null && String(r.value).trim() !== "");
+
+  const showMovementAnalysis = spinalItems.length > 0 || movementRows.length > 0;
 
   return (
     <div className="space-y-6">
@@ -257,12 +262,24 @@ export default function ExerciseDetailPage() {
             </Card>
           )}
 
-          {movementRows.length > 0 && (
+          {showMovementAnalysis && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Movement Analysis</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                {spinalItems.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Spinal movement</p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {spinalItems.map((value, i) => (
+                        <Badge key={`${value}-${i}`} variant="secondary">
+                          {value}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {movementRows.map((row) => (
                   <div key={row.label}>
                     <p className="text-xs font-medium text-muted-foreground">{row.label}</p>

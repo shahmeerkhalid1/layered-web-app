@@ -11,6 +11,7 @@ import {
 
 interface ExerciseFolderSidebarProps {
   folders: ExerciseFolder[];
+  totalExerciseCount?: number;
   selectedFolder: string | null;
   onSelectFolder: (folderId: string | null) => void;
   onCreateFolder: () => void;
@@ -20,6 +21,7 @@ interface ExerciseFolderSidebarProps {
 
 export function ExerciseFolderSidebar({
   folders,
+  totalExerciseCount,
   selectedFolder,
   onSelectFolder,
   onCreateFolder,
@@ -45,15 +47,20 @@ export function ExerciseFolderSidebar({
       </div>
 
       <div className="space-y-1">
-        <FolderButton
-          active={!selectedFolder}
-          icon={<Dumbbell className="size-4" />}
-          label="All Exercises"
-          onClick={() => onSelectFolder(null)}
-        />
+        <div className="flex w-full items-center gap-1">
+          <FolderButton
+            active={!selectedFolder}
+            count={totalExerciseCount}
+            icon={<Dumbbell className="size-4" />}
+            label="All Exercises"
+            onClick={() => onSelectFolder(null)}
+          />
+          {/* Matches DropdownMenuTrigger icon-xs (size-6) so row widths match folder rows */}
+          <span className="size-6 shrink-0" aria-hidden />
+        </div>
 
         {folders.map((folder) => (
-          <div key={folder.id} className="group flex items-center gap-1">
+          <div key={folder.id} className="group flex w-full items-center gap-1">
             <FolderButton
               active={selectedFolder === folder.id}
               count={folder._count?.exercises}
