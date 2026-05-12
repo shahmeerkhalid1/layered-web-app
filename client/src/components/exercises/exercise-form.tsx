@@ -308,6 +308,11 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
     });
   };
 
+  const isEquipmentOptionDisabled = (value: string): boolean => {
+    if (value === noneEquipmentValue) return false;
+    return equipment.includes(noneEquipmentValue);
+  };
+
   const addCustomEquipment = () => {
     const raw = equipmentCustomInput.trim();
     if (!raw) return;
@@ -364,6 +369,11 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
       }
       return [...withoutNone, value];
     });
+  };
+
+  const isSpinalMovementOptionDisabled = (value: string): boolean => {
+    if (value === noneSpinalMovementValue) return false;
+    return spinalMovement.includes(noneSpinalMovementValue);
   };
 
   const toggleJointLoading = (value: string) => {
@@ -818,21 +828,25 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                   className="m-0 min-w-0 space-y-2 border-0 p-0"
                 >
                   <div className="space-y-2 pl-1.5">
-                    {equipmentDd.options.map((o) => (
-                      <label
-                        key={o.id}
-                        className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
-                      >
-                        <input
-                          type="checkbox"
-                          name={`equipment-${o.value}`}
-                          checked={equipment.includes(o.value)}
-                          onChange={() => toggleEquipmentValue(o.value)}
-                          className="size-4 rounded border-input accent-primary"
-                        />
-                        {o.label}
-                      </label>
-                    ))}
+                    {equipmentDd.options.map((o) => {
+                      const disabled = isEquipmentOptionDisabled(o.value);
+                      return (
+                        <label
+                          key={o.id}
+                          className={`flex cursor-pointer items-center gap-2 text-sm text-foreground ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+                        >
+                          <input
+                            type="checkbox"
+                            name={`equipment-${o.value}`}
+                            checked={equipment.includes(o.value)}
+                            disabled={disabled}
+                            onChange={() => toggleEquipmentValue(o.value)}
+                            className="size-4 rounded border-input accent-primary disabled:cursor-not-allowed"
+                          />
+                          {o.label}
+                        </label>
+                      );
+                    })}
                     {equipment
                       .filter((v) => !equipmentDd.options.some((o) => o.value === v))
                       .map((val) => (
@@ -861,19 +875,21 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                       value={equipmentCustomInput}
                       onChange={(e) => setEquipmentCustomInput(e.target.value)}
                       placeholder="Custom equipment…"
+                      disabled={equipment.includes(noneEquipmentValue)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
                           addCustomEquipment();
                         }
                       }}
-                      className="box-border h-12 min-h-12 w-full min-w-0 rounded-2xl border-input bg-background/80 px-4 py-0 text-sm leading-snug shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 sm:flex-1"
+                      className="box-border h-12 min-h-12 w-full min-w-0 rounded-2xl border-input bg-background/80 px-4 py-0 text-sm leading-snug shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 sm:flex-1 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                     <Button
                       type="button"
                       variant="outline"
                       onClick={addCustomEquipment}
-                      className="h-12 w-full shrink-0 rounded-2xl border-input px-4 text-sm font-medium sm:w-auto sm:min-w-22"
+                      disabled={equipment.includes(noneEquipmentValue)}
+                      className="h-12 w-full shrink-0 rounded-2xl border-input px-4 text-sm font-medium sm:w-auto sm:min-w-22 disabled:cursor-not-allowed"
                     >
                       Add
                     </Button>
@@ -1071,21 +1087,25 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                 Select all that apply. &quot;None&quot; clears other selections (same as Equipment).
               </p>
               <div className="space-y-2 pl-1">
-                {spinalDd.options.map((o) => (
-                  <label
-                    key={o.id}
-                    className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
-                  >
-                    <input
-                      type="checkbox"
-                      name={`spinalMovement-${o.value}`}
-                      checked={spinalMovement.includes(o.value)}
-                      onChange={() => toggleSpinalMovementValue(o.value)}
-                      className="size-4 rounded border-input accent-primary"
-                    />
-                    {o.label}
-                  </label>
-                ))}
+                {spinalDd.options.map((o) => {
+                  const disabled = isSpinalMovementOptionDisabled(o.value);
+                  return (
+                    <label
+                      key={o.id}
+                      className={`flex cursor-pointer items-center gap-2 text-sm text-foreground ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+                    >
+                      <input
+                        type="checkbox"
+                        name={`spinalMovement-${o.value}`}
+                        checked={spinalMovement.includes(o.value)}
+                        disabled={disabled}
+                        onChange={() => toggleSpinalMovementValue(o.value)}
+                        className="size-4 rounded border-input accent-primary disabled:cursor-not-allowed"
+                      />
+                      {o.label}
+                    </label>
+                  );
+                })}
               </div>
             </fieldset>
 

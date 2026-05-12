@@ -35,11 +35,11 @@ isProject: false
 
 The repo is a monorepo with two fully functional apps:
 
-- **Server** ([server/src/app.ts](server/src/app.ts)): Express 4 with Better Auth mounted at `/api/auth/*`, health endpoint, CORS with credentials, Prisma 7 + PostgreSQL, modular feature structure under `server/src/modules/`. Modules: `admin/` (invitation, settings, stats), `exercises/` (full CRUD + folders + progression + images + reorder), `dropdowns/` (dynamic option API), `uploads/` (temp image upload/delete). Route mounts: `/api/admin`, `/api/uploads`, `/api/exercises`, `/api/exercise-folders`, `/api/dropdowns`, plus public helpers (`/api/signup-status`, `/api/invite/verify`).
+- **Server** ([server/src/app.ts](server/src/app.ts)): Express 4 with Better Auth mounted at `/api/auth/`*, health endpoint, CORS with credentials, Prisma 7 + PostgreSQL, modular feature structure under `server/src/modules/`. Modules: `admin/` (invitation, settings, stats), `exercises/` (full CRUD + folders + progression + images + reorder), `dropdowns/` (dynamic option API), `uploads/` (temp image upload/delete). Route mounts: `/api/admin`, `/api/uploads`, `/api/exercises`, `/api/exercise-folders`, `/api/dropdowns`, plus public helpers (`/api/signup-status`, `/api/invite/verify`).
 - **Client** ([client/src/app/(dashboard)/page.tsx](client/src/app/(dashboard)/page.tsx)): Next.js 16 App Router with dashboard layout, auth pages (login/register), Better Auth React client, sidebar + topbar shell with role-aware admin navigation. Full Exercise Library UI (list/grid views, create, edit, detail with Fancybox image lightbox, layers with isFinisher badge styling, dropdown-driven fields, progression chain viewer). Admin pages (users, settings). Service modules: `exercise-api`, `admin-api`, `dropdown-api`. Custom hooks: `use-debounce`, `use-dropdown-options`, `use-fancybox`, and exercise-specific hooks (`use-exercise-folders`, `use-exercise-library`, `use-exercise-list`, `use-exercise-search`). Exercise components: `exercise-form`, `exercise-list`, `exercise-card`, `exercise-search`, `exercise-library-header`, `exercise-folder-sidebar`, `folder-dialog`, `progression-chain-viewer`.
 - **Auth**: Better Auth with cookie-based sessions, email/password, Prisma adapter, **admin plugin** (`defaultRole: "INSTRUCTOR"`, `adminRole: "ADMIN"`). `Instructor` model mapped as Better Auth's user with `Role` enum (`ADMIN`/`INSTRUCTOR`), ban fields, and invitation support. Session/Account/Verification tables managed by Better Auth.
 - **Admin**: `Role` and `InvitationStatus` enums, `Invitation` and `PlatformSetting` models, `requireAdmin` middleware, signup toggle (off by default, invite-only), invitation flow with token verification and auto-accept on registration, `adminClient` plugin on frontend, `isAdmin` in auth context. Admin pages: `/admin` (dashboard), `/admin/users` (user management), `/admin/settings` (platform config).
-- **Exercise Library** (Phase 1 — fully complete): Exercise CRUD with soft-delete (also cleans Cloudinary assets and `ExerciseImage` records), folder management, Cloudinary image uploads (hybrid temp flow: `POST /api/uploads/temp` with multer → promote on save via `extractImagePublicIds` middleware + two-phase compensation → `DELETE /api/uploads/temp/:publicId` → hourly `node-cron` cleanup of temp images older than 6 hours), image reordering (`PATCH /api/exercises/:id/images/reorder`), progression linking (chain viewer + `progressionNotes`/`regressionNotes` text fields), ExerciseLayer system (dynamic layers with explicit `isFinisher` boolean toggle on last layer — no automatic finisher assignment, instructors opt-in intentionally), DropdownCategory/DropdownOption system (8 seeded categories with instructor-scoped custom options), extended exercise fields: orientation, directionFaced, movementType, springs, machineSetup, transitionCues, cueing (all `String?`); equipment (`String[]` multiselect checkboxes + custom "Add" input, "None" clears others), spinalMovement (`String[]` multiselect checkboxes, "None" clears others), chainType (`String[]` multiselect checkboxes, max 2, "Both" mutual exclusivity + tooltips from `chain-type-tooltips.ts`), jointLoading (`String[]` multiselect checkboxes); progressionNotes, regressionNotes (`String?`); Fancybox lightbox for full-size image preview on detail page, react-dropzone with drag-to-sort in exercise form.
+- **Exercise Library** (Phase 1 — fully complete): Exercise CRUD with soft-delete (also cleans Cloudinary assets and `ExerciseImage` records), folder management, Cloudinary image uploads (hybrid temp flow: `POST /api/uploads/temp` with multer → promote on save via `extractImagePublicIds` middleware + two-phase compensation → `DELETE /api/uploads/temp/:publicId` → hourly `node-cron` cleanup of temp images older than 6 hours), image reordering (`PATCH /api/exercises/:id/images/reorder`), progression linking (chain viewer + `progressionNotes`/`regressionNotes` text fields), ExerciseLayer system (dynamic layers with explicit `isFinisher` boolean toggle on last layer — no automatic finisher assignment, instructors opt-in intentionally), DropdownCategory/DropdownOption system (8 seeded categories with instructor-scoped custom options), extended exercise fields: orientation, directionFaced, movementType, springs, machineSetup, transitionCues, cueing (all `String?`); equipment (`String[]` multiselect checkboxes + custom "Add" input; "None" clears others and **disables** all other equipment checkboxes plus custom add while selected), spinalMovement (`String[]` multiselect checkboxes; "None" clears others and **disables** all other options while selected), chainType (`String[]` multiselect checkboxes, max 2, "Both" mutual exclusivity + tooltips from `chain-type-tooltips.ts`), jointLoading (`String[]` multiselect checkboxes); progressionNotes, regressionNotes (`String?`); Fancybox lightbox for full-size image preview on detail page, react-dropzone with drag-to-sort in exercise form.
 - **Seed**: [server/prisma/seed.ts](server/prisma/seed.ts) seeds default platform settings, promotes first user to ADMIN, and initializes 8 dropdown categories with updated default options (orientation 8, direction 3, equipment 7, machine setup 4, spinal movement 7, chain type 5, joint loading 3, movement type 3). Run via `npm run seed --prefix server`.
 - **Key dependencies**: Server — `express`, `better-auth`, `prisma`, `cloudinary`, `multer`, `node-cron`, `zod`, `nodemailer`. Client — `next`, `react`, `better-auth`, `react-dropzone`, `@fancyapps/ui`, `sonner`, `shadcn`, `lucide-react`.
 - **Partial schema**: `ClassPlanTemplate` (id, name, instructorId, timestamps, deletedAt) and `Class` models with `ClassType`/`InstanceStatus` enums exist in schema but have **no API routes, services, or UI** yet. Relations on these models are not fully wired. `ClassPlanFolder`, `PlanSection`, `PlanSectionExercise`, `ClassInstance`, `Client`, `Enrollment`, `Attendance`, `SessionNote`, `SessionNoteExercise` models are **not yet created**.
@@ -52,7 +52,9 @@ The repo is a monorepo with two fully functional apps:
 The following were confirmed through client conversations and must be applied in Phase 2:
 
 ### Add `ClassPlanFolder` model
+
 Confirmed from prototype screenshot — folders section visible on Class Plans page.
+
 ```prisma
 model ClassPlanFolder {
   id           String    @id @default(cuid())
@@ -67,7 +69,9 @@ model ClassPlanFolder {
 ```
 
 ### Update `ClassPlanTemplate` — add confirmed fields
+
 Confirmed from prototype form (Class Title, Class Type, Class Style, Duration, Folder, Tags):
+
 ```prisma
 classType       String?          // "reformer" | "mat" | "chair" | "cadillac" | "barrel"
 classStyle      String?          // "beginner" | "intermediate" | "advanced" | "pre_post_natal"
@@ -77,11 +81,14 @@ folderId        String?          // → ClassPlanFolder
 tags            String[]         @default([])
                                  // preset tags: "Easy Teach", "Moderate", "Challenging" + custom
 ```
+
 > **Note**: `rating` removed from template — rating is a post-class reflection and belongs exclusively on `ClassInstance`.
 
 ### Update `ClassInstance` — add confirmed fields
+
 Confirmed: rating = post-class reflection (NOT MVP). isCustomised tracks edits from template.
 Denormalized `classType`/`classStyle` copied from template on scheduling — enables filtering/displaying scheduled classes by equipment type on Calendar without joining back to the template.
+
 ```prisma
 templateId      String?          // reference to which template was copied from
 isCustomised    Boolean          @default(false)
@@ -94,7 +101,9 @@ reviewedAt      DateTime?
 ```
 
 ### Add `Exercise.savedToLibrary`
+
 Confirmed by client: exercises created inside a class plan should be saveable to library gradually.
+
 ```prisma
 savedToLibrary  Boolean          @default(true)
 // false = created inside a class plan, hidden from Exercise Library page
@@ -102,6 +111,7 @@ savedToLibrary  Boolean          @default(true)
 ```
 
 ### Seed new DropdownCategories (confirmed from prototype screenshots May 8, 2026)
+
 ```
 classType  → Reformer, Mat, Chair, Cadillac, Barrel
 classStyle → Beginner, Intermediate, Advanced, Pre/Post Natal,
@@ -117,7 +127,7 @@ classStyle → Beginner, Intermediate, Advanced, Pre/Post Natal,
   - **Flow 1 — Structured**: Class Plans → build template → Calendar → schedule class → attach template. Best for instructors planning ahead.
   - **Flow 2 — Quick**: Available from BOTH the Class Plans page ("Schedule this plan" button on a template) AND the Calendar (click a time slot). Creates Class + ClassInstance + copies sections in one transaction via `POST /api/quick-schedule`. Best for speed. The Class Plans page is where Alexa expects this button to live — not just the Calendar.
 - **Exercise in Class Plan**: "Add Exercise" → two equal options: (1) Pick from Library — browse saved exercises; (2) Create New — full exercise form with `savedToLibrary: false` default + "Save to Library" toggle.
-- **Movement Analysis** (confirmed May 11, 2026): `spinalMovement String[]` ✅ already multiselect. `chainType String[]` ✅ already multiselect (max 2, "Both" exclusive). `jointLoading String[]` ✅ updated to multiselect. All serve to balance spinal patterns, manage joint stress, and ensure open/closed chain variety across a class.
+- **Movement Analysis** (confirmed May 11, 2026): `spinalMovement String[]` ✅ already multiselect (exercise form: "None" clears others and disables non-None checkboxes while selected). `chainType String[]` ✅ already multiselect (max 2, "Both" exclusive). `jointLoading String[]` ✅ updated to multiselect. `equipment String[]` ✅ same "None" clear + disable-siblings pattern as spinal movement in `exercise-form`. All serve to balance spinal patterns, manage joint stress, and ensure open/closed chain variety across a class.
 - **ExerciseLayer `isFinisher`**: explicit boolean toggle — no automatic finisher assignment. Only the last layer shows the "Mark as finisher" checkbox. Instructors opt-in intentionally.
 
 ---
@@ -159,9 +169,12 @@ erDiagram
     SessionNote ||--o{ SessionNoteExercise : references
 ```
 
+
+
 ---
 
 ## Phase 0 -- Foundation (Database, Auth, App Shell, Admin Role)
+
 *(COMPLETED)*
 
 Set up Prisma, PostgreSQL, Better Auth (cookie-based sessions), the shared app layout, and admin role infrastructure that every subsequent phase depends on.
@@ -188,7 +201,7 @@ Set up Prisma, PostgreSQL, Better Auth (cookie-based sessions), the shared app l
   - `Invitation` and `PlatformSetting` models
   - Better Auth admin plugin (`defaultRole: "INSTRUCTOR"`, `adminRole: "ADMIN"`) providing `/api/auth/admin/`* endpoints (listUsers, banUser, unbanUser, setRole, createUser)
   - `requireAdmin` middleware for custom admin routes
-  - Admin module at `/api/admin/*`: invitation CRUD, platform settings (signup toggle), platform stats
+  - Admin module at `/api/admin/`*: invitation CRUD, platform settings (signup toggle), platform stats
   - Public endpoints: `/api/signup-status`, `/api/invite/verify`
   - Database hook to auto-accept invitations and apply role on user registration
   - Seed script (`server/prisma/seed.ts`) to bootstrap first admin and default settings
@@ -260,8 +273,8 @@ The exercise library is the most self-contained domain and a dependency for clas
 - **1.7 -- Extended Exercise Fields** ✓
   - Optional metadata fields on Exercise: orientation, directionFaced, movementType, springs, machineSetup, transitionCues, cueing (all `String?`); progressionNotes, regressionNotes (`String?`)
   - Multiselect `String[]` fields with specialized UI behaviors:
-    - **Equipment**: checkboxes + custom "Add" input; selecting "None" clears all others
-    - **Spinal Movement**: checkboxes; selecting "None" clears all others
+    - **Equipment**: checkboxes + custom "Add" input; selecting "None" clears all others, disables every other equipment checkbox (and the custom add field/button) until "None" is unchecked — mirrors Chain Type disabled styling
+    - **Spinal Movement**: checkboxes; selecting "None" clears all others and disables every other spinal-movement checkbox until "None" is unchecked
     - **Chain Type**: checkboxes; "Both" is mutually exclusive with all other options; max 2 selections; tooltips on hover (`chain-type-tooltips.ts`)
     - **Joint Loading**: simple multiselect checkboxes (Knee Loading, Wrist Loading)
   - **Springs**: free-text input with N/A quick button (not a dropdown)
@@ -280,6 +293,7 @@ The exercise library is the most self-contained domain and a dependency for clas
 ---
 
 ## Phase 2 -- Class Plan Templates
+
 *(IN PROGRESS)*
 
 Reusable plan structures with folders, sections, and exercise sequencing — confirmed architecture from client discussions.
@@ -301,7 +315,6 @@ Reusable plan structures with folders, sections, and exercise sequencing — con
   - Seed `classType` and `classStyle` DropdownCategories + options (see confirmed values above)
   - Run: `npx prisma migrate dev --name add_class_planning_system`
   - Run: `npx prisma generate`
-
 - **2.2 -- Template CRUD API**
   - Follow exact same module structure as exercises: `server/src/modules/class-plans/{routes,controller,service,validation}.ts`
   - Folder endpoints:
@@ -330,13 +343,12 @@ Reusable plan structures with folders, sections, and exercise sequencing — con
     - All queries filter by `instructorId` from auth — instructors see only their own data
     - All list queries filter `deletedAt IS NULL`
     - PlanSection must have EITHER templateId OR classInstanceId — enforced in service layer
-
 - **2.3 -- Class Planner UI (template builder)**
   - `/class-plans` listing page:
     - Folder sidebar (same pattern as `exercise-folder-sidebar`)
     - Template grid/list with search, filter by classType, classStyle, tags
     - "New Plan" button → create template modal:
-      - Class Title (required)
+      - Class Template Title (required)
       - Class Type dropdown (Reformer, Mat, Chair, Cadillac, Barrel)
       - Class Style dropdown (Beginner, Intermediate, Advanced, Pre/Post Natal, HIIT, Restorative, JumpBoard, Classical Pilates)
       - Duration mins (default 60)
@@ -376,7 +388,8 @@ Reusable plan structures with folders, sections, and exercise sequencing — con
     - "Save" button (saves all section/exercise changes)
     - "Duplicate" button (deep copy this template)
   - **API response requirement**: `GET /api/class-plans/:id` must include `spinalMovement`, `chainType`, and `jointLoading` on each exercise inside `PlanSectionExercise` for Movement Analysis badge display. No additional endpoint needed — include these fields in the nested exercise select on the existing endpoint:
-    ```
+
+```
     PlanSectionExercise {
       ...pseFields,
       exercise: {
@@ -386,11 +399,14 @@ Reusable plan structures with folders, sections, and exercise sequencing — con
         jointLoading,     // String[] — for badges
       }
     }
-    ```
+    
+
+```
 
 ---
 
 ## Phase 3 -- Calendar and Class Scheduling
+
 *(PENDING)*
 
 Scheduling engine for one-off and recurring classes, plus the calendar UI. Two confirmed flows from client.
@@ -433,7 +449,7 @@ Scheduling engine for one-off and recurring classes, plus the calendar UI. Two c
   - Click existing class instance → detail drawer (view plan, edit plan, mark complete, view enrolled clients)
   - Attach / swap plan on an existing instance: template picker inside instance detail drawer → `POST /api/class-instances/:id/assign-template`
   - `/week-overview` — simpler week list view (per prototype sidebar item)
-  > **Note**: Flow 2 (quick-schedule) is available from BOTH the Class Plans page (primary — "Schedule" button on template card) AND the Calendar (secondary — click a time slot). Both call the same `POST /api/quick-schedule` endpoint. The Class Plans page is Alexa's primary entry point for quick scheduling — confirmed in client reply.
+    > **Note**: Flow 2 (quick-schedule) is available from BOTH the Class Plans page (primary — "Schedule" button on template card) AND the Calendar (secondary — click a time slot). Both call the same `POST /api/quick-schedule` endpoint. The Class Plans page is Alexa's primary entry point for quick scheduling — confirmed in client reply.
 - **3.5 -- Recurring class management UI**
   - Recurrence form: day selector (Mon/Tue/Wed etc), start date, end date
   - On edit: "Just this class" vs "All future classes" choice dialog
@@ -441,6 +457,7 @@ Scheduling engine for one-off and recurring classes, plus the calendar UI. Two c
 ---
 
 ## Phase 4 -- Client Management
+
 *(PENDING)*
 
 Client profiles, roster enrollment, and attendance tracking.
@@ -466,6 +483,7 @@ Client profiles, roster enrollment, and attendance tracking.
 ---
 
 ## Phase 5 -- Session Notes
+
 *(PENDING)*
 
 Post-class notes tied to specific class instances and individual clients.
@@ -496,6 +514,7 @@ Post-class notes tied to specific class instances and individual clients.
 ---
 
 ## Phase 6 -- Dashboard, Notifications, and Reporting
+
 *(PENDING)*
 
 Home dashboard and basic analytics.
@@ -520,6 +539,7 @@ Home dashboard and basic analytics.
 ---
 
 ## Phase 7 -- Polish and Seed Data
+
 *(PENDING)*
 
 Final quality pass and starter content.
@@ -560,5 +580,7 @@ flowchart TD
     P5 --> P6["Phase 6: Dashboard + Reporting"]
     P6 --> P7["Phase 7: Polish + Seed Data"]
 ```
+
+
 
 Phases 3 and 4 can be built in parallel after Phase 2. Everything else is sequential.

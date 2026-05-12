@@ -75,11 +75,11 @@ Metadata fields on `Exercise` for comprehensive Pilates documentation:
 | `directionFaced` | `String?` | Direction client faces during exercise |
 | `movementType` | `String?` | Bilateral / Unilateral / Alternating |
 | `springs` | `String?` | Spring configuration (free text input, N/A for mat) |
-| `equipment` | `String[]` | Equipment/props used — **multi-select** (Ring, Band, Ball, etc.) with custom entry and "None" option |
+| `equipment` | `String[]` | Equipment/props used — **multi-select** (Ring, Band, Ball, etc.) with custom entry and "None" option; while "None" is checked, all other equipment checkboxes and the custom add row are **disabled** |
 | `machineSetup` | `String?` | Machine configuration (Footbar Up/Down/Middle, N/A) |
 | `transitionCues` | `String?` | Verbal cues for transitioning |
 | `cueing` | `String?` | Teaching cues and instructions |
-| `spinalMovement` | `String[]` | Spinal movement categories — **multi-select** with "None" clearing others |
+| `spinalMovement` | `String[]` | Spinal movement categories — **multi-select** with "None" clearing others; while "None" is checked, every other spinal-movement checkbox is **disabled** |
 | `chainType` | `String[]` | Chain classification — **multi-select**, max 2; "Both" is mutually exclusive with other options; hover tooltips on each option |
 | `jointLoading` | `String[]` | Joints bearing load — **multi-select** (Knee, Wrist, Hip Flexor) |
 | `progressionNotes` | `String?` | How to make the exercise harder (text field) |
@@ -88,8 +88,8 @@ Metadata fields on `Exercise` for comprehensive Pilates documentation:
 
 ### Multi-select behaviour
 
-- **Equipment**: checkboxes from dropdown options + custom "Add" input. Selecting "None" clears all others; selecting any other clears "None".
-- **Spinal Movement**: checkboxes from dropdown options. Same "None" mutual exclusivity as Equipment.
+- **Equipment**: checkboxes from dropdown options + custom "Add" input. Selecting "None" clears all others and **disables** all non-None checkboxes plus the custom add field/button (same muted/disabled styling pattern as Chain Type); unchecking "None" re-enables them. Selecting any other option clears "None" from the array.
+- **Spinal Movement**: checkboxes from dropdown options. Same "None" clear + **disable all other options** while "None" is selected; unchecking "None" re-enables the list.
 - **Chain Type**: checkboxes from dropdown options with smart constraints:
   - Selecting "Both" disables all other options (max 1 selection).
   - Selecting any non-Both option disables "Both"; max 2 selections total.
@@ -101,9 +101,9 @@ Metadata fields on `Exercise` for comprehensive Pilates documentation:
 ## 4. Exercise Form UI
 
 - **Springs**: full-width `Label` → helper text → text input with **N/A quick button** (same `h-12` / `rounded-2xl` styling as other inputs).
-- **Equipment**: full-width `Label` → helper text → checkboxes + custom "Add" input row (same input sizing/styling).
+- **Equipment**: full-width `Label` → helper text → checkboxes + custom "Add" input row (same input sizing/styling). With "None" selected, non-None checkboxes and custom add controls are disabled until "None" is cleared.
 - **Machine Setup**: single-select dropdown with N/A option.
-- **Movement Analysis** section: Spinal Movement (multi-select), Chain Type (multi-select with constraints + tooltips), Joint Loading (multi-select) — grouped under a heading with a separator.
+- **Movement Analysis** section: Spinal Movement (multi-select, "None" disables other options while selected), Chain Type (multi-select with constraints + tooltips), Joint Loading (multi-select) — grouped under a heading with a separator.
 - **Layers**: numbered rows with manual "Mark as finisher" toggle on the last row only.
 - **Progression / Regression**: two textarea fields after the "Easier version" progression select — "Progression notes" and "Regression notes".
 - Form sections: Basic Info → Orientation & Direction → Movement Type → Springs & Equipment → Machine Setup → Layers → Transition Cues & Cueing → Movement Analysis → Folder & Progression → Progression/Regression Notes → Tags → Images.
@@ -161,6 +161,6 @@ Metadata fields on `Exercise` for comprehensive Pilates documentation:
 | `server/src/modules/exercises/exercise.validation.ts` | `equipment`/`chainType` → arrays; added `progressionNotes`/`regressionNotes`; added `isFinisher` to layer schema |
 | `client/src/lib/types.ts` | `equipment`/`chainType` → `string[]`; added `progressionNotes`/`regressionNotes`; `ExerciseLayer.isFinisher` |
 | `client/src/services/exercise-api.ts` | `SaveExerciseBody` updated for arrays, new text fields, `ExerciseLayerInput.isFinisher` |
-| `client/src/components/exercises/exercise-form.tsx` | Equipment multi-select + custom entry; chain type multi-select with constraints + tooltips; springs N/A button; manual finisher toggle; progression/regression textareas; spinal movement "None" exclusivity; consistent Label-on-top layout |
+| `client/src/components/exercises/exercise-form.tsx` | Equipment multi-select + custom entry ("None" clears others and disables non-None checkboxes + custom add while selected); chain type multi-select with constraints + tooltips; springs N/A button; manual finisher toggle; progression/regression textareas; spinal movement "None" clears others and disables non-None checkboxes while selected; consistent Label-on-top layout |
 | `client/src/app/(dashboard)/exercises/[id]/page.tsx` | Equipment/chain type as badges; layer `isFinisher` display; progression/regression card |
 | `.cursor/rules/project.mdc` | Updated conventions for new field types, layer system, and dropdown category keys |
