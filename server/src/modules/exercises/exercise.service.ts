@@ -62,6 +62,7 @@ export async function createExercise(
         create: layers.map((l) => ({
           content: l.content,
           order: l.order,
+          isFinisher: l.isFinisher ?? false,
         })),
       },
     },
@@ -95,6 +96,7 @@ export async function updateExercise(
           create: layers.map((l) => ({
             content: l.content,
             order: l.order,
+            isFinisher: l.isFinisher ?? false,
           })),
         },
       }),

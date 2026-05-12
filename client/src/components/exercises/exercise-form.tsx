@@ -25,16 +25,25 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { X, ArrowLeft, Plus, ImagePlus, Loader2, GripVertical, Mic } from "lucide-react";
+import { X, ArrowLeft, Plus, ImagePlus, Loader2, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { useDropdownOptions } from "@/hooks/use-dropdown-options";
 import { useFancybox } from "@/hooks/use-fancybox";
 import { Separator } from "@/components/ui/separator";
-import { getLayerStepTitle, isFinisherLayerIndex } from "@/lib/exercise-layer-labels";
+import { getLayerStepTitle } from "@/lib/exercise-layer-labels";
+import { chainTypeTooltipForValue } from "@/lib/chain-type-tooltips";
 
 const MAX_IMAGES = 3;
 const EXERCISE_FORM_IMAGE_GALLERY = "exercise-form-images";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+function coerceStringArray(val: unknown): string[] {
+  if (Array.isArray(val)) return val.filter((v): v is string => typeof v === "string");
+  if (typeof val === "string" && val.trim().length > 0) return [val.trim()];
+  return [];
+}
+
+type LayerRow = { content: string; isFinisher: boolean };
 
 type ImageItem =
   | { type: "saved"; data: ExerciseImage }
@@ -82,14 +91,20 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
     exercise?.movementType ?? "none"
   );
   const [springs, setSprings] = useState(exercise?.springs ?? "");
-  const [equipment, setEquipment] = useState(exercise?.equipment ?? "none");
+  const [equipment, setEquipment] = useState<string[]>(() =>
+    coerceStringArray(exercise?.equipment)
+  );
+  const [equipmentCustomInput, setEquipmentCustomInput] = useState("");
   const [machineSetup, setMachineSetup] = useState(exercise?.machineSetup ?? "none");
-  const [layerContents, setLayerContents] = useState<string[]>(() => {
+  const [layerRows, setLayerRows] = useState<LayerRow[]>(() => {
     const layers = exercise?.layers ?? [];
-    if (layers.length === 0) return [""];
+    if (layers.length === 0) return [{ content: "", isFinisher: false }];
     return [...layers]
       .sort((a, b) => a.order - b.order)
-      .map((l) => l.content);
+      .map((l) => ({
+        content: l.content,
+        isFinisher: l.isFinisher ?? false,
+      }));
   });
   const [transitionCues, setTransitionCues] = useState(
     exercise?.transitionCues ?? ""
@@ -98,9 +113,17 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
   const [spinalMovement, setSpinalMovement] = useState<string[]>(
     exercise?.spinalMovement ?? []
   );
-  const [chainType, setChainType] = useState(exercise?.chainType ?? "none");
+  const [chainType, setChainType] = useState<string[]>(() =>
+    coerceStringArray(exercise?.chainType)
+  );
   const [jointLoading, setJointLoading] = useState<string[]>(
     exercise?.jointLoading ?? []
+  );
+  const [progressionNotes, setProgressionNotes] = useState(
+    exercise?.progressionNotes ?? ""
+  );
+  const [regressionNotes, setRegressionNotes] = useState(
+    exercise?.regressionNotes ?? ""
   );
   const [tags, setTags] = useState<string[]>(exercise?.tags ?? []);
   const [tagInput, setTagInput] = useState("");
@@ -240,17 +263,6 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
     [movementType, movementTypeDd.options, movementTypeDd.loading]
   );
 
-  const equipmentLabel = useMemo(
-    () =>
-      setupDropdownLabel(
-        equipment,
-        "Select equipment",
-        equipmentDd.options,
-        equipmentDd.loading
-      ),
-    [equipment, equipmentDd.options, equipmentDd.loading]
-  );
-
   const machineSetupLabel = useMemo(
     () =>
       setupDropdownLabel(
@@ -261,6 +273,71 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
       ),
     [machineSetup, machineSetupDd.options, machineSetupDd.loading]
   );
+
+  const noneEquipmentValue = useMemo(() => {
+    const o = equipmentDd.options.find(
+      (x) => x.label === "None" || x.value === "None" || x.value === "none"
+    );
+    return o?.value ?? "None";
+  }, [equipmentDd.options]);
+
+  const noneSpinalMovementValue = useMemo(() => {
+    const o = spinalDd.options.find(
+      (x) => x.label === "None" || x.value === "None" || x.value === "none"
+    );
+    return o?.value ?? "None";
+  }, [spinalDd.options]);
+
+  const bothChainValue = useMemo(() => {
+    const o = chainDd.options.find((x) => x.label === "Both" || x.value === "Both");
+    return o?.value ?? "Both";
+  }, [chainDd.options]);
+
+  const toggleEquipmentValue = (value: string) => {
+    setEquipment((prev) => {
+      const isNone = value === noneEquipmentValue;
+      if (isNone) {
+        if (prev.includes(value)) return [];
+        return [value];
+      }
+      const withoutNone = prev.filter((v) => v !== noneEquipmentValue);
+      if (withoutNone.includes(value)) {
+        return withoutNone.filter((v) => v !== value);
+      }
+      return [...withoutNone, value];
+    });
+  };
+
+  const addCustomEquipment = () => {
+    const raw = equipmentCustomInput.trim();
+    if (!raw) return;
+    setEquipment((prev) => {
+      const withoutNone = prev.filter((v) => v !== noneEquipmentValue);
+      if (withoutNone.includes(raw)) return withoutNone;
+      return [...withoutNone, raw];
+    });
+    setEquipmentCustomInput("");
+  };
+
+  const toggleChainTypeValue = (value: string) => {
+    setChainType((prev) => {
+      const has = prev.includes(value);
+      if (has) return prev.filter((v) => v !== value);
+      if (value === bothChainValue) return [bothChainValue];
+      if (prev.includes(bothChainValue)) return prev;
+      if (prev.length >= 2) return prev;
+      return [...prev, value];
+    });
+  };
+
+  const isChainTypeOptionDisabled = (value: string): boolean => {
+    const checked = chainType.includes(value);
+    if (checked) return false;
+    if (chainType.includes(bothChainValue) && value !== bothChainValue) return true;
+    if (value === bothChainValue && chainType.some((v) => v !== bothChainValue)) return true;
+    if (chainType.length >= 2) return true;
+    return false;
+  };
 
   const addTag = () => {
     const tag = tagInput.trim();
@@ -274,10 +351,19 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
     setTags(tags.filter((t) => t !== tag));
   };
 
-  const toggleSpinalMovement = (value: string) => {
-    setSpinalMovement((prev) =>
-      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
-    );
+  const toggleSpinalMovementValue = (value: string) => {
+    setSpinalMovement((prev) => {
+      const isNone = value === noneSpinalMovementValue;
+      if (isNone) {
+        if (prev.includes(value)) return [];
+        return [value];
+      }
+      const withoutNone = prev.filter((v) => v !== noneSpinalMovementValue);
+      if (withoutNone.includes(value)) {
+        return withoutNone.filter((v) => v !== value);
+      }
+      return [...withoutNone, value];
+    });
   };
 
   const toggleJointLoading = (value: string) => {
@@ -435,20 +521,29 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
       directionFaced: directionFaced === "none" ? null : directionFaced,
       movementType: movementType === "none" ? null : movementType,
       springs: optionalField(springs) ?? null,
-      equipment: equipment === "none" ? null : equipment,
+      equipment,
       machineSetup: machineSetup === "none" ? null : machineSetup,
       transitionCues: optionalField(transitionCues) ?? null,
       cueing: optionalField(cueing) ?? null,
       spinalMovement,
-      chainType: chainType === "none" ? null : chainType,
+      chainType,
       jointLoading,
+      progressionNotes: optionalField(progressionNotes) ?? null,
+      regressionNotes: optionalField(regressionNotes) ?? null,
       tags,
       folderId: folderId === "none" ? null : folderId,
       progressionOfId: nextProgressionOfId,
-      layers: layerContents
-        .map((c) => c.trim())
-        .filter((c) => c.length > 0)
-        .map((content, i) => ({ content, order: i })),
+      layers: (() => {
+        const trimmed = layerRows
+          .map((r) => ({ ...r, content: r.content.trim() }))
+          .filter((r) => r.content.length > 0);
+        const last = trimmed.length - 1;
+        return trimmed.map((r, i) => ({
+          content: r.content,
+          order: i,
+          isFinisher: i === last ? r.isFinisher : false,
+        }));
+      })(),
       ...(tempPublicIds.length > 0 ? { publicIds: tempPublicIds } : {}),
     };
 
@@ -679,67 +774,111 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                 </Select>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 sm:items-stretch">
-                <div className="flex min-h-0 flex-col gap-2">
-                  <Label htmlFor="springs" className="pl-1.5 text-sm font-medium text-foreground">
-                    Springs
-                  </Label>
+              <div className="space-y-2">
+                <Label htmlFor="springs" className="pl-1.5 text-sm font-medium text-foreground">
+                  Springs
+                </Label>
+                <p className="pl-1.5 text-xs text-muted-foreground">
+                  Reformer setups vary by studio. For mat work or no springs, type{" "}
+                  <span className="font-medium text-foreground">N/A</span> or use the button.
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
                   <Input
                     id="springs"
                     value={springs}
                     onChange={(e) => setSprings(e.target.value)}
-                    placeholder="e.g., Medium (2 red)"
-                    className="box-border h-12 min-h-12 w-full shrink-0 rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                    placeholder="e.g., Medium (2 red) or N/A for mat"
+                    className="box-border h-12 min-h-12 w-full min-w-0 rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 sm:flex-1"
                   />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setSprings("N/A")}
+                    className="h-12 w-full shrink-0 rounded-2xl border-input px-4 text-sm font-medium sm:w-auto sm:min-w-22"
+                  >
+                    N/A
+                  </Button>
                 </div>
-                <div className="flex min-h-0 flex-col gap-2">
-                  <Label
-                    htmlFor="exercise-equipment"
-                    className="pl-1.5 text-sm font-medium text-foreground"
-                  >
-                    Equipment Used
-                  </Label>
-                  <Select
-                    value={equipment}
-                    onValueChange={(v) => setEquipment(v ?? "none")}
-                    disabled={equipmentDd.loading && equipmentDd.options.length === 0}
-                  >
-                    <SelectTrigger
-                      id="exercise-equipment"
-                      className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
-                    >
-                      <SelectValue placeholder="Select equipment">
-                        <span
-                          className={
-                            equipment === "none" ||
-                            (equipmentDd.loading && equipmentDd.options.length === 0)
-                              ? "text-muted-foreground"
-                              : undefined
-                          }
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  id="exercise-equipment-label"
+                  className="pl-1.5 text-sm font-medium text-foreground"
+                >
+                  Equipment
+                </Label>
+                <p className="pl-1.5 text-xs text-muted-foreground">
+                  Select all that apply, or add custom props. &quot;None&quot; clears other
+                  selections.
+                </p>
+                <fieldset
+                  aria-labelledby="exercise-equipment-label"
+                  disabled={equipmentDd.loading}
+                  className="m-0 min-w-0 space-y-2 border-0 p-0"
+                >
+                  <div className="space-y-2 pl-1.5">
+                    {equipmentDd.options.map((o) => (
+                      <label
+                        key={o.id}
+                        className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
+                      >
+                        <input
+                          type="checkbox"
+                          name={`equipment-${o.value}`}
+                          checked={equipment.includes(o.value)}
+                          onChange={() => toggleEquipmentValue(o.value)}
+                          className="size-4 rounded border-input accent-primary"
+                        />
+                        {o.label}
+                      </label>
+                    ))}
+                    {equipment
+                      .filter((v) => !equipmentDd.options.some((o) => o.value === v))
+                      .map((val) => (
+                        <label
+                          key={val}
+                          className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
                         >
-                          {equipmentLabel}
-                        </span>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent
-                      align="start"
-                      sideOffset={6}
-                      className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
-                    >
-                      <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
-                        <span className="text-muted-foreground">Select equipment</span>
-                      </SelectItem>
-                      {equipmentDd.options.length > 0 && (
-                        <SelectSeparator className="mx-1 bg-border/70" />
-                      )}
-                      {equipmentDd.options.map((o) => (
-                        <SelectItem key={o.id} value={o.value} className="rounded-xl py-2.5 pl-3">
-                          {o.label}
-                        </SelectItem>
+                          <input
+                            type="checkbox"
+                            name={`equipment-custom-${val}`}
+                            checked
+                            onChange={() =>
+                              setEquipment((p) => p.filter((x) => x !== val))
+                            }
+                            className="size-4 rounded border-input accent-primary"
+                          />
+                          <span title={val}>{val}</span>
+                          <span className="text-xs text-muted-foreground">(custom)</span>
+                        </label>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                    <Input
+                      id="exercise-equipment-custom"
+                      aria-label="Custom equipment"
+                      value={equipmentCustomInput}
+                      onChange={(e) => setEquipmentCustomInput(e.target.value)}
+                      placeholder="Custom equipment…"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addCustomEquipment();
+                        }
+                      }}
+                      className="box-border h-12 min-h-12 w-full min-w-0 rounded-2xl border-input bg-background/80 px-4 py-0 text-sm leading-snug shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 sm:flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={addCustomEquipment}
+                      className="h-12 w-full shrink-0 rounded-2xl border-input px-4 text-sm font-medium sm:w-auto sm:min-w-22"
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </fieldset>
               </div>
 
               <div className="space-y-2">
@@ -800,13 +939,9 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  setLayerContents((prev) => {
-                    if (prev.length >= 3) {
-                      const next = [...prev];
-                      next.splice(prev.length - 1, 0, "");
-                      return next;
-                    }
-                    return [...prev, ""];
+                  setLayerRows((prev) => {
+                    const cleared = prev.map((r) => ({ ...r, isFinisher: false }));
+                    return [...cleared, { content: "", isFinisher: false }];
                   })
                 }
                 className="h-9 gap-1.5 rounded-full border-input px-4 text-sm font-medium"
@@ -815,63 +950,82 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                 Add Layer
               </Button>
             </div>
-            {layerContents.map((content, index) => {
-              const total = layerContents.length;
-              const stepTitle = getLayerStepTitle(index, total);
-              const finisher = isFinisherLayerIndex(index, total);
+            {layerRows.map((row, index) => {
+              const total = layerRows.length;
+              const isLast = index === total - 1;
+              const stepTitle = getLayerStepTitle(index);
+              const showFinisherStyle = isLast && row.isFinisher;
               return (
                 <div
                   key={index}
                   className={
-                    finisher
-                      ? "space-y-3"
-                      : "space-y-1.5"
+                    showFinisherStyle ? "space-y-3" : "space-y-1.5"
                   }
                 >
-                  <div className="flex items-center justify-between">
-                    {finisher ? (
-                      <span className="text-base font-semibold tracking-tight text-foreground">
-                        Finisher
-                      </span>
-                    ) : (
-                      <span className="pl-1.5 text-xs font-medium text-muted-foreground">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2 pl-1.5">
+                      <span className="text-xs font-medium text-muted-foreground">
                         {stepTitle}
                       </span>
-                    )}
-                    {layerContents.length > 1 && (
+                      {isLast && row.isFinisher && (
+                        <Badge variant="secondary" className="text-xs font-semibold">
+                          Finisher
+                        </Badge>
+                      )}
+                      {isLast && (
+                        <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            checked={row.isFinisher}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setLayerRows((prev) =>
+                                prev.map((r, i) =>
+                                  i === prev.length - 1
+                                    ? { ...r, isFinisher: checked }
+                                    : { ...r, isFinisher: false }
+                                )
+                              );
+                            }}
+                            className="size-4 rounded border-input accent-primary"
+                          />
+                          Mark as finisher
+                        </label>
+                      )}
+                    </div>
+                    {layerRows.length > 1 && (
                       <button
                         type="button"
                         onClick={() =>
-                          setLayerContents((prev) => prev.filter((_, i) => i !== index))
+                          setLayerRows((prev) => prev.filter((_, i) => i !== index))
                         }
                         className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
-                        aria-label={finisher ? "Remove finisher" : `Remove ${stepTitle}`}
+                        aria-label={`Remove ${stepTitle}`}
                       >
                         <X className="size-4" />
                       </button>
                     )}
                   </div>
                   <Textarea
-                    value={content}
+                    value={row.content}
                     onChange={(e) => {
                       const v = e.target.value;
-                      setLayerContents((prev) => {
+                      setLayerRows((prev) => {
                         const next = [...prev];
-                        next[index] = v;
+                        next[index] = { ...next[index], content: v };
                         return next;
                       });
                     }}
                     placeholder={
                       index === 0
                         ? "e.g., Press out halfway, pause, return"
-                        : finisher
+                        : showFinisherStyle
                           ? "e.g., Add finisher movement"
                           : "Build on the previous layer..."
                     }
-                    rows={finisher ? 4 : 3}
+                    rows={showFinisherStyle ? 4 : 3}
                     className="min-h-22 resize-y rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                   />
-                 
                 </div>
               );
             })}
@@ -914,7 +1068,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                 Spinal Movement
               </legend>
               <p className="mb-2 pl-1.5 text-xs text-muted-foreground">
-                Select all that apply. Leave none checked if not specified.
+                Select all that apply. &quot;None&quot; clears other selections (same as Equipment).
               </p>
               <div className="space-y-2 pl-1">
                 {spinalDd.options.map((o) => (
@@ -926,7 +1080,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                       type="checkbox"
                       name={`spinalMovement-${o.value}`}
                       checked={spinalMovement.includes(o.value)}
-                      onChange={() => toggleSpinalMovement(o.value)}
+                      onChange={() => toggleSpinalMovementValue(o.value)}
                       className="size-4 rounded border-input accent-primary"
                     />
                     {o.label}
@@ -939,32 +1093,31 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
               <legend className="mb-2 pl-1.5 text-sm font-medium text-foreground">
                 Chain Type
               </legend>
+              <p className="mb-2 pl-1.5 text-xs text-muted-foreground">
+                Up to two options, or &quot;Both&quot; alone. Hover a label for a short description.
+              </p>
               <div className="space-y-2 pl-1">
-                <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-                  <input
-                    type="radio"
-                    name="chainType"
-                    checked={chainType === "none"}
-                    onChange={() => setChainType("none")}
-                    className="size-4 accent-primary"
-                  />
-                  Not specified
-                </label>
-                {chainDd.options.map((o) => (
-                  <label
-                    key={o.id}
-                    className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
-                  >
-                    <input
-                      type="radio"
-                      name="chainType"
-                      checked={chainType === o.value}
-                      onChange={() => setChainType(o.value)}
-                      className="size-4 accent-primary"
-                    />
-                    {o.label}
-                  </label>
-                ))}
+                {chainDd.options.map((o) => {
+                  const checked = chainType.includes(o.value);
+                  const disabled = isChainTypeOptionDisabled(o.value);
+                  const tip = chainTypeTooltipForValue(o.value);
+                  return (
+                    <label
+                      key={o.id}
+                      className={`flex cursor-pointer items-center gap-2 text-sm text-foreground ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+                    >
+                      <input
+                        type="checkbox"
+                        name={`chainType-${o.value}`}
+                        checked={checked}
+                        disabled={disabled}
+                        onChange={() => toggleChainTypeValue(o.value)}
+                        className="size-4 rounded border-input accent-primary disabled:cursor-not-allowed"
+                      />
+                      <span title={tip}>{o.label}</span>
+                    </label>
+                  );
+                })}
               </div>
             </fieldset>
 
@@ -1032,7 +1185,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
             </Select>
           </div>
 
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="progression" className="pl-1.5 text-sm font-medium text-foreground">
               Easier version (progression)
             </Label>
@@ -1088,6 +1241,34 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
               Pick the movement clients do before this one. The detail page shows a
               Level 1 → 2 → 3 chain from root to harder steps.
             </p>
+          </div> */}
+
+          <div className="space-y-2">
+            <Label htmlFor="progressionNotes" className="pl-1.5 text-sm font-medium text-foreground">
+              Progression notes
+            </Label>
+            <Textarea
+              id="progressionNotes"
+              value={progressionNotes}
+              onChange={(e) => setProgressionNotes(e.target.value)}
+              placeholder="How to make this exercise harder (load, range, tempo, props…)"
+              rows={3}
+              className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="regressionNotes" className="pl-1.5 text-sm font-medium text-foreground">
+              Regression notes
+            </Label>
+            <Textarea
+              id="regressionNotes"
+              value={regressionNotes}
+              onChange={(e) => setRegressionNotes(e.target.value)}
+              placeholder="How to make this exercise easier (modifications, support, range…)"
+              rows={3}
+              className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+            />
           </div>
 
           <div className="space-y-2">

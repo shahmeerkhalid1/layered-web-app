@@ -136,14 +136,16 @@ model Exercise {
   directionFaced   String?
   movementType     String?
   springs          String?
-  equipment        String?
+  equipment        String[]  @default([])
   machineSetup     String?
   transitionCues   String?
   cueing           String?
   spinalMovement   String[]  @default([])
-  chainType        String?
+  chainType        String[]  @default([])
   jointLoading     String[]  @default([])
   tags             String[]  @default([])
+  progressionNotes String?
+  regressionNotes  String?
   folderId         String?
   instructorId     String
   progressionOfId  String?
@@ -167,6 +169,7 @@ model ExerciseLayer {
   exerciseId String
   order      Int      @default(0)
   content    String
+  isFinisher Boolean  @default(false)
   createdAt  DateTime @default(now())
 
   exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)

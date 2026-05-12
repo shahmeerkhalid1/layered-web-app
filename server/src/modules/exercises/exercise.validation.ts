@@ -3,6 +3,7 @@ import { z } from "zod";
 const layerSchema = z.object({
   content: z.string(),
   order: z.number().int().min(0).optional(),
+  isFinisher: z.boolean().default(false),
 });
 
 const layersField = z
@@ -13,6 +14,7 @@ const layersField = z
       .map((l, i) => ({
         content: l.content.trim(),
         order: l.order ?? i,
+        isFinisher: l.isFinisher ?? false,
       }))
       .filter((l) => l.content.length > 0)
   );
@@ -27,13 +29,15 @@ export const createExerciseSchema = z.object({
   directionFaced: nullableStr,
   movementType: nullableStr,
   springs: nullableStr,
-  equipment: nullableStr,
+  equipment: z.array(z.string()).default([]),
   machineSetup: nullableStr,
   transitionCues: nullableStr,
   cueing: nullableStr,
   spinalMovement: z.array(z.string()).default([]),
-  chainType: nullableStr,
+  chainType: z.array(z.string()).max(2).default([]),
   jointLoading: z.array(z.string()).default([]),
+  progressionNotes: nullableStr,
+  regressionNotes: nullableStr,
   tags: z.array(z.string()).default([]),
   folderId: z.string().optional().nullable(),
   progressionOfId: z.string().optional().nullable(),

@@ -6,26 +6,26 @@ A dynamic, ordered content-block system for building exercise instructions step 
 
 ### Database
 
-- **`ExerciseLayer`** model (`server/prisma/schema.prisma`) — stores `exerciseId`, `order`, and `content` per layer; cascades on exercise delete.
+- **`ExerciseLayer`** model (`server/prisma/schema.prisma`) — stores `exerciseId`, `order`, `content`, and `isFinisher` (boolean, default false) per layer; cascades on exercise delete.
 
 ### Backend
 
-- **Create/Update** endpoints (`POST /api/exercises`, `PATCH /api/exercises/:id`) accept an optional `layers: string[]` array.
-- Service atomically replaces layers on every save: `deleteMany` existing → `createMany` with new order indices.
+- **Create/Update** endpoints (`POST /api/exercises`, `PATCH /api/exercises/:id`) accept an optional `layers: { content, order?, isFinisher? }[]` array.
+- Service atomically replaces layers on every save: `deleteMany` existing → `createMany` with new order indices and `isFinisher` flag.
 - Layers are included in `getExerciseById` response (ordered by `order` ASC).
 
 ### Frontend — Form
 
 - Dynamic layer rows in `exercise-form.tsx`: add, remove, and edit content per layer.
+- Layer state is `{ content: string; isFinisher: boolean }[]`.
 - Layer label logic lives in `client/src/lib/exercise-layer-labels.ts`:
-  - **< 4 layers** → `Layer 1`, `Layer 2`, `Layer 3` (no Finisher).
-  - **≥ 4 layers** → last row is always **Finisher**; preceding rows are `Layer 1` … `Layer N−1`.
-  - Adding a layer when ≥ 4 inserts **before** the Finisher row.
-- Finisher row has a distinct bordered card style and a placeholder "Record Voice Note" button (shows toast — stub for future audio).
+  - `getLayerStepTitle(index)` always returns `Layer N` (no auto-finisher logic).
+- **Manual finisher toggle**: only the **last** layer row shows a "Mark as finisher" checkbox. When checked, that layer displays a "Finisher" badge. Adding a new layer always appends at the end and clears any existing finisher flag.
+- No automatic finisher assignment — instructors control it intentionally.
 
 ### Frontend — Detail Page
 
-- Exercise detail page (`exercises/[id]/page.tsx`) renders layers with the same labeling logic; Finisher styled distinctly.
+- Exercise detail page (`exercises/[id]/page.tsx`) renders layers with `layer.isFinisher` flag; finisher-marked layers get a "Finisher" badge and distinct bordered card styling.
 
 ---
 
@@ -40,16 +40,16 @@ Allows instructors to use platform-provided defaults **and** add their own custo
 
 ### Seeded Categories (8)
 
-| Key | Name | Example Defaults |
-|-----|------|------------------|
-| `orientation` | Orientation | Prone, Supine, Sitting, Standing, Side-lying, Kneeling, All Fours |
-| `direction_faced` | Direction Faced | Front-Facing, Side-Facing, Rear-Facing |
+| Key | Name | Default Options |
+|-----|------|-----------------|
+| `orientation` | Orientation | Supine, Prone, Side-Lying, Low Kneeling, High Kneeling, 4 Point Kneeling, Standing, Seated |
+| `direction_faced` | Direction Faced | Front-Facing, Reverse-Facing, Side-Facing |
 | `movement_type` | Movement Type | Bilateral, Unilateral, Alternating |
-| `equipment` | Equipment Used | Reformer, Cadillac, Chair, Barrel, Mat, Tower, Spine Corrector |
-| `machine_setup` | Machine Setup | Headrest Up/Down, Footbar High/Low, Long/Short Box |
-| `spinal_movement` | Spinal Movement | Flexion, Extension, Rotation, Lateral Flexion, Articulation |
+| `equipment` | Equipment Used | Ring, Band, Ball, Box, Dumbbells, Dell, None |
+| `machine_setup` | Machine Setup | Footbar Up, Footbar Down, Footbar Middle, N/A |
+| `spinal_movement` | Spinal Movement | Flexion, Extension, Rotation, Lateral Flexion, Articulation, Neutral, None |
 | `chain_type` | Chain Type | Open Chain, Closed Chain, Both, Lower Chain Closed, Upper Open |
-| `joint_loading` | Joint Loading | Knee Loading, Wrist Loading |
+| `joint_loading` | Joint Loading | Knee Loading, Wrist Loading, Hip Flexor Loading |
 
 ### Backend — Dropdown Module (`server/src/modules/dropdowns/`)
 
@@ -60,49 +60,80 @@ Allows instructors to use platform-provided defaults **and** add their own custo
 ### Frontend
 
 - **`dropdownApi`** (`client/src/services/dropdown-api.ts`) — typed `getOptions(key)`, `createOption(key, label)`.
-- **`useDropdownOptions(key)`** hook (`client/src/hooks/exercises/use-dropdown-options.ts`) — fetches + caches options for a category.
+- **`useDropdownOptions(key)`** hook (`client/src/hooks/use-dropdown-options.ts`) — fetches + caches options for a category.
 - Exercise form selects consume these hooks for orientation, direction faced, movement type, springs, equipment, machine setup, spinal movement, chain type, and joint loading fields.
 
 ---
 
 ## 3. Extended Exercise Fields
 
-New optional metadata fields on `Exercise` for comprehensive Pilates documentation:
+Metadata fields on `Exercise` for comprehensive Pilates documentation:
 
-| Field | Purpose |
-|-------|---------|
-| `orientation` | Body position (Supine, Prone, etc.) |
-| `directionFaced` | Direction client faces during exercise |
-| `movementType` | Bilateral / Unilateral / Alternating |
-| `springs` | Spring configuration (free text via dropdown) |
-| `equipment` | Equipment used (Reformer, Mat, etc.) |
-| `machineSetup` | Machine configuration details |
-| `transitionCues` | Verbal cues for transitioning |
-| `cueing` | Teaching cues and instructions |
-| `spinalMovement` | Spinal movement categories (`String[]`, multiselect) |
-| `chainType` | Open / Closed chain classification |
-| `jointLoading` | Joints bearing load (`String[]`, multiselect) |
+| Field | Type | Purpose |
+|-------|------|---------|
+| `orientation` | `String?` | Body position (Supine, Prone, Seated, etc.) |
+| `directionFaced` | `String?` | Direction client faces during exercise |
+| `movementType` | `String?` | Bilateral / Unilateral / Alternating |
+| `springs` | `String?` | Spring configuration (free text input, N/A for mat) |
+| `equipment` | `String[]` | Equipment/props used — **multi-select** (Ring, Band, Ball, etc.) with custom entry and "None" option |
+| `machineSetup` | `String?` | Machine configuration (Footbar Up/Down/Middle, N/A) |
+| `transitionCues` | `String?` | Verbal cues for transitioning |
+| `cueing` | `String?` | Teaching cues and instructions |
+| `spinalMovement` | `String[]` | Spinal movement categories — **multi-select** with "None" clearing others |
+| `chainType` | `String[]` | Chain classification — **multi-select**, max 2; "Both" is mutually exclusive with other options; hover tooltips on each option |
+| `jointLoading` | `String[]` | Joints bearing load — **multi-select** (Knee, Wrist, Hip Flexor) |
+| `progressionNotes` | `String?` | How to make the exercise harder (text field) |
+| `regressionNotes` | `String?` | How to make the exercise easier (text field) |
+| `progressionOfId` | `String?` | Links to an easier exercise (self-referential FK for progression chains) |
 
-Most fields are nullable strings, populated from dropdown-driven selects in the form. **`spinalMovement`** and **`jointLoading`** are `String[]` (PostgreSQL `TEXT[]`, default `[]`) supporting multiselect — the form uses checkboxes and the detail page renders selected values as badges. All fields are stored directly on the `Exercise` model and returned in API responses.
+### Multi-select behaviour
+
+- **Equipment**: checkboxes from dropdown options + custom "Add" input. Selecting "None" clears all others; selecting any other clears "None".
+- **Spinal Movement**: checkboxes from dropdown options. Same "None" mutual exclusivity as Equipment.
+- **Chain Type**: checkboxes from dropdown options with smart constraints:
+  - Selecting "Both" disables all other options (max 1 selection).
+  - Selecting any non-Both option disables "Both"; max 2 selections total.
+  - Each option shows a tooltip description on hover (from `client/src/lib/chain-type-tooltips.ts`).
+- **Joint Loading**: simple multi-select checkboxes (no special constraints).
 
 ---
 
-## 4. Exercise Form UI Enhancements
+## 4. Exercise Form UI
 
-- Removed bordered "Class setup" card wrapper — orientation, direction faced, and machine setup fields now flow naturally.
-- **Springs + Equipment row** aligned to equal height (`h-12`, `sm:items-stretch`).
-- **Select trigger values** no longer clip at the bottom — replaced `line-clamp-1` with `truncate` + `leading-snug`.
-- **Movement Analysis** section: spinal movement (multiselect checkboxes), chain type, and joint loading (multiselect checkboxes) grouped logically. Spinal movement and joint loading values displayed as badges on the detail page.
-- Form sections: Basic Info → Orientation & Setup → Springs & Equipment → Transition & Cueing → Layers → Movement Analysis → Images → Progression.
+- **Springs**: full-width `Label` → helper text → text input with **N/A quick button** (same `h-12` / `rounded-2xl` styling as other inputs).
+- **Equipment**: full-width `Label` → helper text → checkboxes + custom "Add" input row (same input sizing/styling).
+- **Machine Setup**: single-select dropdown with N/A option.
+- **Movement Analysis** section: Spinal Movement (multi-select), Chain Type (multi-select with constraints + tooltips), Joint Loading (multi-select) — grouped under a heading with a separator.
+- **Layers**: numbered rows with manual "Mark as finisher" toggle on the last row only.
+- **Progression / Regression**: two textarea fields after the "Easier version" progression select — "Progression notes" and "Regression notes".
+- Form sections: Basic Info → Orientation & Direction → Movement Type → Springs & Equipment → Machine Setup → Layers → Transition Cues & Cueing → Movement Analysis → Folder & Progression → Progression/Regression Notes → Tags → Images.
 
 ---
 
-## 5. Seed Updates
+## 5. Exercise Detail Page
+
+- **Setup** card: Orientation, Direction faced, Movement type, Springs, Machine setup as key-value pairs. **Equipment** displayed as badges (array field).
+- **Layers** card: numbered layers with `isFinisher` badge on finisher-marked layers and distinct card styling.
+- **Movement Analysis** card: Spinal Movement as badges, **Chain Type** as badges (was single text), Joint Loading as badges.
+- **Progressions & Regressions** card: shows `progressionNotes` and `regressionNotes` if present.
+- **Progression Chain Viewer**: shows exercise-to-exercise chain (Level 1 → 2 → 3) when chain has 2+ steps.
+
+---
+
+## 6. Seed Updates
 
 `server/prisma/seed.ts` now:
 1. Seeds platform settings (`signupEnabled`).
 2. Creates or promotes admin user.
-3. Seeds all 8 dropdown categories with their default global options (idempotent — skips existing).
+3. Seeds all 8 dropdown categories with updated default global options (idempotent — skips existing).
+   - Orientation: 8 options (Supine, Prone, Side-Lying, Low/High/4 Point Kneeling, Standing, Seated)
+   - Direction Faced: 3 options (Front-Facing, Reverse-Facing, Side-Facing)
+   - Equipment: 7 options (Ring, Band, Ball, Box, Dumbbells, Dell, None)
+   - Machine Setup: 4 options (Footbar Up/Down/Middle, N/A)
+   - Spinal Movement: 7 options (+ Neutral, None)
+   - Joint Loading: 3 options (+ Hip Flexor Loading)
+   - Chain Type: 5 options (unchanged)
+   - Movement Type: 3 options (unchanged)
 
 ---
 
@@ -114,20 +145,22 @@ Most fields are nullable strings, populated from dropdown-driven selects in the 
 | `server/src/modules/dropdowns/dropdown.service.ts` | Business logic for dropdown CRUD |
 | `server/src/modules/dropdowns/dropdown.validation.ts` | Zod schemas for dropdown requests |
 | `client/src/services/dropdown-api.ts` | Typed API client for dropdowns |
-| `client/src/hooks/exercises/use-dropdown-options.ts` | React hook for fetching dropdown options |
-| `client/src/lib/exercise-layer-labels.ts` | Layer title + finisher detection helpers |
+| `client/src/hooks/use-dropdown-options.ts` | React hook for fetching dropdown options |
+| `client/src/lib/exercise-layer-labels.ts` | Layer title helper (`getLayerStepTitle`) |
+| `client/src/lib/chain-type-tooltips.ts` | Chain type hover tooltip descriptions |
+| `server/prisma/migrations/20260511140000_alexa_exercise_fields/migration.sql` | Migration: equipment/chainType to arrays, add progressionNotes/regressionNotes, add isFinisher |
 
 ## Files Modified
 
 | File | Changes |
 |------|---------|
-| `server/prisma/schema.prisma` | Added `ExerciseLayer`, `DropdownCategory`, `DropdownOption` models; extended `Exercise` with new fields |
-| `server/prisma/seed.ts` | Added `seedDropdownDefaults()` for 8 categories |
+| `server/prisma/schema.prisma` | `equipment` and `chainType` → `String[]`; added `progressionNotes`, `regressionNotes` to Exercise; added `isFinisher` to ExerciseLayer |
+| `server/prisma/seed.ts` | Updated dropdown defaults for all 8 categories to match Alexa's exact taxonomy |
 | `server/src/app.ts` | Mounted `/api/dropdowns` router |
-| `server/src/modules/exercises/exercise.service.ts` | Layer create/update/include logic |
-| `server/src/modules/exercises/exercise.validation.ts` | Added `layers` array + new string fields to Zod schemas |
-| `client/src/lib/types.ts` | Extended `Exercise` type with layers + new fields |
-| `client/src/services/exercise-api.ts` | `SaveExerciseBody` includes `layers` + new fields |
-| `client/src/components/exercises/exercise-form.tsx` | Full form rebuild: layers, dropdowns, layout fixes |
-| `client/src/app/(dashboard)/exercises/[id]/page.tsx` | Detail page: layers display, new field sections |
-| `client/src/components/ui/select.tsx` | Fixed `SelectTrigger` height override + value clipping |
+| `server/src/modules/exercises/exercise.service.ts` | Layer create/update includes `isFinisher`; all new fields flow through via `...rest` |
+| `server/src/modules/exercises/exercise.validation.ts` | `equipment`/`chainType` → arrays; added `progressionNotes`/`regressionNotes`; added `isFinisher` to layer schema |
+| `client/src/lib/types.ts` | `equipment`/`chainType` → `string[]`; added `progressionNotes`/`regressionNotes`; `ExerciseLayer.isFinisher` |
+| `client/src/services/exercise-api.ts` | `SaveExerciseBody` updated for arrays, new text fields, `ExerciseLayerInput.isFinisher` |
+| `client/src/components/exercises/exercise-form.tsx` | Equipment multi-select + custom entry; chain type multi-select with constraints + tooltips; springs N/A button; manual finisher toggle; progression/regression textareas; spinal movement "None" exclusivity; consistent Label-on-top layout |
+| `client/src/app/(dashboard)/exercises/[id]/page.tsx` | Equipment/chain type as badges; layer `isFinisher` display; progression/regression card |
+| `.cursor/rules/project.mdc` | Updated conventions for new field types, layer system, and dropdown category keys |

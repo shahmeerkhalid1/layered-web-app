@@ -16,6 +16,7 @@ export type ExerciseListParams = {
 export type ExerciseLayerInput = {
   content: string;
   order?: number;
+  isFinisher?: boolean;
 };
 
 export type SaveExerciseBody = {
@@ -26,13 +27,15 @@ export type SaveExerciseBody = {
   directionFaced?: string | null;
   movementType?: string | null;
   springs?: string | null;
-  equipment?: string | null;
+  equipment?: string[];
   machineSetup?: string | null;
   transitionCues?: string | null;
   cueing?: string | null;
   spinalMovement?: string[];
-  chainType?: string | null;
+  chainType?: string[];
   jointLoading?: string[];
+  progressionNotes?: string | null;
+  regressionNotes?: string | null;
   tags?: string[];
   folderId?: string | null;
   progressionOfId?: string | null;

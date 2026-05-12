@@ -15,19 +15,20 @@ const DROPDOWN_CATEGORIES: { key: string; name: string; defaults: string[] }[] =
     key: "orientation",
     name: "Orientation",
     defaults: [
-      "Prone",
       "Supine",
-      "Sitting",
+      "Prone",
+      "Side-Lying",
+      "Low Kneeling",
+      "High Kneeling",
+      "4 Point Kneeling",
       "Standing",
-      "Side-lying",
-      "Kneeling",
-      "All Fours",
+      "Seated",
     ],
   },
   {
     key: "direction_faced",
     name: "Direction Faced",
-    defaults: ["Front-Facing", "Side-Facing", "Rear-Facing"],
+    defaults: ["Front-Facing", "Reverse-Facing", "Side-Facing"],
   },
   {
     key: "movement_type",
@@ -37,27 +38,12 @@ const DROPDOWN_CATEGORIES: { key: string; name: string; defaults: string[] }[] =
   {
     key: "equipment",
     name: "Equipment Used",
-    defaults: [
-      "Reformer",
-      "Cadillac",
-      "Chair",
-      "Barrel",
-      "Mat",
-      "Tower",
-      "Spine Corrector",
-    ],
+    defaults: ["Ring", "Band", "Ball", "Box", "Dumbbells", "Dell", "None"],
   },
   {
     key: "machine_setup",
     name: "Machine Setup",
-    defaults: [
-      "Headrest Up",
-      "Headrest Down",
-      "Footbar High",
-      "Footbar Low",
-      "Long Box",
-      "Short Box",
-    ],
+    defaults: ["Footbar Up", "Footbar Down", "Footbar Middle", "N/A"],
   },
   {
     key: "spinal_movement",
@@ -68,6 +54,8 @@ const DROPDOWN_CATEGORIES: { key: string; name: string; defaults: string[] }[] =
       "Rotation",
       "Lateral Flexion",
       "Articulation",
+      "Neutral",
+      "None",
     ],
   },
   {
@@ -84,7 +72,7 @@ const DROPDOWN_CATEGORIES: { key: string; name: string; defaults: string[] }[] =
   {
     key: "joint_loading",
     name: "Joint Loading",
-    defaults: ["Knee Loading", "Wrist Loading"],
+    defaults: ["Knee Loading", "Wrist Loading", "Hip Flexor Loading"],
   },
 ];
 

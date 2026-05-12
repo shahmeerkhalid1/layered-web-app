@@ -7,7 +7,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-const MAX_TAGS_VISIBLE = 4;
+const MAX_TAGS_VISIBLE = 3;
 
 interface ExerciseCardProps {
   exercise: Exercise;

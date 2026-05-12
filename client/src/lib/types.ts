@@ -13,6 +13,7 @@ export interface ExerciseLayer {
   exerciseId: string;
   order: number;
   content: string;
+  isFinisher?: boolean;
 }
 
 export interface ExerciseFolder {
@@ -35,13 +36,15 @@ export interface Exercise {
   directionFaced?: string | null;
   movementType?: string | null;
   springs?: string | null;
-  equipment?: string | null;
+  equipment?: string[];
   machineSetup?: string | null;
   transitionCues?: string | null;
   cueing?: string | null;
   spinalMovement?: string[];
-  chainType?: string | null;
+  chainType?: string[];
   jointLoading?: string[];
+  progressionNotes?: string | null;
+  regressionNotes?: string | null;
   tags: string[];
   folderId?: string | null;
   instructorId: string;

@@ -39,8 +39,8 @@ The repo is a monorepo with two fully functional apps:
 - **Client** ([client/src/app/(dashboard)/page.tsx](client/src/app/(dashboard)/page.tsx)): Next.js 16 App Router with dashboard layout, auth pages (login/register), Better Auth React client, sidebar + topbar shell with role-aware admin navigation. Full Exercise Library UI (list/grid views, create, edit, detail with Fancybox image lightbox, layers with Finisher styling, dropdown-driven fields, progression chain viewer). Admin pages (users, settings). Service modules: `exercise-api`, `admin-api`, `dropdown-api`. Custom hooks: `use-debounce`, `use-dropdown-options`, `use-fancybox`, and exercise-specific hooks (`use-exercise-folders`, `use-exercise-library`, `use-exercise-list`, `use-exercise-search`). Exercise components: `exercise-form`, `exercise-list`, `exercise-card`, `exercise-search`, `exercise-library-header`, `exercise-folder-sidebar`, `folder-dialog`, `progression-chain-viewer`.
 - **Auth**: Better Auth with cookie-based sessions, email/password, Prisma adapter, **admin plugin** (`defaultRole: "INSTRUCTOR"`, `adminRole: "ADMIN"`). `Instructor` model mapped as Better Auth's user with `Role` enum (`ADMIN`/`INSTRUCTOR`), ban fields, and invitation support. Session/Account/Verification tables managed by Better Auth.
 - **Admin**: `Role` and `InvitationStatus` enums, `Invitation` and `PlatformSetting` models, `requireAdmin` middleware, signup toggle (off by default, invite-only), invitation flow with token verification and auto-accept on registration, `adminClient` plugin on frontend, `isAdmin` in auth context. Admin pages: `/admin` (dashboard), `/admin/users` (user management), `/admin/settings` (platform config).
-- **Exercise Library** (Phase 1 — fully complete): Exercise CRUD with soft-delete (also cleans Cloudinary assets and ExerciseImage records), folder management, Cloudinary image uploads (hybrid temp flow: `POST /api/uploads/temp` with multer → promote on save via `extractImagePublicIds` middleware + two-phase compensation → `DELETE /api/uploads/temp/:publicId` → hourly `node-cron` cleanup of temp images older than 6 hours), image reordering (`PATCH /api/exercises/:id/images/reorder`), progression linking (chain viewer), ExerciseLayer system (dynamic layers with Finisher logic), DropdownCategory/DropdownOption system (8 seeded categories with instructor-scoped custom options), extended exercise fields (orientation, directionFaced, movementType, springs, equipment, machineSetup, transitionCues, cueing, spinalMovement (multiselect `String[]`), chainType, jointLoading (multiselect `String[]`)), Fancybox lightbox for full-size image preview on detail page, react-dropzone with drag-to-sort in exercise form.
-- **Seed**: [server/prisma/seed.ts](server/prisma/seed.ts) seeds default platform settings, promotes first user to ADMIN, and initializes 8 dropdown categories with default options. Run via `npm run seed --prefix server`.
+- **Exercise Library** (Phase 1 — fully complete): Exercise CRUD with soft-delete (also cleans Cloudinary assets and ExerciseImage records), folder management, Cloudinary image uploads (hybrid temp flow: `POST /api/uploads/temp` with multer → promote on save via `extractImagePublicIds` middleware + two-phase compensation → `DELETE /api/uploads/temp/:publicId` → hourly `node-cron` cleanup of temp images older than 6 hours), image reordering (`PATCH /api/exercises/:id/images/reorder`), progression linking (chain viewer + `progressionNotes`/`regressionNotes` text fields), ExerciseLayer system (dynamic layers with manual `isFinisher` toggle on last layer), DropdownCategory/DropdownOption system (8 seeded categories with instructor-scoped custom options), extended exercise fields (orientation, directionFaced, movementType, springs, equipment (`String[]` multiselect with custom entry + "None" exclusivity), machineSetup, transitionCues, cueing, spinalMovement (`String[]` multiselect with "None" exclusivity), chainType (`String[]` multiselect, max 2, "Both" mutual exclusivity + tooltips), jointLoading (`String[]` multiselect)), Fancybox lightbox for full-size image preview on detail page, react-dropzone with drag-to-sort in exercise form.
+- **Seed**: [server/prisma/seed.ts](server/prisma/seed.ts) seeds default platform settings, promotes first user to ADMIN, and initializes 8 dropdown categories with updated default options (orientation 8, direction 3, equipment 7, machine setup 4, spinal movement 7, chain type 5, joint loading 3, movement type 3). Run via `npm run seed --prefix server`.
 - **Key dependencies**: Server — `express`, `better-auth`, `prisma`, `cloudinary`, `multer`, `node-cron`, `zod`, `nodemailer`. Client — `next`, `react`, `better-auth`, `react-dropzone`, `@fancyapps/ui`, `sonner`, `shadcn`, `lucide-react`.
 - **Partial schema**: `ClassPlanTemplate` and `Class` models with `ClassType`/`InstanceStatus` enums exist in schema but have **no API routes, services, or UI** yet. Relations on these models are not fully wired. `PlanSection`, `PlanSectionExercise`, `ClassInstance`, `Client`, `Enrollment`, `Attendance`, `SessionNote`, `SessionNoteExercise` models are **not yet created**.
 - **Docs**: [project-scop.md](project-scop.md) defines the full MVP scope. [HYBRID_IMAGE_UPLOAD.md](HYBRID_IMAGE_UPLOAD.md) documents the image upload architecture.
@@ -146,9 +146,9 @@ The exercise library is the most self-contained domain and a dependency for clas
 
 - **1.1 -- Prisma schema: Exercise, ExerciseFolder, ExerciseImage, ExerciseLayer ✓**
   - `ExerciseFolder`: id, name, instructorId, createdAt, deletedAt
-  - `Exercise`: id, name, description, startingPosition, orientation, directionFaced, movementType, springs, equipment, machineSetup, transitionCues, cueing, spinalMovement (string[], multiselect), chainType, jointLoading (string[], multiselect), tags (string[]), folderId, instructorId, progressionOfId (self-relation), createdAt, updatedAt, deletedAt
+  - `Exercise`: id, name, description, startingPosition, orientation, directionFaced, movementType, springs, equipment (`String[]`, default `[]`), machineSetup, transitionCues, cueing, spinalMovement (`String[]`, default `[]`), chainType (`String[]`, default `[]`), jointLoading (`String[]`, default `[]`), tags (`String[]`, default `[]`), progressionNotes, regressionNotes, folderId, instructorId, progressionOfId (self-relation), createdAt, updatedAt, deletedAt
   - `ExerciseImage`: id, exerciseId, url, publicId, order
-  - `ExerciseLayer`: id, exerciseId, order, content, createdAt
+  - `ExerciseLayer`: id, exerciseId, order, content, isFinisher (boolean, default false), createdAt
   - Migrated
 - **1.2 -- Exercise CRUD API ✓**
   - `POST/GET /api/exercises`, `GET/PATCH/DELETE /api/exercises/:id`
@@ -181,17 +181,23 @@ The exercise library is the most self-contained domain and a dependency for clas
   - 8 seeded categories: orientation, directionFaced, movementType, springs, equipment, spinalMovement, chainType, jointLoading
   - Frontend `useDropdownOptions(key)` hook with cache; `dropdownApi` service module
 - **1.7 -- Extended Exercise Fields ✓**
-  - 11 new optional fields on Exercise model (orientation through jointLoading); `spinalMovement` and `jointLoading` are `String[]` (multiselect arrays, default `[]`) while the rest are optional single strings
-  - Dropdown-driven selects in ExerciseForm for most fields; `spinalMovement` and `jointLoading` use checkboxes for multiselect
-  - Displayed on exercise detail page in organized sections (Setup card, Movement Analysis card); spinal movement and joint loading values rendered as badges
+  - Optional metadata fields on Exercise: orientation, directionFaced, movementType, springs, machineSetup, transitionCues, cueing (all `String?`); equipment, spinalMovement, chainType, jointLoading (all `String[]`, default `[]`); progressionNotes, regressionNotes (`String?`)
+  - Dropdown-driven selects for single-value fields; multi-select checkboxes for array fields:
+    - **Equipment**: checkboxes + custom "Add" input; "None" clears others
+    - **Spinal Movement**: checkboxes; "None" clears others
+    - **Chain Type**: checkboxes; "Both" mutually exclusive with others; max 2 selections; tooltips on hover (`chain-type-tooltips.ts`)
+    - **Joint Loading**: simple multi-select checkboxes
+  - **Springs**: text input with N/A quick button
+  - Displayed on detail page: Setup card (single fields + equipment badges), Movement Analysis card (spinal movement / chain type / joint loading badges), Progressions & Regressions card (notes)
 - **1.8 -- Exercise Layer System ✓**
-  - `ExerciseLayer` model with ordered content blocks
-  - Create/update endpoints accept `layers: { content, order }[]` — service replaces atomically via deleteMany + createMany
-  - Form renders dynamic layer rows (add/remove) with Finisher logic:
-    - <3 layers → Layer 1, Layer 2 only (no Finisher)
-    - ≥3 layers → last row is always Finisher; preceding rows are Layer 1, Layer 2, Layer 3…
-    - Add Layer inserts before the finisher when ≥3 layers
-  - Detail page displays layers with same Finisher styling (`getLayerStepTitle`, `isFinisherLayerIndex` from `exercise-layer-labels.ts`)
+  - `ExerciseLayer` model with ordered content blocks and explicit `isFinisher` boolean
+  - Create/update endpoints accept `layers: { content, order?, isFinisher? }[]` — service replaces atomically via deleteMany + createMany
+  - Form renders dynamic layer rows (add/remove) numbered sequentially (`Layer 1`, `Layer 2`, …):
+    - Only the **last** layer shows a "Mark as finisher" checkbox
+    - No automatic finisher assignment — instructors opt-in intentionally
+    - Adding a new layer always appends at the end
+  - Detail page displays layers with `isFinisher` flag; finisher-marked layers get a "Finisher" badge and distinct card styling
+  - Layer labels from `exercise-layer-labels.ts` (`getLayerStepTitle` returns "Layer N" only)
 
 ---
 

@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Pencil, Trash2, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
-import { getLayerStepTitle, isFinisherLayerIndex } from "@/lib/exercise-layer-labels";
+import { getLayerStepTitle } from "@/lib/exercise-layer-labels";
 import { useFancybox } from "@/hooks/use-fancybox";
 
 const EXERCISE_DETAIL_IMAGE_GALLERY = "exercise-detail-images";
@@ -76,9 +76,16 @@ export default function ExerciseDetailPage() {
     { label: "Direction faced", value: exercise.directionFaced },
     { label: "Movement type", value: exercise.movementType },
     { label: "Springs", value: exercise.springs },
-    { label: "Equipment", value: exercise.equipment },
     { label: "Machine setup", value: exercise.machineSetup },
   ].filter((r) => r.value != null && String(r.value).trim() !== "");
+
+  const equipmentItems = (exercise.equipment ?? []).filter(
+    (s) => s != null && String(s).trim() !== ""
+  );
+
+  const chainTypeItems = (exercise.chainType ?? []).filter(
+    (s) => s != null && String(s).trim() !== ""
+  );
 
   const spinalItems = (exercise.spinalMovement ?? []).filter(
     (s) => s != null && String(s).trim() !== ""
@@ -88,14 +95,15 @@ export default function ExerciseDetailPage() {
     (s) => s != null && String(s).trim() !== ""
   );
 
-  const movementRows = [{ label: "Chain type", value: exercise.chainType }].filter(
-    (r) => r.value != null && String(r.value).trim() !== ""
-  );
-
   const showMovementAnalysis =
     spinalItems.length > 0 ||
     jointLoadingItems.length > 0 ||
-    movementRows.length > 0;
+    chainTypeItems.length > 0;
+
+  const showProgressionRegression =
+    (exercise.progressionNotes != null &&
+      String(exercise.progressionNotes).trim() !== "") ||
+    (exercise.regressionNotes != null && String(exercise.regressionNotes).trim() !== "");
 
   return (
     <div className="space-y-6">
@@ -181,18 +189,34 @@ export default function ExerciseDetailPage() {
             </Card>
           )}
 
-          {setupRows.length > 0 && (
+          {(setupRows.length > 0 || equipmentItems.length > 0) && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Setup</CardTitle>
               </CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-2">
-                {setupRows.map((row) => (
-                  <div key={row.label}>
-                    <p className="text-xs font-medium text-muted-foreground">{row.label}</p>
-                    <p className="text-sm text-foreground">{row.value}</p>
+              <CardContent className="space-y-4">
+                {setupRows.length > 0 && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {setupRows.map((row) => (
+                      <div key={row.label}>
+                        <p className="text-xs font-medium text-muted-foreground">{row.label}</p>
+                        <p className="text-sm text-foreground">{row.value}</p>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
+                {equipmentItems.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Equipment</p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {equipmentItems.map((value, i) => (
+                        <Badge key={`eq-${value}-${i}`} variant="secondary">
+                          {value}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -206,8 +230,9 @@ export default function ExerciseDetailPage() {
                 <ul className="space-y-4">
                   {sortedLayers.map((layer, index) => {
                     const total = sortedLayers.length;
-                    const title = getLayerStepTitle(index, total);
-                    const finisher = isFinisherLayerIndex(index, total);
+                    const title = getLayerStepTitle(index);
+                    const isLast = index === total - 1;
+                    const finisher = Boolean(layer.isFinisher && isLast);
                     return (
                       <li
                         key={layer.id}
@@ -217,17 +242,22 @@ export default function ExerciseDetailPage() {
                             : "border-b border-border/60 pb-4 last:border-0 last:pb-0"
                         }
                       >
-                        {finisher ? (
-                          <div className="mb-3 flex items-center justify-between">
-                            <span className="text-base font-semibold text-foreground">
-                              Finisher
-                            </span>
-                          </div>
-                        ) : (
+                        <div
+                          className={
+                            finisher
+                              ? "mb-3 flex flex-wrap items-center gap-2"
+                              : "mb-1.5 flex flex-wrap items-center gap-2"
+                          }
+                        >
                           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             {title}
                           </p>
-                        )}
+                          {finisher && (
+                            <Badge variant="secondary" className="text-xs font-semibold">
+                              Finisher
+                            </Badge>
+                          )}
+                        </div>
                         <p
                           className={
                             finisher
@@ -237,11 +267,38 @@ export default function ExerciseDetailPage() {
                         >
                           {layer.content}
                         </p>
-                        
                       </li>
                     );
                   })}
                 </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {showProgressionRegression && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Progressions & regressions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {exercise.progressionNotes != null &&
+                  String(exercise.progressionNotes).trim() !== "" && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Progression</p>
+                      <p className="mt-1.5 whitespace-pre-wrap text-sm text-foreground">
+                        {exercise.progressionNotes}
+                      </p>
+                    </div>
+                  )}
+                {exercise.regressionNotes != null &&
+                  String(exercise.regressionNotes).trim() !== "" && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Regression</p>
+                      <p className="mt-1.5 whitespace-pre-wrap text-sm text-foreground">
+                        {exercise.regressionNotes}
+                      </p>
+                    </div>
+                  )}
               </CardContent>
             </Card>
           )}
@@ -298,12 +355,18 @@ export default function ExerciseDetailPage() {
                     </div>
                   </div>
                 )}
-                {movementRows.map((row) => (
-                  <div key={row.label}>
-                    <p className="text-xs font-medium text-muted-foreground">{row.label}</p>
-                    <p className="text-sm text-foreground">{row.value}</p>
+                {chainTypeItems.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Chain type</p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {chainTypeItems.map((value, i) => (
+                        <Badge key={`chain-${value}-${i}`} variant="secondary">
+                          {value}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
           )}
