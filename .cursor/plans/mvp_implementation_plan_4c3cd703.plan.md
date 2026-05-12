@@ -12,7 +12,7 @@ todos:
     content: "Phase 2: Class Plan Templates -- ClassPlanFolder + new ClassPlanTemplate fields (classType, classStyle, durationMinutes, folderId, tags) + PlanSection + PlanSectionExercise schema, Exercise.savedToLibrary field, seed classType/classStyle dropdowns, template CRUD with nested sections/exercises, planner builder UI with drag-and-drop, exercise picker (library + create-new flows), quick-schedule button on template card (Flow 2 entry point from Class Plans page) (tasks 2.1 -- 2.3)"
     status: in_progress
   - id: phase-3-calendar
-    content: "Phase 3: Calendar and Scheduling -- Class + ClassInstance schema (templateId, isCustomised, rating scaffold), scheduling API (one-off + recurring), copy-on-use template assignment, quick-schedule endpoint (Flow 2), calendar UI, week overview, recurring class management (tasks 3.1 -- 3.5)"
+    content: "Phase 3: Calendar and Scheduling -- Class + ClassInstance schema (templateId, isCustomised, denormalized classType/classStyle, rating scaffold), scheduling API (one-off + recurring), copy-on-use template assignment, quick-schedule endpoint (Flow 2), calendar UI, week overview, recurring class management (tasks 3.1 -- 3.5)"
     status: pending
   - id: phase-4-clients
     content: "Phase 4: Client Management -- Client/Enrollment/Attendance schema, CRUD API, enrollment and attendance APIs, client profile and attendance UI (tasks 4.1 -- 4.4)"
@@ -74,16 +74,19 @@ classStyle      String?          // "beginner" | "intermediate" | "advanced" | "
                                  // | "hiit" | "restorative" | "jumpboard" | "classical_pilates"
 durationMinutes Int?             // default 60
 folderId        String?          // → ClassPlanFolder
-rating          String?          // NOT MVP — post-class reflection scaffold only
 tags            String[]         @default([])
                                  // preset tags: "Easy Teach", "Moderate", "Challenging" + custom
 ```
+> **Note**: `rating` removed from template — rating is a post-class reflection and belongs exclusively on `ClassInstance`.
 
 ### Update `ClassInstance` — add confirmed fields
 Confirmed: rating = post-class reflection (NOT MVP). isCustomised tracks edits from template.
+Denormalized `classType`/`classStyle` copied from template on scheduling — enables filtering/displaying scheduled classes by equipment type on Calendar without joining back to the template.
 ```prisma
 templateId      String?          // reference to which template was copied from
 isCustomised    Boolean          @default(false)
+classType       String?          // denormalized from template — "reformer" | "mat" | etc.
+classStyle      String?          // denormalized from template — "beginner" | "advanced" | etc.
 // NOT MVP — scaffold only, no UI:
 rating          Int?
 reflectionNotes String?
@@ -285,7 +288,7 @@ Reusable plan structures with folders, sections, and exercise sequencing — con
 
 - **2.1 -- Prisma schema: ClassPlanFolder, PlanSection, PlanSectionExercise + update ClassPlanTemplate + Exercise**
   - Add `ClassPlanFolder` model (id, name, instructorId, createdAt, deletedAt)
-  - Add to `ClassPlanTemplate`: classType (`String?`), classStyle (`String?`), durationMinutes (`Int?`), folderId (`String?`), rating (`String?` — scaffold only, NOT MVP), tags (`String[]`, default `[]`)
+  - Add to `ClassPlanTemplate`: classType (`String?`), classStyle (`String?`), durationMinutes (`Int?`), folderId (`String?`), tags (`String[]`, default `[]`) — no `rating` on template (rating belongs on `ClassInstance` only)
   - Add relations: `ClassPlanTemplate` → `ClassPlanFolder`, `ClassPlanTemplate` → `PlanSection[]`, `ClassPlanFolder` → `ClassPlanTemplate[]`
   - Add `ClassPlanFolder[]` back-relation to `Instructor`
   - `PlanSection`: id, name (e.g. "Warm-up"), order, templateId (`String?`), classInstanceId (`String?`), createdAt
@@ -339,7 +342,6 @@ Reusable plan structures with folders, sections, and exercise sequencing — con
       - Duration mins (default 60)
       - Folder dropdown ("No Folder" default)
       - Tags (presets: Easy Teach, Moderate, Challenging + custom input)
-      - Rating — hidden for MVP
     - Template cards show: name, classType, classStyle, duration, tags, section count, action buttons:
       - **"View / Edit"** → goes to `/class-plans/:id` planner page
       - **"Schedule"** → opens quick-schedule dialog (Flow 2 — primary entry point from Class Plans page):
@@ -396,7 +398,7 @@ Scheduling engine for one-off and recurring classes, plus the calendar UI. Two c
 > **Status**: `Class` model with `ClassType` and `InstanceStatus` enums exist in schema but relations are incomplete. `ClassInstance` model (with confirmed new fields), API routes, services, and UI are **not yet built**.
 
 - **3.1 -- Prisma schema: ClassInstance + update Class**
-  - `ClassInstance`: id, classId, date, time (`DateTime @db.Timestamptz()`), status (SCHEDULED/COMPLETED/CANCELLED), instructorId, templateId (`String?` — reference only, not live sync), isCustomised (`Boolean @default(false)`), rating (`Int?` — NOT MVP scaffold), reflectionNotes (`String?` — NOT MVP scaffold), reviewedAt (`DateTime?` — NOT MVP scaffold), createdAt, deletedAt
+  - `ClassInstance`: id, classId, date, time (`DateTime @db.Timestamptz()`), status (SCHEDULED/COMPLETED/CANCELLED), instructorId, templateId (`String?` — reference only, not live sync), isCustomised (`Boolean @default(false)`), classType (`String?` — denormalized from template), classStyle (`String?` — denormalized from template), rating (`Int?` — NOT MVP scaffold), reflectionNotes (`String?` — NOT MVP scaffold), reviewedAt (`DateTime?` — NOT MVP scaffold), createdAt, deletedAt
   - Wire all relations: `Class` → `ClassInstance[]`, `ClassInstance` → `PlanSection[]`, `ClassInstance` → `Attendance[]`, `ClassInstance` → `SessionNote[]`
   - Add `ClassInstance[]` back-relation to `Instructor`
   - Migrate

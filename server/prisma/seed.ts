@@ -74,6 +74,25 @@ const DROPDOWN_CATEGORIES: { key: string; name: string; defaults: string[] }[] =
     name: "Joint Loading",
     defaults: ["Knee Loading", "Wrist Loading", "Hip Flexor Loading"],
   },
+  {
+    key: "class_type",
+    name: "Class Type",
+    defaults: ["Reformer", "Mat", "Chair", "Cadillac", "Barrel"],
+  },
+  {
+    key: "class_style",
+    name: "Class Style",
+    defaults: [
+      "Beginner",
+      "Intermediate",
+      "Advanced",
+      "Pre/Post Natal",
+      "HIIT",
+      "Restorative",
+      "JumpBoard",
+      "Classical Pilates",
+    ],
+  },
 ];
 
 async function seedDropdownDefaults() {

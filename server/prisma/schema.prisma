@@ -39,9 +39,11 @@ model Instructor {
   accounts     Account[]
   invitations  Invitation[] @relation("InvitedBy")
 
-  exercises       Exercise[]
-  exerciseFolders ExerciseFolder[]
-  dropdownOptions DropdownOption[]
+  exercises          Exercise[]
+  exerciseFolders    ExerciseFolder[]
+  dropdownOptions    DropdownOption[]
+  classPlanFolders   ClassPlanFolder[]
+  classPlanTemplates ClassPlanTemplate[]
 }
 
 model Session {
@@ -149,16 +151,18 @@ model Exercise {
   folderId         String?
   instructorId     String
   progressionOfId  String?
+  savedToLibrary   Boolean   @default(true)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   deletedAt        DateTime?
 
-  instructor    Instructor      @relation(fields: [instructorId], references: [id])
-  folder        ExerciseFolder? @relation(fields: [folderId], references: [id])
-  progressionOf Exercise?       @relation("ExerciseProgression", fields: [progressionOfId], references: [id])
-  progressions  Exercise[]      @relation("ExerciseProgression")
-  images        ExerciseImage[]
-  layers        ExerciseLayer[]
+  instructor           Instructor              @relation(fields: [instructorId], references: [id])
+  folder               ExerciseFolder?         @relation(fields: [folderId], references: [id])
+  progressionOf        Exercise?               @relation("ExerciseProgression", fields: [progressionOfId], references: [id])
+  progressions         Exercise[]              @relation("ExerciseProgression")
+  images               ExerciseImage[]
+  layers               ExerciseLayer[]
+  planSectionExercises PlanSectionExercise[]
 
   @@index([instructorId])
   @@index([folderId])
@@ -216,16 +220,69 @@ model ExerciseImage {
 
 // ─── Class Plan Templates ────────────────────────────────────────────────────
 
-model ClassPlanTemplate {
+model ClassPlanFolder {
   id           String    @id @default(cuid())
   name         String
   instructorId String
   createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
+  instructor Instructor          @relation(fields: [instructorId], references: [id])
+  templates  ClassPlanTemplate[]
 
   @@index([instructorId])
+}
+
+model ClassPlanTemplate {
+  id              String    @id @default(cuid())
+  name            String
+  classType       String?
+  classStyle      String?
+  durationMinutes Int?
+  folderId        String?
+  tags            String[]  @default([])
+  instructorId    String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  instructor Instructor        @relation(fields: [instructorId], references: [id])
+  folder     ClassPlanFolder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  sections   PlanSection[]
+
+  @@index([instructorId])
+  @@index([folderId])
+}
+
+model PlanSection {
+  id              String   @id @default(cuid())
+  name            String
+  order           Int      @default(0)
+  templateId      String?
+  classInstanceId String?
+  createdAt       DateTime @default(now())
+
+  template  ClassPlanTemplate?    @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  exercises PlanSectionExercise[]
+
+  @@index([templateId])
+  @@index([classInstanceId])
+}
+
+model PlanSectionExercise {
+  id         String  @id @default(cuid())
+  sectionId  String
+  exerciseId String
+  order      Int     @default(0)
+  reps       String?
+  duration   String?
+  notes      String?
+
+  section  PlanSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  exercise Exercise    @relation(fields: [exerciseId], references: [id])
+
+  @@index([sectionId])
+  @@index([exerciseId])
 }
 
 // ─── Calendar & Scheduling ───────────────────────────────────────────────────
