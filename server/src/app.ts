@@ -11,6 +11,7 @@ import * as adminService from "./modules/admin/service";
 import exerciseRoutes from "./modules/exercises/exercise.routes";
 import folderRoutes from "./modules/exercises/folder.routes";
 import classPlanFolderRoutes from "./modules/class-plans/class-plan-folder.routes";
+import classPlanRoutes from "./modules/class-plans/class-plan.routes";
 import uploadRoutes from "./modules/uploads/upload.routes";
 import dropdownRoutes from "./modules/dropdowns/dropdown.routes";
 
@@ -55,6 +56,7 @@ app.use("/api/uploads", authenticate, uploadRoutes);
 app.use("/api/exercises", exerciseRoutes);
 app.use("/api/exercise-folders", folderRoutes);
 app.use("/api/class-plan-folders", classPlanFolderRoutes);
+app.use("/api/class-plans", classPlanRoutes);
 app.use("/api/dropdowns", authenticate, dropdownRoutes);
 app.use(errorHandler);
 
