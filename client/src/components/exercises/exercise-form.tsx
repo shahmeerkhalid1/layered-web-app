@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useForm, useFieldArray, Controller, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useDropzone, type FileRejection } from "react-dropzone";
 import { exerciseApi } from "@/services/exercise-api";
@@ -32,18 +34,15 @@ import { useFancybox } from "@/hooks/use-fancybox";
 import { Separator } from "@/components/ui/separator";
 import { getLayerStepTitle } from "@/lib/exercise-layer-labels";
 import { chainTypeTooltipForValue } from "@/lib/chain-type-tooltips";
+import {
+  buildExerciseFormDefaults,
+  exerciseFormSchema,
+  type ExerciseFormValues,
+} from "@/lib/validation/exercise-form-schema";
 
 const MAX_IMAGES = 3;
 const EXERCISE_FORM_IMAGE_GALLERY = "exercise-form-images";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-function coerceStringArray(val: unknown): string[] {
-  if (Array.isArray(val)) return val.filter((v): v is string => typeof v === "string");
-  if (typeof val === "string" && val.trim().length > 0) return [val.trim()];
-  return [];
-}
-
-type LayerRow = { content: string; isFinisher: boolean };
 
 type ImageItem =
   | { type: "saved"; data: ExerciseImage }
@@ -78,67 +77,67 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
   const router = useRouter();
   const isEdit = !!exercise;
 
-  const [name, setName] = useState(exercise?.name ?? "");
-  const [description, setDescription] = useState(exercise?.description ?? "");
-  const [startingPosition, setStartingPosition] = useState(
-    exercise?.startingPosition ?? ""
-  );
-  const [orientation, setOrientation] = useState(exercise?.orientation ?? "none");
-  const [directionFaced, setDirectionFaced] = useState(
-    exercise?.directionFaced ?? "none"
-  );
-  const [movementType, setMovementType] = useState(
-    exercise?.movementType ?? "none"
-  );
-  const [springs, setSprings] = useState(exercise?.springs ?? "");
-  const [equipment, setEquipment] = useState<string[]>(() =>
-    coerceStringArray(exercise?.equipment)
-  );
-  const [equipmentCustomInput, setEquipmentCustomInput] = useState("");
-  const [machineSetup, setMachineSetup] = useState(exercise?.machineSetup ?? "none");
-  const [layerRows, setLayerRows] = useState<LayerRow[]>(() => {
-    const layers = exercise?.layers ?? [];
-    if (layers.length === 0) return [{ content: "", isFinisher: false }];
-    return [...layers]
-      .sort((a, b) => a.order - b.order)
-      .map((l) => ({
-        content: l.content,
-        isFinisher: l.isFinisher ?? false,
-      }));
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    getValues,
+    formState: { errors, isSubmitting },
+  } = useForm<ExerciseFormValues>({
+    resolver: zodResolver(exerciseFormSchema),
+    defaultValues: buildExerciseFormDefaults(exercise),
   });
-  const [transitionCues, setTransitionCues] = useState(
-    exercise?.transitionCues ?? ""
-  );
-  const [cueing, setCueing] = useState(exercise?.cueing ?? "");
-  const [spinalMovement, setSpinalMovement] = useState<string[]>(
-    exercise?.spinalMovement ?? []
-  );
-  const [chainType, setChainType] = useState<string[]>(() =>
-    coerceStringArray(exercise?.chainType)
-  );
-  const [jointLoading, setJointLoading] = useState<string[]>(
-    exercise?.jointLoading ?? []
-  );
-  const [progressionNotes, setProgressionNotes] = useState(
-    exercise?.progressionNotes ?? ""
-  );
-  const [regressionNotes, setRegressionNotes] = useState(
-    exercise?.regressionNotes ?? ""
-  );
 
-  const [tags, setTags] = useState<string[]>(exercise?.tags ?? []);
+  useEffect(() => {
+    reset(buildExerciseFormDefaults(exercise));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when switching exercises by id only; avoid wiping edits on parent re-renders
+  }, [exercise?.id, reset]);
+
+  const { fields: layerFields, append, remove, update } = useFieldArray({
+    control,
+    name: "layers",
+  });
+
+  const [
+    wName,
+    wOrientation,
+    wDirectionFaced,
+    wMovementType,
+    wMachineSetup,
+    wFolderId,
+    wEquipment,
+    wSpinalMovement,
+    wChainType,
+    wJointLoading,
+  ] = useWatch({
+    control,
+    name: [
+      "name",
+      "orientation",
+      "directionFaced",
+      "movementType",
+      "machineSetup",
+      "folderId",
+      "equipment",
+      "spinalMovement",
+      "chainType",
+      "jointLoading",
+    ],
+  });
+
+  const wTags = useWatch({ control, name: "tags" }) ?? [];
+
+  const layersWatch = useWatch({ control, name: "layers" }) ?? [];
+
+  const [equipmentCustomInput, setEquipmentCustomInput] = useState("");
   const [tagInput, setTagInput] = useState("");
-  const [folderId, setFolderId] = useState<string>(exercise?.folderId ?? "none");
-  const [progressionOfId, setProgressionOfId] = useState<string>(
-    exercise?.progressionOfId ?? "none"
-  );
   const [folders, setFolders] = useState<ExerciseFolder[]>([]);
-  const [allExercises, setAllExercises] = useState<Exercise[]>([]);
   /** Edit only: cannot pick self or a harder step in the same chain (would cycle). */
   const [blockedParentIds, setBlockedParentIds] = useState<Set<string>>(() =>
     exercise?.id ? new Set([exercise.id]) : new Set()
   );
-  const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const [images, setImages] = useState<ImageItem[]>(() => {
@@ -172,7 +171,6 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
       .getFolders()
       .then((data) => setFolders(data.folders))
       .catch(() => {});
-    exerciseApi.getExercises().then(setAllExercises).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -195,84 +193,56 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
   }, [exercise?.id]);
 
   const folderTriggerLabel = useMemo(() => {
+    const folderId = wFolderId ?? "none";
     if (folderId === "none") return "No folder";
     const fromList = folders.find((f) => f.id === folderId);
     if (fromList) return fromList.name;
     if (exercise?.folder?.id === folderId) return exercise.folder.name;
     return "No folder";
-  }, [folderId, folders, exercise?.folder?.id, exercise?.folder?.name]);
-
-  const progressionParentOptions = useMemo(() => {
-    return allExercises
-      .filter((ex) => !blockedParentIds.has(ex.id))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [allExercises, blockedParentIds]);
-
-  const progressionTriggerLabel = useMemo(() => {
-    if (progressionOfId === "none") return "None — root level";
-    const ex = allExercises.find((e) => e.id === progressionOfId);
-    if (ex) return ex.name;
-    if (exercise?.progressionOf?.id === progressionOfId) {
-      return exercise.progressionOf.name;
-    }
-    return "Unknown exercise";
-  }, [progressionOfId, allExercises, exercise]);
-
-  const orphanProgressionParent = useMemo(() => {
-    if (
-      progressionOfId === "none" ||
-      allExercises.some((e) => e.id === progressionOfId)
-    ) {
-      return null;
-    }
-    return {
-      id: progressionOfId,
-      name: exercise?.progressionOf?.name ?? null,
-    };
-  }, [progressionOfId, allExercises, exercise]);
+  }, [wFolderId, folders, exercise?.folder?.id, exercise?.folder?.name]);
 
   const orientationLabel = useMemo(
     () =>
       setupDropdownLabel(
-        orientation,
+        wOrientation ?? "none",
         "Select orientation",
         orientationDd.options,
         orientationDd.loading
       ),
-    [orientation, orientationDd.options, orientationDd.loading]
+    [wOrientation, orientationDd.options, orientationDd.loading]
   );
 
   const directionLabel = useMemo(
     () =>
       setupDropdownLabel(
-        directionFaced,
+        wDirectionFaced ?? "none",
         "Select direction",
         directionDd.options,
         directionDd.loading
       ),
-    [directionFaced, directionDd.options, directionDd.loading]
+    [wDirectionFaced, directionDd.options, directionDd.loading]
   );
 
   const movementTypeLabel = useMemo(
     () =>
       setupDropdownLabel(
-        movementType,
+        wMovementType ?? "none",
         "Select movement type",
         movementTypeDd.options,
         movementTypeDd.loading
       ),
-    [movementType, movementTypeDd.options, movementTypeDd.loading]
+    [wMovementType, movementTypeDd.options, movementTypeDd.loading]
   );
 
   const machineSetupLabel = useMemo(
     () =>
       setupDropdownLabel(
-        machineSetup,
+        wMachineSetup ?? "none",
         "Select setup",
         machineSetupDd.options,
         machineSetupDd.loading
       ),
-    [machineSetup, machineSetupDd.options, machineSetupDd.loading]
+    [wMachineSetup, machineSetupDd.options, machineSetupDd.loading]
   );
 
   const noneEquipmentValue = useMemo(() => {
@@ -295,48 +265,64 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
   }, [chainDd.options]);
 
   const toggleEquipmentValue = (value: string) => {
-    setEquipment((prev) => {
-      const isNone = value === noneEquipmentValue;
-      if (isNone) {
-        if (prev.includes(value)) return [];
-        return [value];
-      }
-      const withoutNone = prev.filter((v) => v !== noneEquipmentValue);
-      if (withoutNone.includes(value)) {
-        return withoutNone.filter((v) => v !== value);
-      }
-      return [...withoutNone, value];
-    });
+    const equipment = getValues("equipment");
+    setValue(
+      "equipment",
+      (() => {
+        const isNone = value === noneEquipmentValue;
+        if (isNone) {
+          if (equipment.includes(value)) return [];
+          return [value];
+        }
+        const withoutNone = equipment.filter((v) => v !== noneEquipmentValue);
+        if (withoutNone.includes(value)) {
+          return withoutNone.filter((v) => v !== value);
+        }
+        return [...withoutNone, value];
+      })(),
+      { shouldDirty: true, shouldValidate: true }
+    );
   };
 
   const isEquipmentOptionDisabled = (value: string): boolean => {
     if (value === noneEquipmentValue) return false;
-    return equipment.includes(noneEquipmentValue);
+    return (wEquipment ?? []).includes(noneEquipmentValue);
   };
 
   const addCustomEquipment = () => {
     const raw = equipmentCustomInput.trim();
     if (!raw) return;
-    setEquipment((prev) => {
-      const withoutNone = prev.filter((v) => v !== noneEquipmentValue);
-      if (withoutNone.includes(raw)) return withoutNone;
-      return [...withoutNone, raw];
-    });
+    const equipment = getValues("equipment");
+    setValue(
+      "equipment",
+      (() => {
+        const withoutNone = equipment.filter((v) => v !== noneEquipmentValue);
+        if (withoutNone.includes(raw)) return withoutNone;
+        return [...withoutNone, raw];
+      })(),
+      { shouldDirty: true, shouldValidate: true }
+    );
     setEquipmentCustomInput("");
   };
 
   const toggleChainTypeValue = (value: string) => {
-    setChainType((prev) => {
-      const has = prev.includes(value);
-      if (has) return prev.filter((v) => v !== value);
-      if (value === bothChainValue) return [bothChainValue];
-      if (prev.includes(bothChainValue)) return prev;
-      if (prev.length >= 2) return prev;
-      return [...prev, value];
-    });
+    const chainType = getValues("chainType");
+    setValue(
+      "chainType",
+      (() => {
+        const has = chainType.includes(value);
+        if (has) return chainType.filter((v) => v !== value);
+        if (value === bothChainValue) return [bothChainValue];
+        if (chainType.includes(bothChainValue)) return chainType;
+        if (chainType.length >= 2) return chainType;
+        return [...chainType, value];
+      })(),
+      { shouldDirty: true, shouldValidate: true }
+    );
   };
 
   const isChainTypeOptionDisabled = (value: string): boolean => {
+    const chainType = wChainType ?? [];
     const checked = chainType.includes(value);
     if (checked) return false;
     if (chainType.includes(bothChainValue) && value !== bothChainValue) return true;
@@ -347,39 +333,51 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
 
   const addTag = () => {
     const tag = tagInput.trim();
+    const tags = getValues("tags");
     if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag]);
+      setValue("tags", [...tags, tag], { shouldDirty: true, shouldValidate: true });
     }
     setTagInput("");
   };
 
   const removeTag = (tag: string) => {
-    setTags(tags.filter((t) => t !== tag));
+    const tags = getValues("tags").filter((t) => t !== tag);
+    setValue("tags", tags, { shouldDirty: true, shouldValidate: true });
   };
 
   const toggleSpinalMovementValue = (value: string) => {
-    setSpinalMovement((prev) => {
-      const isNone = value === noneSpinalMovementValue;
-      if (isNone) {
-        if (prev.includes(value)) return [];
-        return [value];
-      }
-      const withoutNone = prev.filter((v) => v !== noneSpinalMovementValue);
-      if (withoutNone.includes(value)) {
-        return withoutNone.filter((v) => v !== value);
-      }
-      return [...withoutNone, value];
-    });
+    const spinalMovement = getValues("spinalMovement");
+    setValue(
+      "spinalMovement",
+      (() => {
+        const isNone = value === noneSpinalMovementValue;
+        if (isNone) {
+          if (spinalMovement.includes(value)) return [];
+          return [value];
+        }
+        const withoutNone = spinalMovement.filter((v) => v !== noneSpinalMovementValue);
+        if (withoutNone.includes(value)) {
+          return withoutNone.filter((v) => v !== value);
+        }
+        return [...withoutNone, value];
+      })(),
+      { shouldDirty: true, shouldValidate: true }
+    );
   };
 
   const isSpinalMovementOptionDisabled = (value: string): boolean => {
     if (value === noneSpinalMovementValue) return false;
-    return spinalMovement.includes(noneSpinalMovementValue);
+    return (wSpinalMovement ?? []).includes(noneSpinalMovementValue);
   };
 
   const toggleJointLoading = (value: string) => {
-    setJointLoading((prev) =>
-      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    const jointLoading = getValues("jointLoading");
+    setValue(
+      "jointLoading",
+      jointLoading.includes(value)
+        ? jointLoading.filter((v) => v !== value)
+        : [...jointLoading, value],
+      { shouldDirty: true, shouldValidate: true }
     );
   };
 
@@ -507,45 +505,44 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
 
   // ─── Submit ──────────────────────────────────────────────────────────────
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-
+  const onSubmit = handleSubmit(async (formValues) => {
     const tempPublicIds = images
       .filter((i): i is ImageItem & { type: "temp" } => i.type === "temp")
       .map((i) => i.data.publicId);
 
     const nextProgressionOfId =
-      progressionOfId === "none" ? null : progressionOfId;
+      formValues.progressionOfId === "none" ? null : formValues.progressionOfId;
 
     if (isEdit && nextProgressionOfId && blockedParentIds.has(nextProgressionOfId)) {
       toast.error("That easier exercise would break the progression chain");
-      setSaving(false);
       return;
     }
 
     const body = {
-      name,
-      description: optionalField(description) ?? null,
-      startingPosition: optionalField(startingPosition) ?? null,
-      orientation: orientation === "none" ? null : orientation,
-      directionFaced: directionFaced === "none" ? null : directionFaced,
-      movementType: movementType === "none" ? null : movementType,
-      springs: optionalField(springs) ?? null,
-      equipment,
-      machineSetup: machineSetup === "none" ? null : machineSetup,
-      transitionCues: optionalField(transitionCues) ?? null,
-      cueing: optionalField(cueing) ?? null,
-      spinalMovement,
-      chainType,
-      jointLoading,
-      progressionNotes: optionalField(progressionNotes) ?? null,
-      regressionNotes: optionalField(regressionNotes) ?? null,
-      tags,
-      folderId: folderId === "none" ? null : folderId,
+      name: formValues.name,
+      description: optionalField(formValues.description) ?? null,
+      startingPosition: optionalField(formValues.startingPosition) ?? null,
+      orientation: formValues.orientation === "none" ? null : formValues.orientation,
+      directionFaced:
+        formValues.directionFaced === "none" ? null : formValues.directionFaced,
+      movementType:
+        formValues.movementType === "none" ? null : formValues.movementType,
+      springs: optionalField(formValues.springs) ?? null,
+      equipment: formValues.equipment,
+      machineSetup:
+        formValues.machineSetup === "none" ? null : formValues.machineSetup,
+      transitionCues: optionalField(formValues.transitionCues) ?? null,
+      cueing: optionalField(formValues.cueing) ?? null,
+      spinalMovement: formValues.spinalMovement,
+      chainType: formValues.chainType,
+      jointLoading: formValues.jointLoading,
+      progressionNotes: optionalField(formValues.progressionNotes) ?? null,
+      regressionNotes: optionalField(formValues.regressionNotes) ?? null,
+      tags: formValues.tags,
+      folderId: formValues.folderId === "none" ? null : formValues.folderId,
       progressionOfId: nextProgressionOfId,
       layers: (() => {
-        const trimmed = layerRows
+        const trimmed = formValues.layers
           .map((r) => ({ ...r, content: r.content.trim() }))
           .filter((r) => r.content.length > 0);
         const last = trimmed.length - 1;
@@ -570,13 +567,11 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
       }
     } catch {
       toast.error("Failed to save exercise");
-    } finally {
-      setSaving(false);
     }
-  };
+  });
 
   return (
-    <form onSubmit={handleSubmit} className="w-full min-w-0">
+    <form onSubmit={onSubmit} className="w-full min-w-0">
       <Card className="border-border bg-card shadow-xl">
         <CardContent className="space-y-6 p-5 sm:p-6">
           <div>
@@ -597,49 +592,63 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
             </Label>
             <Input
               id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              {...register("name")}
               placeholder="e.g. Hundred"
-              required
+              aria-invalid={errors.name ? true : undefined}
               className="h-12 rounded-2xl border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
             />
+            {errors.name && (
+              <p className="pl-1.5 text-sm text-destructive">{errors.name.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <BulletTextarea
-              id="description"
-              label={
-                <Label
-                  htmlFor="description"
-                  className="pl-1.5 text-sm font-medium text-foreground"
-                >
-                  Description
-                </Label>
-              }
-              value={description}
-              onValueChange={setDescription}
-              placeholder="Describe the movement, setup, and intention..."
-              rows={4}
-              className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+            <Controller
+              control={control}
+              name="description"
+              render={({ field }) => (
+                <BulletTextarea
+                  id="description"
+                  label={
+                    <Label
+                      htmlFor="description"
+                      className="pl-1.5 text-sm font-medium text-foreground"
+                    >
+                      Description
+                    </Label>
+                  }
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Describe the movement, setup, and intention..."
+                  rows={4}
+                  className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                />
+              )}
             />
           </div>
 
           <div className="space-y-2">
-            <BulletTextarea
-              id="startingPosition"
-              label={
-                <Label
-                  htmlFor="startingPosition"
-                  className="pl-1.5 text-sm font-medium text-foreground"
-                >
-                  Starting Position
-                </Label>
-              }
-              value={startingPosition}
-              onValueChange={setStartingPosition}
-              placeholder="e.g., Supine, feet on footbar"
-              rows={3}
-              className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+            <Controller
+              control={control}
+              name="startingPosition"
+              render={({ field }) => (
+                <BulletTextarea
+                  id="startingPosition"
+                  label={
+                    <Label
+                      htmlFor="startingPosition"
+                      className="pl-1.5 text-sm font-medium text-foreground"
+                    >
+                      Starting Position
+                    </Label>
+                  }
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="e.g., Supine, feet on footbar"
+                  rows={3}
+                  className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                />
+              )}
             />
           </div>
 
@@ -652,46 +661,59 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                   >
                     Orientation
                   </Label>
-                  <Select
-                    value={orientation}
-                    onValueChange={(v) => setOrientation(v ?? "none")}
-                    disabled={orientationDd.loading && orientationDd.options.length === 0}
-                  >
-                    <SelectTrigger
-                      id="exercise-orientation"
-                      className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
-                    >
-                      <SelectValue placeholder="Select orientation">
-                        <span
-                          className={
-                            orientation === "none" ||
-                            (orientationDd.loading && orientationDd.options.length === 0)
-                              ? "text-muted-foreground"
-                              : undefined
-                          }
+                  <Controller
+                    control={control}
+                    name="orientation"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={(v) => field.onChange(v ?? "none")}
+                        disabled={
+                          orientationDd.loading && orientationDd.options.length === 0
+                        }
+                      >
+                        <SelectTrigger
+                          id="exercise-orientation"
+                          className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
                         >
-                          {orientationLabel}
-                        </span>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent
-                      align="start"
-                      sideOffset={6}
-                      className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
-                    >
-                      <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
-                        <span className="text-muted-foreground">Select orientation</span>
-                      </SelectItem>
-                      {orientationDd.options.length > 0 && (
-                        <SelectSeparator className="mx-1 bg-border/70" />
-                      )}
-                      {orientationDd.options.map((o) => (
-                        <SelectItem key={o.id} value={o.value} className="rounded-xl py-2.5 pl-3">
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                          <SelectValue placeholder="Select orientation">
+                            <span
+                              className={
+                                field.value === "none" ||
+                                (orientationDd.loading &&
+                                  orientationDd.options.length === 0)
+                                  ? "text-muted-foreground"
+                                  : undefined
+                              }
+                            >
+                              {orientationLabel}
+                            </span>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent
+                          align="start"
+                          sideOffset={6}
+                          className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                        >
+                          <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                            <span className="text-muted-foreground">Select orientation</span>
+                          </SelectItem>
+                          {orientationDd.options.length > 0 && (
+                            <SelectSeparator className="mx-1 bg-border/70" />
+                          )}
+                          {orientationDd.options.map((o) => (
+                            <SelectItem
+                              key={o.id}
+                              value={o.value}
+                              className="rounded-xl py-2.5 pl-3"
+                            >
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label
@@ -700,46 +722,56 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                   >
                     Direction Faced
                   </Label>
-                  <Select
-                    value={directionFaced}
-                    onValueChange={(v) => setDirectionFaced(v ?? "none")}
-                    disabled={directionDd.loading && directionDd.options.length === 0}
-                  >
-                    <SelectTrigger
-                      id="exercise-direction"
-                      className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
-                    >
-                      <SelectValue placeholder="Select direction">
-                        <span
-                          className={
-                            directionFaced === "none" ||
-                            (directionDd.loading && directionDd.options.length === 0)
-                              ? "text-muted-foreground"
-                              : undefined
-                          }
+                  <Controller
+                    control={control}
+                    name="directionFaced"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={(v) => field.onChange(v ?? "none")}
+                        disabled={directionDd.loading && directionDd.options.length === 0}
+                      >
+                        <SelectTrigger
+                          id="exercise-direction"
+                          className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
                         >
-                          {directionLabel}
-                        </span>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent
-                      align="start"
-                      sideOffset={6}
-                      className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
-                    >
-                      <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
-                        <span className="text-muted-foreground">Select direction</span>
-                      </SelectItem>
-                      {directionDd.options.length > 0 && (
-                        <SelectSeparator className="mx-1 bg-border/70" />
-                      )}
-                      {directionDd.options.map((o) => (
-                        <SelectItem key={o.id} value={o.value} className="rounded-xl py-2.5 pl-3">
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                          <SelectValue placeholder="Select direction">
+                            <span
+                              className={
+                                field.value === "none" ||
+                                (directionDd.loading && directionDd.options.length === 0)
+                                  ? "text-muted-foreground"
+                                  : undefined
+                              }
+                            >
+                              {directionLabel}
+                            </span>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent
+                          align="start"
+                          sideOffset={6}
+                          className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                        >
+                          <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                            <span className="text-muted-foreground">Select direction</span>
+                          </SelectItem>
+                          {directionDd.options.length > 0 && (
+                            <SelectSeparator className="mx-1 bg-border/70" />
+                          )}
+                          {directionDd.options.map((o) => (
+                            <SelectItem
+                              key={o.id}
+                              value={o.value}
+                              className="rounded-xl py-2.5 pl-3"
+                            >
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
               </div>
 
@@ -750,46 +782,64 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                 >
                   Movement Type <span className="text-destructive">*</span>
                 </Label>
-                <Select
-                  value={movementType}
-                  onValueChange={(v) => setMovementType(v ?? "none")}
-                  disabled={movementTypeDd.loading && movementTypeDd.options.length === 0}
-                >
-                  <SelectTrigger
-                    id="exercise-movement-type"
-                    className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
-                  >
-                    <SelectValue placeholder="Select movement type">
-                      <span
-                        className={
-                          movementType === "none" ||
-                          (movementTypeDd.loading && movementTypeDd.options.length === 0)
-                            ? "text-muted-foreground"
-                            : undefined
-                        }
+                <Controller
+                  control={control}
+                  name="movementType"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(v) => field.onChange(v ?? "none")}
+                      disabled={
+                        movementTypeDd.loading && movementTypeDd.options.length === 0
+                      }
+                    >
+                      <SelectTrigger
+                        id="exercise-movement-type"
+                        className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
                       >
-                        {movementTypeLabel}
-                      </span>
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent
-                    align="start"
-                    sideOffset={6}
-                    className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
-                  >
-                    <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
-                      <span className="text-muted-foreground">Select movement type</span>
-                    </SelectItem>
-                    {movementTypeDd.options.length > 0 && (
-                      <SelectSeparator className="mx-1 bg-border/70" />
-                    )}
-                    {movementTypeDd.options.map((o) => (
-                      <SelectItem key={o.id} value={o.value} className="rounded-xl py-2.5 pl-3">
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                        <SelectValue placeholder="Select movement type">
+                          <span
+                            className={
+                              field.value === "none" ||
+                              (movementTypeDd.loading &&
+                                movementTypeDd.options.length === 0)
+                                ? "text-muted-foreground"
+                                : undefined
+                            }
+                          >
+                            {movementTypeLabel}
+                          </span>
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent
+                        align="start"
+                        sideOffset={6}
+                        className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                      >
+                        <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                          <span className="text-muted-foreground">Select movement type</span>
+                        </SelectItem>
+                        {movementTypeDd.options.length > 0 && (
+                          <SelectSeparator className="mx-1 bg-border/70" />
+                        )}
+                        {movementTypeDd.options.map((o) => (
+                          <SelectItem
+                            key={o.id}
+                            value={o.value}
+                            className="rounded-xl py-2.5 pl-3"
+                          >
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.movementType && (
+                  <p className="pl-1.5 text-sm text-destructive">
+                    {errors.movementType.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -803,15 +853,16 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
                   <Input
                     id="springs"
-                    value={springs}
-                    onChange={(e) => setSprings(e.target.value)}
+                    {...register("springs")}
                     placeholder="e.g., Medium (2 red) or N/A for mat"
                     className="box-border h-12 min-h-12 w-full min-w-0 rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 sm:flex-1"
                   />
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setSprings("N/A")}
+                    onClick={() =>
+                      setValue("springs", "N/A", { shouldDirty: true, shouldValidate: true })
+                    }
                     className="h-12 w-full shrink-0 rounded-2xl border-input px-4 text-sm font-medium sm:w-auto sm:min-w-22"
                   >
                     N/A
@@ -846,7 +897,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                           <input
                             type="checkbox"
                             name={`equipment-${o.value}`}
-                            checked={equipment.includes(o.value)}
+                            checked={(wEquipment ?? []).includes(o.value)}
                             disabled={disabled}
                             onChange={() => toggleEquipmentValue(o.value)}
                             className="size-4 rounded border-input accent-primary disabled:cursor-not-allowed"
@@ -855,7 +906,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                         </label>
                       );
                     })}
-                    {equipment
+                    {(wEquipment ?? [])
                       .filter((v) => !equipmentDd.options.some((o) => o.value === v))
                       .map((val) => (
                         <label
@@ -866,9 +917,13 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                             type="checkbox"
                             name={`equipment-custom-${val}`}
                             checked
-                            onChange={() =>
-                              setEquipment((p) => p.filter((x) => x !== val))
-                            }
+                            onChange={() => {
+                              const p = getValues("equipment").filter((x) => x !== val);
+                              setValue("equipment", p, {
+                                shouldDirty: true,
+                                shouldValidate: true,
+                              });
+                            }}
                             className="size-4 rounded border-input accent-primary"
                           />
                           <span title={val}>{val}</span>
@@ -883,7 +938,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                       value={equipmentCustomInput}
                       onChange={(e) => setEquipmentCustomInput(e.target.value)}
                       placeholder="Custom equipment…"
-                      disabled={equipment.includes(noneEquipmentValue)}
+                      disabled={(wEquipment ?? []).includes(noneEquipmentValue)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
@@ -896,7 +951,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                       type="button"
                       variant="outline"
                       onClick={addCustomEquipment}
-                      disabled={equipment.includes(noneEquipmentValue)}
+                      disabled={(wEquipment ?? []).includes(noneEquipmentValue)}
                       className="h-12 w-full shrink-0 rounded-2xl border-input px-4 text-sm font-medium sm:w-auto sm:min-w-22 disabled:cursor-not-allowed"
                     >
                       Add
@@ -912,46 +967,59 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                 >
                   Machine Setup
                 </Label>
-                <Select
-                  value={machineSetup}
-                  onValueChange={(v) => setMachineSetup(v ?? "none")}
-                  disabled={machineSetupDd.loading && machineSetupDd.options.length === 0}
-                >
-                  <SelectTrigger
-                    id="exercise-machine-setup"
-                    className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
-                  >
-                    <SelectValue placeholder="Select setup">
-                      <span
-                        className={
-                          machineSetup === "none" ||
-                          (machineSetupDd.loading && machineSetupDd.options.length === 0)
-                            ? "text-muted-foreground"
-                            : undefined
-                        }
+                <Controller
+                  control={control}
+                  name="machineSetup"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(v) => field.onChange(v ?? "none")}
+                      disabled={
+                        machineSetupDd.loading && machineSetupDd.options.length === 0
+                      }
+                    >
+                      <SelectTrigger
+                        id="exercise-machine-setup"
+                        className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
                       >
-                        {machineSetupLabel}
-                      </span>
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent
-                    align="start"
-                    sideOffset={6}
-                    className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
-                  >
-                    <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
-                      <span className="text-muted-foreground">Select setup</span>
-                    </SelectItem>
-                    {machineSetupDd.options.length > 0 && (
-                      <SelectSeparator className="mx-1 bg-border/70" />
-                    )}
-                    {machineSetupDd.options.map((o) => (
-                      <SelectItem key={o.id} value={o.value} className="rounded-xl py-2.5 pl-3">
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                        <SelectValue placeholder="Select setup">
+                          <span
+                            className={
+                              field.value === "none" ||
+                              (machineSetupDd.loading &&
+                                machineSetupDd.options.length === 0)
+                                ? "text-muted-foreground"
+                                : undefined
+                            }
+                          >
+                            {machineSetupLabel}
+                          </span>
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent
+                        align="start"
+                        sideOffset={6}
+                        className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                      >
+                        <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                          <span className="text-muted-foreground">Select setup</span>
+                        </SelectItem>
+                        {machineSetupDd.options.length > 0 && (
+                          <SelectSeparator className="mx-1 bg-border/70" />
+                        )}
+                        {machineSetupDd.options.map((o) => (
+                          <SelectItem
+                            key={o.id}
+                            value={o.value}
+                            className="rounded-xl py-2.5 pl-3"
+                          >
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
           </div>
 
@@ -962,96 +1030,97 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  setLayerRows((prev) => {
-                    const cleared = prev.map((r) => ({ ...r, isFinisher: false }));
-                    return [...cleared, { content: "", isFinisher: false }];
-                  })
-                }
+                onClick={() => {
+                  const len = layerFields.length;
+                  for (let i = 0; i < len; i++) {
+                    update(i, { ...getValues(`layers.${i}`), isFinisher: false });
+                  }
+                  append({ content: "", isFinisher: false });
+                }}
                 className="h-9 gap-1.5 rounded-full border-input px-4 text-sm font-medium"
               >
                 <Plus className="size-4 shrink-0" aria-hidden />
                 Add Layer
               </Button>
             </div>
-            {layerRows.map((row, index) => {
-              const total = layerRows.length;
+            {layerFields.map((fa, index) => {
+              const row = layersWatch[index] ?? { content: "", isFinisher: false };
+              const total = layerFields.length;
               const isLast = index === total - 1;
               const stepTitle = getLayerStepTitle(index);
               const showFinisherStyle = isLast && row.isFinisher;
               return (
                 <div
-                  key={index}
-                  className={
-                    showFinisherStyle ? "space-y-3" : "space-y-1.5"
-                  }
+                  key={fa.id}
+                  className={showFinisherStyle ? "space-y-3" : "space-y-1.5"}
                 >
-                  <BulletTextarea
-                    bulletsEnabled
-                    showAddBulletButton
-                    label={
-                      <div className="flex flex-wrap items-center gap-2 pl-1.5">
-                        <span className="text-xs font-medium text-muted-foreground">
-                          {stepTitle}
-                        </span>
-                        {isLast && row.isFinisher && (
-                          <Badge variant="secondary" className="text-xs font-semibold">
-                            Finisher
-                          </Badge>
-                        )}
-                        {isLast && (
-                          <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                            <input
-                              type="checkbox"
-                              checked={row.isFinisher}
-                              onChange={(e) => {
-                                const checked = e.target.checked;
-                                setLayerRows((prev) =>
-                                  prev.map((r, i) =>
-                                    i === prev.length - 1
-                                      ? { ...r, isFinisher: checked }
-                                      : { ...r, isFinisher: false }
-                                  )
-                                );
-                              }}
-                              className="size-4 rounded border-input accent-primary"
-                            />
-                            Mark as finisher
-                          </label>
-                        )}
-                      </div>
-                    }
-                    toolbarEndSlot={
-                      layerRows.length > 1 ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setLayerRows((prev) => prev.filter((_, i) => i !== index))
-                          }
-                          className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
-                          aria-label={`Remove ${stepTitle}`}
-                        >
-                          <X className="size-4" />
-                        </button>
-                      ) : null
-                    }
-                    value={row.content}
-                    onValueChange={(v) =>
-                      setLayerRows((prev) => {
-                        const next = [...prev];
-                        next[index] = { ...next[index], content: v };
-                        return next;
-                      })
-                    }
-                    placeholder={
-                      index === 0
-                        ? "e.g., Press out halfway, pause, return"
-                        : showFinisherStyle
-                          ? "e.g., Add finisher movement"
-                          : "Build on the previous layer..."
-                    }
-                    rows={showFinisherStyle ? 4 : 3}
-                    className="min-h-22 resize-y rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                  <Controller
+                    control={control}
+                    name={`layers.${index}.content`}
+                    render={({ field }) => (
+                      <BulletTextarea
+                        bulletsEnabled
+                        showAddBulletButton
+                        label={
+                          <div className="flex flex-wrap items-center gap-2 pl-1.5">
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {stepTitle}
+                            </span>
+                            {isLast && row.isFinisher && (
+                              <Badge variant="secondary" className="text-xs font-semibold">
+                                Finisher
+                              </Badge>
+                            )}
+                            {isLast && (
+                              <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                                <input
+                                  type="checkbox"
+                                  checked={row.isFinisher}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    const layers = getValues("layers");
+                                    setValue(
+                                      "layers",
+                                      layers.map((r, i) =>
+                                        i === layers.length - 1
+                                          ? { ...r, isFinisher: checked }
+                                          : { ...r, isFinisher: false }
+                                      ),
+                                      { shouldDirty: true, shouldValidate: true }
+                                    );
+                                  }}
+                                  className="size-4 rounded border-input accent-primary"
+                                />
+                                Mark as finisher
+                              </label>
+                            )}
+                          </div>
+                        }
+                        toolbarEndSlot={
+                          layerFields.length > 1 ? (
+                            <button
+                              type="button"
+                              onClick={() => remove(index)}
+                              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+                              aria-label={`Remove ${stepTitle}`}
+                            >
+                              <X className="size-4" />
+                            </button>
+                          ) : null
+                        }
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder={
+                          index === 0
+                            ? "e.g., Press out halfway, pause, return"
+                            : showFinisherStyle
+                              ? "e.g., Add finisher movement"
+                              : "Build on the previous layer..."
+                        }
+                        rows={showFinisherStyle ? 4 : 3}
+                        className="min-h-22 resize-y rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                      />
+                    )}
                   />
                 </div>
               );
@@ -1064,29 +1133,34 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
             </Label>
             <Input
               id="transitionCues"
-              value={transitionCues}
-              onChange={(e) => setTransitionCues(e.target.value)}
+              {...register("transitionCues")}
               placeholder="e.g., Coming down from lunge"
               className="h-12 rounded-2xl border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
             />
           </div>
 
           <div className="space-y-2">
-            <BulletTextarea
-              id="cueing"
-              label={
-                <Label
-                  htmlFor="cueing"
-                  className="pl-1.5 text-sm font-medium text-foreground"
-                >
-                  Cues / Notes
-                </Label>
-              }
-              value={cueing}
-              onValueChange={setCueing}
-              placeholder="Key coaching points, modifications, breathing cues..."
-              rows={3}
-              className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+            <Controller
+              control={control}
+              name="cueing"
+              render={({ field }) => (
+                <BulletTextarea
+                  id="cueing"
+                  label={
+                    <Label
+                      htmlFor="cueing"
+                      className="pl-1.5 text-sm font-medium text-foreground"
+                    >
+                      Cues / Notes
+                    </Label>
+                  }
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Key coaching points, modifications, breathing cues..."
+                  rows={3}
+                  className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                />
+              )}
             />
           </div>
 
@@ -1113,7 +1187,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                       <input
                         type="checkbox"
                         name={`spinalMovement-${o.value}`}
-                        checked={spinalMovement.includes(o.value)}
+                        checked={(wSpinalMovement ?? []).includes(o.value)}
                         disabled={disabled}
                         onChange={() => toggleSpinalMovementValue(o.value)}
                         className="size-4 rounded border-input accent-primary disabled:cursor-not-allowed"
@@ -1134,7 +1208,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
               </p>
               <div className="space-y-2 pl-1">
                 {chainDd.options.map((o) => {
-                  const checked = chainType.includes(o.value);
+                  const checked = (wChainType ?? []).includes(o.value);
                   const disabled = isChainTypeOptionDisabled(o.value);
                   const tip = chainTypeTooltipForValue(o.value);
                   return (
@@ -1156,6 +1230,9 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                 })}
               </div>
             </fieldset>
+            {errors.chainType && (
+              <p className="pl-1.5 text-sm text-destructive">{errors.chainType.message}</p>
+            )}
 
             <fieldset className="space-y-2" disabled={jointDd.loading}>
               <legend className="mb-2 pl-1.5 text-sm font-medium text-foreground">
@@ -1174,7 +1251,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                     <input
                       type="checkbox"
                       name={`jointLoading-${o.value}`}
-                      checked={jointLoading.includes(o.value)}
+                      checked={(wJointLoading ?? []).includes(o.value)}
                       onChange={() => toggleJointLoading(o.value)}
                       className="size-4 rounded border-input accent-primary"
                     />
@@ -1189,36 +1266,42 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
             <Label htmlFor="folder" className="pl-1.5 text-sm font-medium text-foreground">
               Folder
             </Label>
-            <Select
-              value={folderId}
-              onValueChange={(value) => setFolderId(value ?? "none")}
-            >
-              <SelectTrigger
-                id="folder"
-                className="h-12 w-full min-w-0 rounded-2xl border-input bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
-              >
-                <SelectValue placeholder="No folder">{folderTriggerLabel}</SelectValue>
-              </SelectTrigger>
-              <SelectContent
-                align="start"
-                sideOffset={6}
-                className="max-h-72 rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
-              >
-                <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
-                  No folder
-                </SelectItem>
-                {folders.length > 0 && (
-                  <>
-                    <SelectSeparator className="mx-1 bg-border/70" />
-                    {folders.map((f) => (
-                      <SelectItem key={f.id} value={f.id} className="rounded-xl py-2.5 pl-3">
-                        {f.name}
-                      </SelectItem>
-                    ))}
-                  </>
-                )}
-              </SelectContent>
-            </Select>
+            <Controller
+              control={control}
+              name="folderId"
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={(value) => field.onChange(value ?? "none")}
+                >
+                  <SelectTrigger
+                    id="folder"
+                    className="h-12 w-full min-w-0 rounded-2xl border-input bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+                  >
+                    <SelectValue placeholder="No folder">{folderTriggerLabel}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent
+                    align="start"
+                    sideOffset={6}
+                    className="max-h-72 rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                  >
+                    <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                      No folder
+                    </SelectItem>
+                    {folders.length > 0 && (
+                      <>
+                        <SelectSeparator className="mx-1 bg-border/70" />
+                        {folders.map((f) => (
+                          <SelectItem key={f.id} value={f.id} className="rounded-xl py-2.5 pl-3">
+                            {f.name}
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           {/* <div className="space-y-2">
@@ -1280,40 +1363,52 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
           </div> */}
 
           <div className="space-y-2">
-            <BulletTextarea
-              id="progressionNotes"
-              label={
-                <Label
-                  htmlFor="progressionNotes"
-                  className="pl-1.5 text-sm font-medium text-foreground"
-                >
-                  Progression notes
-                </Label>
-              }
-              value={progressionNotes}
-              onValueChange={setProgressionNotes}
-              placeholder="How to make this exercise harder (load, range, tempo, props…)"
-              rows={3}
-              className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+            <Controller
+              control={control}
+              name="progressionNotes"
+              render={({ field }) => (
+                <BulletTextarea
+                  id="progressionNotes"
+                  label={
+                    <Label
+                      htmlFor="progressionNotes"
+                      className="pl-1.5 text-sm font-medium text-foreground"
+                    >
+                      Progression notes
+                    </Label>
+                  }
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="How to make this exercise harder (load, range, tempo, props…)"
+                  rows={3}
+                  className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                />
+              )}
             />
           </div>
 
           <div className="space-y-2">
-            <BulletTextarea
-              id="regressionNotes"
-              label={
-                <Label
-                  htmlFor="regressionNotes"
-                  className="pl-1.5 text-sm font-medium text-foreground"
-                >
-                  Regression notes
-                </Label>
-              }
-              value={regressionNotes}
-              onValueChange={setRegressionNotes}
-              placeholder="How to make this exercise easier (modifications, support, range…)"
-              rows={3}
-              className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+            <Controller
+              control={control}
+              name="regressionNotes"
+              render={({ field }) => (
+                <BulletTextarea
+                  id="regressionNotes"
+                  label={
+                    <Label
+                      htmlFor="regressionNotes"
+                      className="pl-1.5 text-sm font-medium text-foreground"
+                    >
+                      Regression notes
+                    </Label>
+                  }
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="How to make this exercise easier (modifications, support, range…)"
+                  rows={3}
+                  className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                />
+              )}
             />
           </div>
 
@@ -1344,9 +1439,9 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                 Add
               </Button>
             </div>
-            {tags.length > 0 && (
+            {wTags.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-2">
-                {tags.map((tag) => (
+                {wTags.map((tag) => (
                   <Badge
                     key={tag}
                     variant="outline"
@@ -1398,8 +1493,8 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                       href={item.data.url}
                       data-fancybox={EXERCISE_FORM_IMAGE_GALLERY}
                       data-caption={
-                        name.trim().length > 0
-                          ? `${name.trim()} — Image ${index + 1}${item.type === "temp" ? " (unsaved)" : ""}`
+                        (wName ?? "").trim().length > 0
+                          ? `${(wName ?? "").trim()} — Image ${index + 1}${item.type === "temp" ? " (unsaved)" : ""}`
                           : `Image ${index + 1}${item.type === "temp" ? " (unsaved)" : ""}`
                       }
                       title="View full size"
@@ -1479,10 +1574,15 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
         </Button>
         <Button
           type="submit"
-          disabled={saving || uploading || !name.trim() || movementType === "none"}
+          // disabled={
+          //   isSubmitting ||
+          //   uploading ||
+          //   !(wName ?? "").trim() ||
+          //   (wMovementType ?? "none") === "none"
+          // }
           className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
         >
-          {saving ? "Saving..." : isEdit ? "Update Exercise" : "Create Exercise"}
+          {isSubmitting ? "Saving..." : isEdit ? "Update Exercise" : "Create Exercise"}
         </Button>
       </div>
     </form>

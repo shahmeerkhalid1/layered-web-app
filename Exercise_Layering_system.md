@@ -16,8 +16,8 @@ A dynamic, ordered content-block system for building exercise instructions step 
 
 ### Frontend — Form
 
-- Dynamic layer rows in `exercise-form.tsx`: add, remove, and edit content per layer.
-- Layer state is `{ content: string; isFinisher: boolean }[]`.
+- Dynamic layer rows in [`exercise-form.tsx`](client/src/components/exercises/exercise-form.tsx): add, remove, and edit content per layer.
+- **React Hook Form** + **`zodResolver`** ([`client/src/lib/validation/exercise-form-schema.ts`](client/src/lib/validation/exercise-form-schema.ts)): layers are a **`useFieldArray`** on `layers` (`{ content, isFinisher }[]` per row). Each layer’s **`content`** is edited through a **`Controller`** wrapping **`BulletTextarea`**. **`buildExerciseFormDefaults`** + **`reset`** when `exercise?.id` changes on edit. Client Zod enforces (among other rules) at least one layer row, movement type not `"none"`, and chain type max two entries — aligned with server expectations where practical. Image upload/reorder state stays in **local React state** outside RHF.
 - Layer label logic lives in `client/src/lib/exercise-layer-labels.ts`:
   - `getLayerStepTitle(index)` always returns `Layer N` (no auto-finisher logic).
 - **Manual finisher toggle**: only the **last** layer row shows a "Mark as finisher" checkbox. When checked, that layer displays a "Finisher" badge. Adding a new layer always appends at the end and clears any existing finisher flag.
@@ -25,7 +25,7 @@ A dynamic, ordered content-block system for building exercise instructions step 
 
 #### `BulletTextarea` (plain-text bullets in `content`)
 
-Reusable component: [`client/src/components/exercises/bullet-textarea.tsx`](client/src/components/exercises/bullet-textarea.tsx). Wired from [`exercise-form.tsx`](client/src/components/exercises/exercise-form.tsx) for:
+Reusable component: [`client/src/components/exercises/bullet-textarea.tsx`](client/src/components/exercises/bullet-textarea.tsx). Wired from [`exercise-form.tsx`](client/src/components/exercises/exercise-form.tsx) via **React Hook Form `Controller`** for:
 
 - **Every** dynamic layer row (Layer 1, Layer 2, … — not only the first).
 - **Description**, **Starting position**, **Cues / notes**, **Progression notes**, and **Regression notes**.
@@ -63,7 +63,9 @@ Allows instructors to use platform-provided defaults **and** add their own custo
 - **`DropdownCategory`** — unique `key` + display `name`; seeded at platform setup.
 - **`DropdownOption`** — belongs to a category; `instructorId` null = global (seeded), non-null = custom per instructor.
 
-### Seeded Categories (8)
+### Seeded categories (10)
+
+Exercise metadata keys **plus** two reserved for **class plan templates** (Phase 2 UI):
 
 | Key | Name | Default Options |
 |-----|------|-----------------|
@@ -75,6 +77,8 @@ Allows instructors to use platform-provided defaults **and** add their own custo
 | `spinal_movement` | Spinal Movement | Flexion, Extension, Rotation, Lateral Flexion, Articulation, Neutral, None |
 | `chain_type` | Chain Type | Open Chain, Closed Chain, Both, Lower Chain Closed, Upper Open |
 | `joint_loading` | Joint Loading | Knee Loading, Wrist Loading, Hip Flexor Loading |
+| `class_type` | Class Type | Reformer, Mat, Chair, Cadillac, Barrel |
+| `class_style` | Class Style | Beginner, Intermediate, Advanced, Pre/Post Natal, HIIT, Restorative, JumpBoard, Classical Pilates |
 
 ### Backend — Dropdown Module (`server/src/modules/dropdowns/`)
 
@@ -86,7 +90,7 @@ Allows instructors to use platform-provided defaults **and** add their own custo
 
 - **`dropdownApi`** (`client/src/services/dropdown-api.ts`) — typed `getOptions(key)`, `createOption(key, label)`.
 - **`useDropdownOptions(key)`** hook (`client/src/hooks/use-dropdown-options.ts`) — fetches + caches options for a category.
-- Exercise form selects consume these hooks for orientation, direction faced, movement type, springs, equipment, machine setup, spinal movement, chain type, and joint loading fields.
+- Exercise form selects consume these hooks for **orientation**, **direction faced**, **movement type**, **equipment**, **machine setup**, **spinal movement**, **chain type**, and **joint loading**. **`springs`** is a **free-text** field with an **N/A** quick button — not a dropdown category.
 
 ---
 
@@ -125,15 +129,17 @@ Metadata fields on `Exercise` for comprehensive Pilates documentation:
 
 ## 4. Exercise Form UI
 
+- **Form stack**: **React Hook Form** + **`zodResolver`** and [`exercise-form-schema.ts`](client/src/lib/validation/exercise-form-schema.ts); shadcn **`Select`** fields use **`Controller`**; simple text inputs use **`register`**; multi-select arrays use **`setValue`** / **`getValues`** with **`useWatch`** for derived UI (checkboxes, disabled states).
 - **Springs**: full-width `Label` → helper text → text input with **N/A quick button** (same `h-12` / `rounded-2xl` styling as other inputs).
 - **Equipment**: full-width `Label` → helper text → checkboxes + custom "Add" input row (same input sizing/styling). With "None" selected, non-None checkboxes and custom add controls are disabled until "None" is cleared.
 - **Machine Setup**: single-select dropdown with N/A option.
 - **Movement Analysis** section: Spinal Movement (multi-select, "None" disables other options while selected), Chain Type (multi-select with constraints + tooltips), Joint Loading (multi-select) — grouped under a heading with a separator.
-- **Layers**: each row uses **`BulletTextarea`** (Enter / Shift+Enter / **Add •** as above). Step title + finisher UI sit in the component’s `label` slot on one row with **Add •**; **Remove layer** sits in `toolbarEndSlot` when there is more than one layer. Numbered layers; manual "Mark as finisher" only on the **last** row.
-- **Description**, **Starting position**: **`BulletTextarea`** with shadcn `Label` in the `label` slot (same row as **Add •**).
-- **Progression / Regression**: **`BulletTextarea`** fields ("Progression notes", "Regression notes") with labels on the same row as **Add •**, after the "Easier version" progression select.
-- **Cueing**: **`BulletTextarea`** with label on the same row as **Add •**.
-- Form sections: Basic Info → Orientation & Direction → Movement Type → Springs & Equipment → Machine Setup → Layers → Transition Cues & Cueing → Movement Analysis → Folder & Progression → Progression/Regression Notes → Tags → Images.
+- **Layers**: each row uses **`Controller`** + **`BulletTextarea`** on `layers.{index}.content` (Enter / Shift+Enter / **Add •** as above). Step title + finisher UI sit in the component’s `label` slot on one row with **Add •**; **Remove layer** sits in `toolbarEndSlot` when there is more than one layer. Numbered layers; manual "Mark as finisher" only on the **last** row (`setValue` on the whole `layers` array for finisher flags).
+- **Description**, **Starting position**: **`Controller`** + **`BulletTextarea`** with shadcn `Label` in the `label` slot (same row as **Add •**).
+- **Progression / Regression**: **`Controller`** + **`BulletTextarea`** ("Progression notes", "Regression notes") with labels on the same row as **Add •**. The inline **"Easier version (progression)"** `Select` (pick easier exercise) is **commented out** in the form source; `progressionOfId` still defaults in the schema and is sent on save (typically `null` / unchanged). Use **`PATCH /api/exercises/:id/progression`** or **`exerciseApi.setProgression`** to change progression until the block is restored.
+- **Cueing**: **`Controller`** + **`BulletTextarea`** with label on the same row as **Add •**.
+- **Auth pages**: **`/login`** and **`/register`** use the same RHF + Zod pattern with [`auth-schemas.ts`](client/src/lib/validation/auth-schemas.ts).
+- Form sections (approximate order): Basic Info → Orientation & Direction → Movement Type → Springs & Equipment → Machine Setup → Layers → Transition Cues & Cueing → Movement Analysis → Folder → Progression/Regression Notes → Tags → Images.
 
 ---
 
@@ -147,20 +153,14 @@ Metadata fields on `Exercise` for comprehensive Pilates documentation:
 
 ---
 
-## 6. Seed Updates
+## 6. Seed updates
 
 `server/prisma/seed.ts` now:
 1. Seeds platform settings (`signupEnabled`).
 2. Creates or promotes admin user.
-3. Seeds all 8 dropdown categories with updated default global options (idempotent — skips existing).
-   - Orientation: 8 options (Supine, Prone, Side-Lying, Low/High/4 Point Kneeling, Standing, Seated)
-   - Direction Faced: 3 options (Front-Facing, Reverse-Facing, Side-Facing)
-   - Equipment: 7 options (Ring, Band, Ball, Box, Dumbbells, Dell, None)
-   - Machine Setup: 4 options (Footbar Up/Down/Middle, N/A)
-   - Spinal Movement: 7 options (+ Neutral, None)
-   - Joint Loading: 3 options (+ Hip Flexor Loading)
-   - Chain Type: 5 options (unchanged)
-   - Movement Type: 3 options (unchanged)
+3. Seeds **10** dropdown categories with default global options (idempotent — skips existing option rows that already match).
+   - Exercise-oriented keys: orientation (8), direction_faced (3), movement_type (3), equipment (7), machine_setup (4), spinal_movement (7), chain_type (5), joint_loading (3).
+   - **Class plan** keys (for upcoming template UI): **class_type** (Reformer, Mat, Chair, Cadillac, Barrel), **class_style** (Beginner, Intermediate, Advanced, Pre/Post Natal, HIIT, Restorative, JumpBoard, Classical Pilates).
 
 ---
 
@@ -174,6 +174,8 @@ Metadata fields on `Exercise` for comprehensive Pilates documentation:
 | `client/src/services/dropdown-api.ts` | Typed API client for dropdowns |
 | `client/src/hooks/use-dropdown-options.ts` | React hook for fetching dropdown options |
 | `client/src/lib/exercise-layer-labels.ts` | Layer title helper (`getLayerStepTitle`) |
+| `client/src/lib/validation/exercise-form-schema.ts` | Client Zod schema + `buildExerciseFormDefaults` for exercise create/edit |
+| `client/src/lib/validation/auth-schemas.ts` | Client Zod schemas for login and register |
 | `client/src/lib/chain-type-tooltips.ts` | Chain type hover tooltip descriptions |
 | `client/src/components/exercises/bullet-textarea.tsx` | Reusable long-text control: Enter / Shift+Enter bullets, **Add •**, optional `label` + `toolbarEndSlot` on one toolbar row |
 | `client/src/components/exercises/exercise-pre-text.tsx` | Read-only display: line breaks + hanging indent for lines starting with `•` |
@@ -184,13 +186,16 @@ Metadata fields on `Exercise` for comprehensive Pilates documentation:
 | File | Changes |
 |------|---------|
 | `server/prisma/schema.prisma` | `equipment` and `chainType` → `String[]`; added `progressionNotes`, `regressionNotes` to Exercise; added `isFinisher` to ExerciseLayer |
-| `server/prisma/seed.ts` | Updated dropdown defaults for all 8 categories to match Alexa's exact taxonomy |
+| `server/prisma/seed.ts` | Seeds 10 dropdown categories (exercise keys + `class_type` / `class_style`) with default global options |
 | `server/src/app.ts` | Mounted `/api/dropdowns` router |
 | `server/src/modules/exercises/exercise.service.ts` | Layer create/update includes `isFinisher`; all new fields flow through via `...rest` |
 | `server/src/modules/exercises/exercise.validation.ts` | `equipment`/`chainType` → arrays; added `progressionNotes`/`regressionNotes`; added `isFinisher` to layer schema |
 | `client/src/lib/types.ts` | `equipment`/`chainType` → `string[]`; added `progressionNotes`/`regressionNotes`; `ExerciseLayer.isFinisher` |
 | `client/src/services/exercise-api.ts` | `SaveExerciseBody` updated for arrays, new text fields, `ExerciseLayerInput.isFinisher` |
-| `client/src/components/exercises/exercise-form.tsx` | Equipment multi-select + custom entry ("None" clears others and disables non-None checkboxes + custom add while selected); chain type multi-select with constraints + tooltips; springs N/A button; manual finisher toggle; **`BulletTextarea`** for description, starting position, **all** layer rows, cueing, progression/regression notes; spinal movement "None" clears others and disables non-None checkboxes while selected |
+| `client/src/components/exercises/exercise-form.tsx` | **React Hook Form** + **`zodResolver`** (`exercise-form-schema.ts`): **`useFieldArray`** for layers, **`Controller`** for selects and **`BulletTextarea`** fields, **`register`** / **`useWatch`** / **`setValue`** for the rest; equipment multi-select + custom entry ("None" clears others and disables non-None checkboxes + custom add while selected); chain type multi-select with constraints + tooltips; springs N/A button; manual finisher toggle; spinal movement "None" clears others and disables non-None checkboxes while selected; progression parent **Select** UI commented out (payload still includes `progressionOfId`) |
+| `client/src/app/login/page.tsx` | RHF + `auth-schemas` for sign-in |
+| `client/src/app/register/page.tsx` | RHF + `auth-schemas`; `setValue` for invite email |
+| `client/package.json` | Adds `react-hook-form`, `@hookform/resolvers`, `zod` (client) |
 | `client/src/app/(dashboard)/exercises/[id]/page.tsx` | Equipment/chain type as badges; layer `isFinisher` display; progression/regression card; **`ExercisePreText`** for long-form copy (e.g. description, layers, cueing) |
 | `client/src/components/ui/textarea.tsx` | `forwardRef` for ref/caret compatibility (used by `BulletTextarea`) |
-| `.cursor/rules/project.mdc` | Updated conventions for new field types, layer system, and dropdown category keys |
+| `.cursor/rules/project.mdc` | Tech stack, forms (`lib/validation/`), layer/bullet/dropdown conventions; progression picker note |

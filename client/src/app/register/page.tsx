@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +18,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import {
+  registerFormSchema,
+  type RegisterFormValues,
+} from "@/lib/validation/auth-schemas";
 
 interface InviteInfo {
   email: string;
@@ -37,20 +43,25 @@ export default function RegisterPage() {
 }
 
 function RegisterPageContent() {
-  const { register, isAuthenticated } = useAuth();
+  const { register: signUp, isAuthenticated } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
+  const [pageError, setPageError] = useState("");
   const [signupAllowed, setSignupAllowed] = useState<boolean | null>(null);
   const [invite, setInvite] = useState<InviteInfo | null>(null);
   const [checking, setChecking] = useState(true);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerFormSchema),
+    defaultValues: { name: "", email: "", password: "" },
+  });
 
   useEffect(() => {
     async function checkAccess() {
@@ -58,7 +69,7 @@ function RegisterPageContent() {
         if (token) {
           const data = await api.get<InviteInfo>(`/invite/verify?token=${token}`);
           setInvite(data);
-          setEmail(data.email);
+          setValue("email", data.email, { shouldValidate: true });
           setSignupAllowed(true);
         } else {
           const data = await api.get<{ signupEnabled: boolean }>("/signup-status");
@@ -66,7 +77,7 @@ function RegisterPageContent() {
         }
       } catch {
         if (token) {
-          setError("Invalid or expired invitation link.");
+          setPageError("Invalid or expired invitation link.");
         }
         setSignupAllowed(false);
       } finally {
@@ -74,7 +85,7 @@ function RegisterPageContent() {
       }
     }
     checkAccess();
-  }, [token]);
+  }, [token, setValue]);
 
   if (isAuthenticated) {
     router.replace("/");
@@ -96,7 +107,8 @@ function RegisterPageContent() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Registration Closed</CardTitle>
             <CardDescription>
-              {error || "Public registration is currently disabled. Please contact an administrator for an invitation."}
+              {pageError ||
+                "Public registration is currently disabled. Please contact an administrator for an invitation."}
             </CardDescription>
           </CardHeader>
           <CardFooter className="justify-center">
@@ -112,20 +124,16 @@ function RegisterPageContent() {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  const onSubmit = handleSubmit(async (values) => {
+    setPageError("");
     try {
-      await register(email, password, name);
+      await signUp(values.email, values.password, values.name);
       router.replace("/");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
-    } finally {
-      setLoading(false);
+      setPageError(err instanceof Error ? err.message : "Registration failed");
     }
-  };
+  });
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
@@ -138,11 +146,11 @@ function RegisterPageContent() {
               : "Get started with Pilates Platform"}
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={onSubmit}>
           <CardContent className="space-y-4">
-            {error && (
+            {pageError && (
               <div className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {error}
+                {pageError}
               </div>
             )}
             <div className="space-y-2">
@@ -151,10 +159,13 @@ function RegisterPageContent() {
                 id="name"
                 type="text"
                 placeholder="Jane Smith"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
+                autoComplete="name"
+                aria-invalid={errors.name ? true : undefined}
+                {...register("name")}
               />
+              {errors.name && (
+                <p className="text-sm text-destructive">{errors.name.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -162,11 +173,14 @@ function RegisterPageContent() {
                 id="email"
                 type="email"
                 placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                autoComplete="email"
                 readOnly={!!invite}
+                aria-invalid={errors.email ? true : undefined}
+                {...register("email")}
               />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -174,16 +188,18 @@ function RegisterPageContent() {
                 id="password"
                 type="password"
                 placeholder="Min. 8 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
+                autoComplete="new-password"
+                aria-invalid={errors.password ? true : undefined}
+                {...register("password")}
               />
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password.message}</p>
+              )}
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating account..." : "Create Account"}
+          <CardFooter className="mt-6 flex flex-col gap-4">
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Creating account..." : "Create Account"}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
