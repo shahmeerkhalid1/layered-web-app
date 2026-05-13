@@ -28,10 +28,8 @@ export function useExerciseList({
 
     try {
       const params: Record<string, string> = {};
-      console.log('params',params);
       if (debouncedSearch) params.search = debouncedSearch;
       if (selectedFolder) params.folderId = selectedFolder;
-      console.log('params2',params);
 
       const exerciseData = await exerciseApi.getExercises(params, controller.signal);
       setExercises(exerciseData);

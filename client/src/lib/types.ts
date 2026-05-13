@@ -71,3 +71,39 @@ export interface DropdownOptionRow {
   value: string;
   order: number;
 }
+
+// ─── Class Plan Templates ────────────────────────────────────────────────────
+
+export interface ClassPlanFolder {
+  id: string;
+  name: string;
+  _count?: { templates: number };
+}
+
+export interface ClassPlanFoldersResponse {
+  folders: ClassPlanFolder[];
+  totalTemplates: number;
+}
+
+/** List row from GET /api/class-plans (includes section count) */
+export interface ClassPlanTemplate {
+  id: string;
+  name: string;
+  classType?: string | null;
+  classStyle?: string | null;
+  durationMinutes?: number | null;
+  folderId?: string | null;
+  tags: string[];
+  instructorId: string;
+  createdAt: string;
+  updatedAt: string;
+  folder?: { id: string; name: string } | null;
+  _count?: { sections: number };
+}
+
+export interface ClassPlanListResponse {
+  data: ClassPlanTemplate[];
+  total: number;
+  page: number;
+  limit: number;
+}

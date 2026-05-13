@@ -23,7 +23,7 @@ const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/exercises", label: "Exercises", icon: Dumbbell },
-  { href: "/templates", label: "Templates", icon: FileText },
+  { href: "/class-plans", label: "Class Plans", icon: FileText },
   { href: "/clients", label: "Clients", icon: Users },
 ];
 

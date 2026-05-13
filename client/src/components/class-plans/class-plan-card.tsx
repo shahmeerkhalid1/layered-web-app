@@ -1,0 +1,179 @@
+"use client";
+
+import Link from "next/link";
+import {
+  CalendarPlus,
+  Copy,
+  Layers,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import type { ClassPlanTemplate } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+const MAX_TAGS_VISIBLE = 4;
+
+interface ClassPlanCardProps {
+  template: ClassPlanTemplate;
+  onDuplicate: (id: string) => void;
+  onRequestDelete: (template: ClassPlanTemplate) => void;
+}
+
+export function ClassPlanCard({
+  template,
+  onDuplicate,
+  onRequestDelete,
+}: ClassPlanCardProps) {
+  const tags = template.tags ?? [];
+  const visibleTags = tags.slice(0, MAX_TAGS_VISIBLE);
+  const overflowCount = tags.length - visibleTags.length;
+  const overflowLabels = tags.slice(MAX_TAGS_VISIBLE);
+  const sectionCount = template._count?.sections ?? 0;
+  const durationLabel =
+    template.durationMinutes != null ? `${template.durationMinutes} min` : "—";
+
+  const handleSchedule = () => {
+    toast.message("Scheduling coming soon", {
+      description: "Quick schedule from class plans will be available with the calendar.",
+    });
+  };
+
+  return (
+    <Card
+      className={cn(
+        "group relative h-full gap-0 overflow-hidden border-border bg-card py-0 shadow-lg ring-1 ring-foreground/10",
+        "transition-all duration-300 hover:-translate-y-0.5 hover:border-ring hover:shadow-xl"
+      )}
+    >
+      <div className="relative flex h-full min-h-0 flex-col">
+        <Link
+          href={`/class-plans/${template.id}`}
+          className="flex min-h-0 flex-1 flex-col rounded-t-xl outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          <CardContent className="flex flex-1 flex-col p-4 pb-3">
+            <div className="relative mb-4 flex shrink-0 aspect-4/3 items-center justify-center overflow-hidden rounded-2xl bg-muted/80 ring-1 ring-border/60">
+              <Layers className="size-10 text-muted-foreground/70" aria-hidden />
+            </div>
+
+            <h3 className="line-clamp-2 min-h-11 text-base font-semibold leading-snug tracking-[-0.02em] text-card-foreground">
+              {template.name}
+            </h3>
+
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {template.classType && (
+                <Badge
+                  variant="outline"
+                  className="border-border bg-muted/40 text-[11px] font-medium text-foreground"
+                >
+                  {template.classType}
+                </Badge>
+              )}
+              {template.classStyle && (
+                <Badge
+                  variant="outline"
+                  className="border-border bg-muted/40 text-[11px] font-medium text-foreground"
+                >
+                  {template.classStyle}
+                </Badge>
+              )}
+              <Badge
+                variant="secondary"
+                className="border-transparent bg-secondary/90 text-[11px] font-medium tabular-nums text-secondary-foreground"
+              >
+                {durationLabel}
+              </Badge>
+              <Badge
+                variant="secondary"
+                className="border-transparent bg-secondary/90 text-[11px] font-medium tabular-nums text-secondary-foreground"
+              >
+                {sectionCount} section{sectionCount === 1 ? "" : "s"}
+              </Badge>
+            </div>
+
+            {tags.length > 0 && (
+              <div className="mt-4 flex flex-wrap items-center gap-1.5">
+                {visibleTags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="max-w-[min(100%,10rem)] truncate border-border bg-muted/40 text-[11px] font-medium text-foreground"
+                    title={tag}
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+                {overflowCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="shrink-0 border-transparent bg-secondary/90 text-[11px] font-medium tabular-nums text-secondary-foreground"
+                    title={overflowLabels.join(", ")}
+                    aria-label={`${overflowCount} more tags: ${overflowLabels.join(", ")}`}
+                  >
+                    +{overflowCount}
+                  </Badge>
+                )}
+              </div>
+            )}
+
+            {template.folder && (
+              <p className="mt-auto pt-3 text-xs font-medium leading-snug text-muted-foreground">
+                Folder: {template.folder.name}
+              </p>
+            )}
+          </CardContent>
+        </Link>
+
+        <div
+          className="flex shrink-0 flex-wrap items-center justify-end gap-0.5 border-t border-border/60 bg-muted/30 px-2 py-1.5"
+          role="toolbar"
+          aria-label="Class plan actions"
+        >
+          <Link
+            href={`/class-plans/${template.id}`}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "icon-xs" }),
+              "text-muted-foreground hover:bg-background/80 hover:text-foreground"
+            )}
+            aria-label="View or edit plan"
+          >
+            <Pencil className="size-3.5" aria-hidden />
+          </Link>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            className="text-muted-foreground hover:bg-background/80 hover:text-foreground"
+            aria-label="Schedule class"
+            onClick={handleSchedule}
+          >
+            <CalendarPlus className="size-3.5" aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            className="text-muted-foreground hover:bg-background/80 hover:text-foreground"
+            aria-label="Duplicate plan"
+            onClick={() => onDuplicate(template.id)}
+          >
+            <Copy className="size-3.5" aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            aria-label="Delete plan"
+            onClick={() => onRequestDelete(template)}
+          >
+            <Trash2 className="size-3.5" aria-hidden />
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
