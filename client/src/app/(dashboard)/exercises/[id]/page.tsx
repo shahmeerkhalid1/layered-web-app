@@ -14,6 +14,7 @@ import { ArrowLeft, Pencil, Trash2, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 import { getLayerStepTitle } from "@/lib/exercise-layer-labels";
 import { useFancybox } from "@/hooks/use-fancybox";
+import { ExercisePreText } from "@/components/exercises/exercise-pre-text";
 
 const EXERCISE_DETAIL_IMAGE_GALLERY = "exercise-detail-images";
 
@@ -107,12 +108,12 @@ export default function ExerciseDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+      <div className="flex min-w-0 items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => router.push("/exercises")}>
           <ArrowLeft className="size-4" />
         </Button>
-        <div className="flex-1">
-          <h2 className="text-2xl font-bold">{exercise.name}</h2>
+        <div className="min-w-0 flex-1">
+          <h2 className="wrap-break-word text-2xl font-bold">{exercise.name}</h2>
           {exercise.folder && (
             <p className="flex items-center gap-1 text-sm text-muted-foreground">
               <FolderOpen className="size-3" />
@@ -132,8 +133,8 @@ export default function ExerciseDetailPage() {
         </Button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-3">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           {exercise.images.length > 0 && (
             <div
               ref={bindImageGallery}
@@ -171,9 +172,7 @@ export default function ExerciseDetailPage() {
                 <CardTitle className="text-base">Description</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="whitespace-pre-wrap text-sm">
-                  {exercise.description}
-                </p>
+                <ExercisePreText className="text-sm">{exercise.description}</ExercisePreText>
               </CardContent>
             </Card>
           )}
@@ -184,7 +183,7 @@ export default function ExerciseDetailPage() {
                 <CardTitle className="text-base">Starting Position</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="whitespace-pre-wrap text-sm">{exercise.startingPosition}</p>
+                <ExercisePreText className="text-sm">{exercise.startingPosition}</ExercisePreText>
               </CardContent>
             </Card>
           )}
@@ -200,7 +199,7 @@ export default function ExerciseDetailPage() {
                     {setupRows.map((row) => (
                       <div key={row.label}>
                         <p className="text-xs font-medium text-muted-foreground">{row.label}</p>
-                        <p className="text-sm text-foreground">{row.value}</p>
+                        <ExercisePreText className="text-sm text-foreground">{String(row.value)}</ExercisePreText>
                       </div>
                     ))}
                   </div>
@@ -238,8 +237,8 @@ export default function ExerciseDetailPage() {
                         key={layer.id}
                         className={
                           finisher
-                            ? "rounded-2xl border border-border bg-card/40 p-4 sm:p-5"
-                            : "border-b border-border/60 pb-4 last:border-0 last:pb-0"
+                            ? "min-w-0 rounded-2xl border border-border bg-card/40 p-4 sm:p-5"
+                            : "min-w-0 border-b border-border/60 pb-4 last:border-0 last:pb-0"
                         }
                       >
                         <div
@@ -249,24 +248,25 @@ export default function ExerciseDetailPage() {
                               : "mb-1.5 flex flex-wrap items-center gap-2"
                           }
                         >
-                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {/* <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             {title}
-                          </p>
+                          </p> */}
+                          <ExercisePreText className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</ExercisePreText>
                           {finisher && (
                             <Badge variant="secondary" className="text-xs font-semibold">
                               Finisher
                             </Badge>
                           )}
                         </div>
-                        <p
+                        <ExercisePreText
                           className={
                             finisher
-                              ? "whitespace-pre-wrap text-sm text-foreground"
-                              : "mt-1.5 whitespace-pre-wrap text-sm text-foreground"
+                              ? "text-sm text-foreground"
+                              : "mt-1.5 text-sm text-foreground"
                           }
                         >
                           {layer.content}
-                        </p>
+                        </ExercisePreText>
                       </li>
                     );
                   })}
@@ -285,18 +285,18 @@ export default function ExerciseDetailPage() {
                   String(exercise.progressionNotes).trim() !== "" && (
                     <div>
                       <p className="text-xs font-medium text-muted-foreground">Progression</p>
-                      <p className="mt-1.5 whitespace-pre-wrap text-sm text-foreground">
+                      <ExercisePreText className="mt-1.5 text-sm text-foreground">
                         {exercise.progressionNotes}
-                      </p>
+                      </ExercisePreText>
                     </div>
                   )}
                 {exercise.regressionNotes != null &&
                   String(exercise.regressionNotes).trim() !== "" && (
                     <div>
                       <p className="text-xs font-medium text-muted-foreground">Regression</p>
-                      <p className="mt-1.5 whitespace-pre-wrap text-sm text-foreground">
+                      <ExercisePreText className="mt-1.5 text-sm text-foreground">
                         {exercise.regressionNotes}
-                      </p>
+                      </ExercisePreText>
                     </div>
                   )}
               </CardContent>
@@ -309,7 +309,7 @@ export default function ExerciseDetailPage() {
                 <CardTitle className="text-base">Transition Cues</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="whitespace-pre-wrap text-sm">{exercise.transitionCues}</p>
+                <ExercisePreText className="text-sm">{exercise.transitionCues}</ExercisePreText>
               </CardContent>
             </Card>
           )}
@@ -320,7 +320,7 @@ export default function ExerciseDetailPage() {
                 <CardTitle className="text-base">Cues / Notes</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="whitespace-pre-wrap text-sm">{exercise.cueing}</p>
+                <ExercisePreText className="text-sm">{exercise.cueing}</ExercisePreText>
               </CardContent>
             </Card>
           )}
@@ -372,7 +372,7 @@ export default function ExerciseDetailPage() {
           )}
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {exercise.tags.length > 0 && (
             <Card>
               <CardHeader>

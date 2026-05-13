@@ -14,7 +14,7 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { BulletTextarea } from "@/components/exercises/bullet-textarea";
 import {
   Select,
   SelectContent,
@@ -125,6 +125,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
   const [regressionNotes, setRegressionNotes] = useState(
     exercise?.regressionNotes ?? ""
   );
+
   const [tags, setTags] = useState<string[]>(exercise?.tags ?? []);
   const [tagInput, setTagInput] = useState("");
   const [folderId, setFolderId] = useState<string>(exercise?.folderId ?? "none");
@@ -592,7 +593,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
 
           <div className="space-y-2">
             <Label htmlFor="name" className="pl-1.5 text-sm font-medium text-foreground">
-              Name *
+              Name <span className="text-destructive">*</span>
             </Label>
             <Input
               id="name"
@@ -605,13 +606,18 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description" className="pl-1.5 text-sm font-medium text-foreground">
-              Description
-            </Label>
-            <Textarea
+            <BulletTextarea
               id="description"
+              label={
+                <Label
+                  htmlFor="description"
+                  className="pl-1.5 text-sm font-medium text-foreground"
+                >
+                  Description
+                </Label>
+              }
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onValueChange={setDescription}
               placeholder="Describe the movement, setup, and intention..."
               rows={4}
               className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
@@ -619,16 +625,18 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label
-              htmlFor="startingPosition"
-              className="pl-1.5 text-sm font-medium text-foreground"
-            >
-              Starting Position
-            </Label>
-            <Textarea
+            <BulletTextarea
               id="startingPosition"
+              label={
+                <Label
+                  htmlFor="startingPosition"
+                  className="pl-1.5 text-sm font-medium text-foreground"
+                >
+                  Starting Position
+                </Label>
+              }
               value={startingPosition}
-              onChange={(e) => setStartingPosition(e.target.value)}
+              onValueChange={setStartingPosition}
               placeholder="e.g., Supine, feet on footbar"
               rows={3}
               className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
@@ -978,60 +986,63 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                     showFinisherStyle ? "space-y-3" : "space-y-1.5"
                   }
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-2 pl-1.5">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {stepTitle}
-                      </span>
-                      {isLast && row.isFinisher && (
-                        <Badge variant="secondary" className="text-xs font-semibold">
-                          Finisher
-                        </Badge>
-                      )}
-                      {isLast && (
-                        <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                          <input
-                            type="checkbox"
-                            checked={row.isFinisher}
-                            onChange={(e) => {
-                              const checked = e.target.checked;
-                              setLayerRows((prev) =>
-                                prev.map((r, i) =>
-                                  i === prev.length - 1
-                                    ? { ...r, isFinisher: checked }
-                                    : { ...r, isFinisher: false }
-                                )
-                              );
-                            }}
-                            className="size-4 rounded border-input accent-primary"
-                          />
-                          Mark as finisher
-                        </label>
-                      )}
-                    </div>
-                    {layerRows.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setLayerRows((prev) => prev.filter((_, i) => i !== index))
-                        }
-                        className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
-                        aria-label={`Remove ${stepTitle}`}
-                      >
-                        <X className="size-4" />
-                      </button>
-                    )}
-                  </div>
-                  <Textarea
+                  <BulletTextarea
+                    bulletsEnabled
+                    showAddBulletButton
+                    label={
+                      <div className="flex flex-wrap items-center gap-2 pl-1.5">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {stepTitle}
+                        </span>
+                        {isLast && row.isFinisher && (
+                          <Badge variant="secondary" className="text-xs font-semibold">
+                            Finisher
+                          </Badge>
+                        )}
+                        {isLast && (
+                          <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                            <input
+                              type="checkbox"
+                              checked={row.isFinisher}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setLayerRows((prev) =>
+                                  prev.map((r, i) =>
+                                    i === prev.length - 1
+                                      ? { ...r, isFinisher: checked }
+                                      : { ...r, isFinisher: false }
+                                  )
+                                );
+                              }}
+                              className="size-4 rounded border-input accent-primary"
+                            />
+                            Mark as finisher
+                          </label>
+                        )}
+                      </div>
+                    }
+                    toolbarEndSlot={
+                      layerRows.length > 1 ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setLayerRows((prev) => prev.filter((_, i) => i !== index))
+                          }
+                          className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+                          aria-label={`Remove ${stepTitle}`}
+                        >
+                          <X className="size-4" />
+                        </button>
+                      ) : null
+                    }
                     value={row.content}
-                    onChange={(e) => {
-                      const v = e.target.value;
+                    onValueChange={(v) =>
                       setLayerRows((prev) => {
                         const next = [...prev];
                         next[index] = { ...next[index], content: v };
                         return next;
-                      });
-                    }}
+                      })
+                    }
                     placeholder={
                       index === 0
                         ? "e.g., Press out halfway, pause, return"
@@ -1061,13 +1072,18 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="cueing" className="pl-1.5 text-sm font-medium text-foreground">
-              Cues / Notes
-            </Label>
-            <Textarea
+            <BulletTextarea
               id="cueing"
+              label={
+                <Label
+                  htmlFor="cueing"
+                  className="pl-1.5 text-sm font-medium text-foreground"
+                >
+                  Cues / Notes
+                </Label>
+              }
               value={cueing}
-              onChange={(e) => setCueing(e.target.value)}
+              onValueChange={setCueing}
               placeholder="Key coaching points, modifications, breathing cues..."
               rows={3}
               className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
@@ -1264,13 +1280,18 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
           </div> */}
 
           <div className="space-y-2">
-            <Label htmlFor="progressionNotes" className="pl-1.5 text-sm font-medium text-foreground">
-              Progression notes
-            </Label>
-            <Textarea
+            <BulletTextarea
               id="progressionNotes"
+              label={
+                <Label
+                  htmlFor="progressionNotes"
+                  className="pl-1.5 text-sm font-medium text-foreground"
+                >
+                  Progression notes
+                </Label>
+              }
               value={progressionNotes}
-              onChange={(e) => setProgressionNotes(e.target.value)}
+              onValueChange={setProgressionNotes}
               placeholder="How to make this exercise harder (load, range, tempo, props…)"
               rows={3}
               className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
@@ -1278,13 +1299,18 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="regressionNotes" className="pl-1.5 text-sm font-medium text-foreground">
-              Regression notes
-            </Label>
-            <Textarea
+            <BulletTextarea
               id="regressionNotes"
+              label={
+                <Label
+                  htmlFor="regressionNotes"
+                  className="pl-1.5 text-sm font-medium text-foreground"
+                >
+                  Regression notes
+                </Label>
+              }
               value={regressionNotes}
-              onChange={(e) => setRegressionNotes(e.target.value)}
+              onValueChange={setRegressionNotes}
               placeholder="How to make this exercise easier (modifications, support, range…)"
               rows={3}
               className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
@@ -1453,7 +1479,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
         </Button>
         <Button
           type="submit"
-          disabled={saving || uploading || !name.trim()}
+          disabled={saving || uploading || !name.trim() || movementType === "none"}
           className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
         >
           {saving ? "Saving..." : isEdit ? "Update Exercise" : "Create Exercise"}
