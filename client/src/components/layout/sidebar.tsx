@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
   Menu,
@@ -12,6 +13,7 @@ import {
   Dumbbell,
   FileText,
   Users,
+  ListOrdered,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,10 +21,28 @@ import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
 
-const navItems = [
+type MainNavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  /** When set, overrides default prefix matching for the active pill. */
+  isActive?: (pathname: string) => boolean;
+};
+
+const navItems: MainNavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/calendar", label: "Calendar", icon: Calendar },
-  { href: "/exercises", label: "Exercises", icon: Dumbbell },
+  {
+    href: "/exercises",
+    label: "Exercises",
+    icon: Dumbbell,
+    isActive: (p) => p.startsWith("/exercises") && !p.startsWith("/exercises/multistep"),
+  },
+  {
+    href: "/exercises/multistep",
+    label: "Multistep form",
+    icon: ListOrdered,
+  },
   { href: "/class-plans", label: "Class Plans", icon: FileText },
   { href: "/clients", label: "Clients", icon: Users },
 ];
@@ -39,7 +59,7 @@ export function Sidebar() {
   const { isAdmin } = useAuth();
   // const isAdminRoute = pathname.startsWith("/admin");
 
-  const isActive = (href: string) => {
+  const defaultIsActive = (href: string) => {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
@@ -52,9 +72,6 @@ export function Sidebar() {
             <Dumbbell className="size-5" />
           </div>
           <div>
-            <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
-              Studio
-            </p>
             <h1 className="text-base font-semibold tracking-[-0.03em] text-card-foreground">
               Pilates Platform
             </h1>
@@ -64,7 +81,7 @@ export function Sidebar() {
       {!isAdmin &&
         navItems.map((item) => {
           const Icon = item.icon;
-          const active = isActive(item.href);
+          const active = item.isActive ? item.isActive(pathname) : defaultIsActive(item.href);
           return (
             <Link
               key={`main-${item.label}`}
@@ -98,7 +115,7 @@ export function Sidebar() {
           </span>
           {adminNavItems.map((item) => {
             const Icon = item.icon;
-            const active = isActive(item.href);
+            const active = defaultIsActive(item.href);
             return (
               <Link
                 key={`admin-${item.label}`}

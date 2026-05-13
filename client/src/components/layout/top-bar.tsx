@@ -31,12 +31,9 @@ export function TopBar() {
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-background/85 px-4 backdrop-blur-xl md:px-6">
       <div className="ml-11 md:ml-0">
-        <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
-          Studio Flow
-        </p>
-        <p className="mt-0.5 text-sm font-medium text-foreground">
+        {/* <p className="mt-0.5 text-sm font-medium text-foreground">
           Welcome, {firstName}
-        </p>
+        </p> */}
       </div>
 
       <DropdownMenu>

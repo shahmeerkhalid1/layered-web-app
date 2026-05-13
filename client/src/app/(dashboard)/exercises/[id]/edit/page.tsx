@@ -6,6 +6,8 @@ import type { Exercise } from "@/lib/types";
 import { exerciseApi } from "@/services/exercise-api";
 import { ExerciseForm } from "@/components/exercises/exercise-form";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export default function EditExercisePage() {
   const params = useParams();
@@ -36,11 +38,20 @@ export default function EditExercisePage() {
 
   return (
     <div className="space-y-6 relative">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Edit Exercise</h2>
+      <div className="flex min-w-0 items-start gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="size-4" />
+        </Button>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-2xl font-bold tracking-tight">Edit Exercise</h2>
         <p className="text-muted-foreground">Update {exercise.name}</p>
       </div>
-      <ExerciseForm exercise={exercise} />
     </div>
-  );
+    <ExerciseForm exercise={exercise} />
+  </div>
+);
 }
