@@ -23,9 +23,34 @@ A dynamic, ordered content-block system for building exercise instructions step 
 - **Manual finisher toggle**: only the **last** layer row shows a "Mark as finisher" checkbox. When checked, that layer displays a "Finisher" badge. Adding a new layer always appends at the end and clears any existing finisher flag.
 - No automatic finisher assignment — instructors control it intentionally.
 
+#### `BulletTextarea` (plain-text bullets in `content`)
+
+Reusable component: [`client/src/components/exercises/bullet-textarea.tsx`](client/src/components/exercises/bullet-textarea.tsx). Wired from [`exercise-form.tsx`](client/src/components/exercises/exercise-form.tsx) for:
+
+- **Every** dynamic layer row (Layer 1, Layer 2, … — not only the first).
+- **Description**, **Starting position**, **Cues / notes**, **Progression notes**, and **Regression notes**.
+
+Behaviour (bullets are **literal** `•` characters and newlines inside the same `String` stored on `ExerciseLayer.content` or exercise fields — no separate list model in the database):
+
+| Input | Effect |
+|--------|--------|
+| **Enter** | Inserts `\n• ` so the next line starts with a bullet. |
+| **Shift+Enter** | Inserts a newline only (continuation of the current bullet line). |
+| **Add •** | Inserts `• ` at the caret only when the selection is collapsed, the caret is at the **start** of the current line, and that line does not already begin with `• `; otherwise the control stays disabled. |
+| IME composition | Enter is not intercepted while composing (e.g. CJK input). |
+
+Toolbar layout:
+
+- Optional **`label`** on the **same row** as **Add •** (e.g. shadcn `Label` for Description; for layers: step title + optional Finisher badge + "Mark as finisher" checkbox when that row is the last layer).
+- Optional **`toolbarEndSlot`** after **Add •** (e.g. **Remove layer** when there is more than one layer). The control group uses `data-bullet-textarea-toolbar` so moving focus from the textarea to **Add •** or remove does not reset the add-bullet gate incorrectly.
+- **`bulletsEnabled={false}`** renders a plain shadcn `Textarea` with no bullet behaviour (available for reuse elsewhere; **all** layer rows in the exercise form use bullets enabled).
+
+The shadcn [`Textarea`](client/src/components/ui/textarea.tsx) uses `forwardRef` so the component can restore selection after programmatic inserts.
+
 ### Frontend — Detail Page
 
-- Exercise detail page (`exercises/[id]/page.tsx`) renders layers with `layer.isFinisher` flag; finisher-marked layers get a "Finisher" badge and distinct bordered card styling.
+- Exercise detail page ([`client/src/app/(dashboard)/exercises/[id]/page.tsx`](client/src/app/(dashboard)/exercises/[id]/page.tsx)) renders layers with `layer.isFinisher` flag; finisher-marked layers get a "Finisher" badge and distinct bordered card styling.
+- Layer **body** copy (and other long exercise strings such as description, starting position, cueing, progression/regression notes where applicable) is rendered with **`ExercisePreText`** ([`client/src/components/exercises/exercise-pre-text.tsx`](client/src/components/exercises/exercise-pre-text.tsx)): line breaks preserved; lines beginning with `•` get a **hanging indent** so wrapped text aligns under the text after the bullet, not under the bullet column.
 
 ---
 
@@ -104,18 +129,20 @@ Metadata fields on `Exercise` for comprehensive Pilates documentation:
 - **Equipment**: full-width `Label` → helper text → checkboxes + custom "Add" input row (same input sizing/styling). With "None" selected, non-None checkboxes and custom add controls are disabled until "None" is cleared.
 - **Machine Setup**: single-select dropdown with N/A option.
 - **Movement Analysis** section: Spinal Movement (multi-select, "None" disables other options while selected), Chain Type (multi-select with constraints + tooltips), Joint Loading (multi-select) — grouped under a heading with a separator.
-- **Layers**: numbered rows with manual "Mark as finisher" toggle on the last row only.
-- **Progression / Regression**: two textarea fields after the "Easier version" progression select — "Progression notes" and "Regression notes".
+- **Layers**: each row uses **`BulletTextarea`** (Enter / Shift+Enter / **Add •** as above). Step title + finisher UI sit in the component’s `label` slot on one row with **Add •**; **Remove layer** sits in `toolbarEndSlot` when there is more than one layer. Numbered layers; manual "Mark as finisher" only on the **last** row.
+- **Description**, **Starting position**: **`BulletTextarea`** with shadcn `Label` in the `label` slot (same row as **Add •**).
+- **Progression / Regression**: **`BulletTextarea`** fields ("Progression notes", "Regression notes") with labels on the same row as **Add •**, after the "Easier version" progression select.
+- **Cueing**: **`BulletTextarea`** with label on the same row as **Add •**.
 - Form sections: Basic Info → Orientation & Direction → Movement Type → Springs & Equipment → Machine Setup → Layers → Transition Cues & Cueing → Movement Analysis → Folder & Progression → Progression/Regression Notes → Tags → Images.
 
 ---
 
 ## 5. Exercise Detail Page
 
-- **Setup** card: Orientation, Direction faced, Movement type, Springs, Machine setup as key-value pairs. **Equipment** displayed as badges (array field).
-- **Layers** card: numbered layers with `isFinisher` badge on finisher-marked layers and distinct card styling.
+- **Setup** card: Orientation, Direction faced, Movement type, Springs, Machine setup as key-value pairs. **Equipment** displayed as badges (array field). **Description** and **Starting position** (and similar long strings) use **`ExercisePreText`** for line breaks and bullet-line hanging indents where applicable.
+- **Layers** card: numbered layers with `isFinisher` badge on finisher-marked layers and distinct card styling; layer text (and other long copy where used) via **`ExercisePreText`** so `•`-style lines from the form display with a hanging indent when wrapped.
 - **Movement Analysis** card: Spinal Movement as badges, **Chain Type** as badges (was single text), Joint Loading as badges.
-- **Progressions & Regressions** card: shows `progressionNotes` and `regressionNotes` if present.
+- **Progressions & Regressions** card: shows `progressionNotes` and `regressionNotes` when present, via **`ExercisePreText`**.
 - **Progression Chain Viewer**: shows exercise-to-exercise chain (Level 1 → 2 → 3) when chain has 2+ steps.
 
 ---
@@ -148,6 +175,8 @@ Metadata fields on `Exercise` for comprehensive Pilates documentation:
 | `client/src/hooks/use-dropdown-options.ts` | React hook for fetching dropdown options |
 | `client/src/lib/exercise-layer-labels.ts` | Layer title helper (`getLayerStepTitle`) |
 | `client/src/lib/chain-type-tooltips.ts` | Chain type hover tooltip descriptions |
+| `client/src/components/exercises/bullet-textarea.tsx` | Reusable long-text control: Enter / Shift+Enter bullets, **Add •**, optional `label` + `toolbarEndSlot` on one toolbar row |
+| `client/src/components/exercises/exercise-pre-text.tsx` | Read-only display: line breaks + hanging indent for lines starting with `•` |
 | `server/prisma/migrations/20260511140000_alexa_exercise_fields/migration.sql` | Migration: equipment/chainType to arrays, add progressionNotes/regressionNotes, add isFinisher |
 
 ## Files Modified
@@ -161,6 +190,7 @@ Metadata fields on `Exercise` for comprehensive Pilates documentation:
 | `server/src/modules/exercises/exercise.validation.ts` | `equipment`/`chainType` → arrays; added `progressionNotes`/`regressionNotes`; added `isFinisher` to layer schema |
 | `client/src/lib/types.ts` | `equipment`/`chainType` → `string[]`; added `progressionNotes`/`regressionNotes`; `ExerciseLayer.isFinisher` |
 | `client/src/services/exercise-api.ts` | `SaveExerciseBody` updated for arrays, new text fields, `ExerciseLayerInput.isFinisher` |
-| `client/src/components/exercises/exercise-form.tsx` | Equipment multi-select + custom entry ("None" clears others and disables non-None checkboxes + custom add while selected); chain type multi-select with constraints + tooltips; springs N/A button; manual finisher toggle; progression/regression textareas; spinal movement "None" clears others and disables non-None checkboxes while selected; consistent Label-on-top layout |
-| `client/src/app/(dashboard)/exercises/[id]/page.tsx` | Equipment/chain type as badges; layer `isFinisher` display; progression/regression card |
+| `client/src/components/exercises/exercise-form.tsx` | Equipment multi-select + custom entry ("None" clears others and disables non-None checkboxes + custom add while selected); chain type multi-select with constraints + tooltips; springs N/A button; manual finisher toggle; **`BulletTextarea`** for description, starting position, **all** layer rows, cueing, progression/regression notes; spinal movement "None" clears others and disables non-None checkboxes while selected |
+| `client/src/app/(dashboard)/exercises/[id]/page.tsx` | Equipment/chain type as badges; layer `isFinisher` display; progression/regression card; **`ExercisePreText`** for long-form copy (e.g. description, layers, cueing) |
+| `client/src/components/ui/textarea.tsx` | `forwardRef` for ref/caret compatibility (used by `BulletTextarea`) |
 | `.cursor/rules/project.mdc` | Updated conventions for new field types, layer system, and dropdown category keys |
