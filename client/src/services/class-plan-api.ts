@@ -4,6 +4,7 @@ import type {
   ClassPlanFoldersResponse,
   ClassPlanListResponse,
   ClassPlanTemplate,
+  PlanSection,
 } from "@/lib/types";
 
 export type ClassPlanListParams = {
@@ -46,6 +47,27 @@ export const classPlanApi = {
 
   duplicateClassPlan: (id: string) =>
     api.post<ClassPlanTemplate>(`/class-plans/${encodeURIComponent(id)}/duplicate`),
+
+  addSection: (templateId: string, body: { name: string; order?: number }) =>
+    api.post<PlanSection>(
+      `/class-plans/${encodeURIComponent(templateId)}/sections`,
+      body
+    ),
+
+  updateSection: (
+    templateId: string,
+    sectionId: string,
+    body: { name?: string; order?: number }
+  ) =>
+    api.patch<PlanSection>(
+      `/class-plans/${encodeURIComponent(templateId)}/sections/${encodeURIComponent(sectionId)}`,
+      body
+    ),
+
+  deleteSection: (templateId: string, sectionId: string) =>
+    api.delete<{ message: string }>(
+      `/class-plans/${encodeURIComponent(templateId)}/sections/${encodeURIComponent(sectionId)}`
+    ),
 
   getFolders: () => api.get<ClassPlanFoldersResponse>("/class-plan-folders"),
 

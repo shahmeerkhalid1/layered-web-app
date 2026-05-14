@@ -1,9 +1,11 @@
 import { prisma } from "../../lib/prisma";
 import { NotFoundError } from "../../lib/errors";
 import type {
+  AddSectionInput,
   CreateClassPlanInput,
   ListClassPlansQuery,
   UpdateClassPlanInput,
+  UpdateSectionInput,
 } from "./class-plan.validation";
 
 const activeFilter = { deletedAt: null };
@@ -30,6 +32,17 @@ const templateDetailInclude = {
     },
   },
 } as const;
+
+async function assertTemplateOwned(
+  id: string,
+  instructorId: string
+): Promise<void> {
+  const ok = await prisma.classPlanTemplate.findFirst({
+    where: { id, instructorId, ...activeFilter },
+    select: { id: true },
+  });
+  if (!ok) throw new NotFoundError("Class plan template");
+}
 
 async function assertFolderOwned(
   folderId: string,
@@ -181,10 +194,7 @@ export async function updateClassPlan(
   instructorId: string,
   data: UpdateClassPlanInput
 ) {
-  const existing = await prisma.classPlanTemplate.findFirst({
-    where: { id, instructorId, ...activeFilter },
-  });
-  if (!existing) throw new NotFoundError("Class plan template");
+  await assertTemplateOwned(id, instructorId);
 
   const { sections, folderId, ...rest } = data;
 
@@ -255,10 +265,7 @@ export async function updateClassPlan(
 }
 
 export async function deleteClassPlan(id: string, instructorId: string) {
-  const template = await prisma.classPlanTemplate.findFirst({
-    where: { id, instructorId, ...activeFilter },
-  });
-  if (!template) throw new NotFoundError("Class plan template");
+  await assertTemplateOwned(id, instructorId);
 
   await prisma.classPlanTemplate.update({
     where: { id },
@@ -304,4 +311,67 @@ export async function duplicateClassPlan(id: string, instructorId: string) {
     },
     include: templateDetailInclude,
   });
+}
+
+export async function addSection(
+  templateId: string,
+  instructorId: string,
+  data: AddSectionInput
+) {
+  await assertTemplateOwned(templateId, instructorId);
+
+  let order = data.order;
+  if (order === undefined) {
+    const agg = await prisma.planSection.aggregate({
+      where: { templateId },
+      _max: { order: true },
+    });
+    order = (agg._max.order ?? -1) + 1;
+  }
+
+  return prisma.planSection.create({
+    data: {
+      name: data.name,
+      order,
+      templateId,
+    },
+  });
+}
+
+export async function updateSection(
+  templateId: string,
+  sectionId: string,
+  instructorId: string,
+  data: UpdateSectionInput
+) {
+  await assertTemplateOwned(templateId, instructorId);
+
+  const section = await prisma.planSection.findFirst({
+    where: { id: sectionId, templateId },
+  });
+  if (!section) throw new NotFoundError("Section");
+
+  return prisma.planSection.update({
+    where: { id: sectionId },
+    data: {
+      ...(data.name !== undefined && { name: data.name }),
+      ...(data.order !== undefined && { order: data.order }),
+    },
+  });
+}
+
+export async function deleteSection(
+  templateId: string,
+  sectionId: string,
+  instructorId: string
+) {
+  await assertTemplateOwned(templateId, instructorId);
+
+  const section = await prisma.planSection.findFirst({
+    where: { id: sectionId, templateId },
+  });
+  if (!section) throw new NotFoundError("Section");
+
+  await prisma.planSection.delete({ where: { id: sectionId } });
+  return { message: "Section deleted" };
 }

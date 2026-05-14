@@ -85,6 +85,15 @@ export interface ClassPlanFoldersResponse {
   totalTemplates: number;
 }
 
+/** Section row from POST/PATCH /api/class-plans/:id/sections */
+export interface PlanSection {
+  id: string;
+  name: string;
+  order: number;
+  templateId: string;
+  createdAt: string;
+}
+
 /** List row from GET /api/class-plans (includes section count) */
 export interface ClassPlanTemplate {
   id: string;

@@ -39,3 +39,20 @@ export const listClassPlansSchema = z.object({
 export type CreateClassPlanInput = z.infer<typeof createClassPlanSchema>;
 export type UpdateClassPlanInput = z.infer<typeof updateClassPlanSchema>;
 export type ListClassPlansQuery = z.infer<typeof listClassPlansSchema>;
+
+export const addSectionSchema = z.object({
+  name: z.string().min(1).max(200),
+  order: z.number().int().nonnegative().optional(),
+});
+
+export const updateSectionSchema = z
+  .object({
+    name: z.string().min(1).max(200).optional(),
+    order: z.number().int().nonnegative().optional(),
+  })
+  .refine((d) => d.name !== undefined || d.order !== undefined, {
+    message: "At least one of name or order is required",
+  });
+
+export type AddSectionInput = z.infer<typeof addSectionSchema>;
+export type UpdateSectionInput = z.infer<typeof updateSectionSchema>;
