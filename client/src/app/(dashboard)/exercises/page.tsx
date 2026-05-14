@@ -21,7 +21,7 @@ export default function ExercisesPage() {
     library.totalExerciseCount > 0;
 
   return (
-    <div className="space-y-6 rounded-[2rem] bg-background px-2 pb-6 pt-2 sm:px-4">
+    <div className="space-y-6 rounded-[2rem] bg-background px-2 pb-6 sm:px-4">
       <ExerciseLibraryHeader
         totalExercises={library.totalExerciseCount}
         folderCount={library.folders.length}
