@@ -1,6 +1,7 @@
 "use client";
 
 import { ExerciseLibraryHeader } from "@/components/exercises/exercise-library-header";
+import { ExerciseLibraryPagination } from "@/components/exercises/exercise-library-pagination";
 import { ExerciseList } from "@/components/exercises/exercise-list";
 import { FolderDialog } from "@/components/exercises/folder-dialog";
 import { useExerciseLibrary } from "@/hooks/exercises/use-exercise-library";
@@ -48,6 +49,10 @@ export default function ExercisesPage() {
           library.setSelectedFolder(null);
         }}
       />
+
+      {!library.loading && library.exercises.length > 0 ? (
+        <ExerciseLibraryPagination />
+      ) : null}
 
       <FolderDialog
         open={folderDialog.open}

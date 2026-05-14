@@ -1,16 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { adminApi } from "@/services/admin-api";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
+import { useDebounce } from "@/hooks/use-debounce";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -47,9 +57,14 @@ import {
   Copy,
   Loader2,
   Search,
-  ShieldCheck,
-  Users,
+  SearchX,
+  X,
 } from "lucide-react";
+import { ExerciseLibraryPagination } from "@/components/exercises/exercise-library-pagination";
+import {
+  adminInviteFormSchema,
+  type AdminInviteFormValues,
+} from "@/lib/validation/auth-schemas";
 
 const PAGE_SIZE = 10;
 
@@ -92,14 +107,23 @@ export default function AdminUsersPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
-  const [searchApplied, setSearchApplied] = useState("");
+  const debouncedSearch = useDebounce(searchInput, 300);
   const [loading, setLoading] = useState(true);
 
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<Role>("INSTRUCTOR");
   const [inviteSubmitting, setInviteSubmitting] = useState(false);
   const [inviteLinkResult, setInviteLinkResult] = useState<string | null>(null);
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<AdminInviteFormValues>({
+    resolver: zodResolver(adminInviteFormSchema),
+    defaultValues: { email: "", role: "INSTRUCTOR" },
+  });
 
   const [detailsUser, setDetailsUser] = useState<AdminListUser | null>(null);
 
@@ -111,66 +135,80 @@ export default function AdminUsersPage() {
   } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const loadUsers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const offset = (page - 1) * PAGE_SIZE;
-      const res = await authClient.admin.listUsers({
-        query: {
-          limit: PAGE_SIZE,
-          offset,
-          ...(searchApplied.trim()
-            ? {
-                searchValue: searchApplied.trim(),
-                searchField: "email" as const,
-                searchOperator: "contains" as const,
-              }
-            : {}),
-          sortBy: "createdAt",
-          sortDirection: "desc",
-        },
-      });
-      const err = (res as { error?: { message?: string } }).error;
-      if (err?.message) {
-        throw new Error(err.message);
+  const prevDebouncedRef = useRef(debouncedSearch);
+  const lastFetchKeyRef = useRef("");
+
+  const loadUsers = useCallback(
+    async (pageForQuery: number) => {
+      setLoading(true);
+      try {
+        const offset = (pageForQuery - 1) * PAGE_SIZE;
+        const q = debouncedSearch.trim();
+        const res = await authClient.admin.listUsers({
+          query: {
+            limit: PAGE_SIZE,
+            offset,
+            ...(q
+              ? {
+                  searchValue: q,
+                  searchField: "email" as const,
+                  searchOperator: "contains" as const,
+                }
+              : {}),
+            sortBy: "createdAt",
+            sortDirection: "desc",
+          },
+        });
+        const err = (res as { error?: { message?: string } }).error;
+        if (err?.message) {
+          throw new Error(err.message);
+        }
+        const { users: list, total: t } = parseListUsersResult(res);
+        setUsers(list);
+        setTotal(t);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to load users");
+        setUsers([]);
+        setTotal(0);
+      } finally {
+        setLoading(false);
       }
-      const { users: list, total: t } = parseListUsersResult(res);
-      setUsers(list);
-      setTotal(t);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to load users");
-      setUsers([]);
-      setTotal(0);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, searchApplied]);
+    },
+    [debouncedSearch],
+  );
 
   useEffect(() => {
-    queueMicrotask(() => {
-      void loadUsers();
-    });
-  }, [loadUsers]);
+    const searchBump = prevDebouncedRef.current !== debouncedSearch;
+    prevDebouncedRef.current = debouncedSearch;
 
-  const applySearch = () => {
-    setPage(1);
-    setSearchApplied(searchInput);
-  };
+    const pageForQuery = searchBump ? 1 : page;
+    const fetchKey = `${debouncedSearch}:${pageForQuery}`;
+    if (lastFetchKeyRef.current === fetchKey) {
+      return;
+    }
+    lastFetchKeyRef.current = fetchKey;
+
+    queueMicrotask(() => {
+      if (searchBump && page !== 1) {
+        setPage(1);
+      }
+      void loadUsers(pageForQuery);
+    });
+  }, [page, debouncedSearch, loadUsers]);
 
   const openInvite = () => {
-    setInviteEmail("");
-    setInviteRole("INSTRUCTOR");
+    reset({ email: "", role: "INSTRUCTOR" });
     setInviteLinkResult(null);
     setInviteOpen(true);
   };
 
-  const submitInvite = async () => {
+  const onInviteSubmit = async (values: AdminInviteFormValues) => {
     setInviteSubmitting(true);
     setInviteLinkResult(null);
     try {
       const data = await adminApi.invite({
-        email: inviteEmail.trim(),
-        role: inviteRole,
+        email: values.email.trim(),
+        role: values.role,
       });
       setInviteLinkResult(data.inviteLink);
       toast.success("Invitation created");
@@ -207,7 +245,7 @@ export default function AdminUsersPage() {
       if (err?.message) throw new Error(err.message);
       toast.success("User deactivated");
       setConfirmBan(null);
-      await loadUsers();
+      await loadUsers(page);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Ban failed");
     } finally {
@@ -224,7 +262,7 @@ export default function AdminUsersPage() {
       if (err?.message) throw new Error(err.message);
       toast.success("User activated");
       setConfirmUnban(null);
-      await loadUsers();
+      await loadUsers(page);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Unban failed");
     } finally {
@@ -248,7 +286,7 @@ export default function AdminUsersPage() {
       if (err?.message) throw new Error(err.message);
       toast.success("Role updated");
       setConfirmRole(null);
-      await loadUsers();
+      await loadUsers(page);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Role update failed");
     } finally {
@@ -258,91 +296,80 @@ export default function AdminUsersPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const isSelf = (u: AdminListUser) => u.id === selfId;
-  const activeVisibleCount = users.filter((u) => !u.banned).length;
+  const searchTrim = debouncedSearch.trim();
+  const hasActiveFilters = searchTrim.length > 0;
+  const showFilteredEmpty =
+    !loading && users.length === 0 && hasActiveFilters;
+  const showDirectoryEmpty =
+    !loading && users.length === 0 && !hasActiveFilters;
 
   return (
-    <div className="relative space-y-6 overflow-hidden rounded-[2rem] bg-background p-1">
-      <div className="pointer-events-none absolute top-24 right-10 h-52 w-52 rounded-full bg-secondary/70 blur-3xl" />
-
-      <div className="relative rounded-3xl border border-border bg-card/90 p-5 shadow-lg">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="mb-2 text-xs font-semibold tracking-[0.24em] text-muted-foreground uppercase">
-              Instructor Directory
-            </p>
+    <div className="space-y-6 rounded-[2rem] bg-background px-2 pb-6 pt-2 sm:px-4">
+      <div className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+          <div className="min-w-0 max-w-2xl space-y-2">
             <h2 className="text-2xl font-semibold tracking-[-0.03em] text-card-foreground sm:text-3xl">
               User management
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Invite instructors, update roles, and keep access aligned with your
-              studio operations.
+            <p
+              className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground"
+              aria-live="polite"
+            >
+              {loading && <span>Loading directory…</span>}
+              {!loading && (
+                <>
+                  <span className="font-medium text-foreground">
+                    {hasActiveFilters
+                      ? `Showing ${users.length} on this page · ${total} match${total === 1 ? "" : "es"}`
+                      : `${total} user${total === 1 ? "" : "s"}`}
+                  </span>
+                </>
+              )}
             </p>
+            
           </div>
           <Button
             type="button"
             size="sm"
             onClick={openInvite}
-            className="rounded-full bg-primary px-5 text-primary-foreground shadow-md hover:bg-primary/90"
+            className="h-10 shrink-0 rounded-full bg-primary px-5 text-primary-foreground shadow-md hover:bg-primary/90"
           >
-            <UserPlus className="size-4" />
+            <UserPlus className="mr-2 size-4" />
             Invite user
           </Button>
         </div>
-      </div>
 
-      <div className="relative grid gap-4 md:grid-cols-[1fr_auto_auto]">
-        <div className="rounded-3xl border border-border bg-card p-4 shadow-lg">
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row items-stretch sm:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="flex flex-wrap items-start gap-3 border-t border-border pt-5">
+          <div className="min-w-0 flex-1 basis-52 space-y-2 sm:basis-72">
+            <Label htmlFor="user-search" className="text-muted-foreground">
+              Search
+            </Label>
+            <div className="relative rounded-2xl border border-border bg-card shadow-none">
+              <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="user-search"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") applySearch();
-                }}
-                placeholder="contains..."
-                className="h-11 rounded-2xl border-input bg-background/70 pr-4 pl-11 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                placeholder="Search by email…"
+                autoComplete="off"
+                className="h-12 rounded-2xl border-0 bg-transparent pr-11 pl-11 text-sm shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
               />
+              {searchInput ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchInput("")}
+                  className="absolute top-1/2 right-4 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  aria-label="Clear search"
+                >
+                  <X className="size-4" />
+                </button>
+              ) : null}
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={applySearch}
-              className="rounded-full h-auto sm:h-11  border-border bg-transparent px-5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            >
-              Search
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex min-w-36 items-center gap-3 rounded-3xl border border-border bg-card p-4 shadow-lg">
-          <div className="flex size-10 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
-            <Users className="size-5" />
-          </div>
-          <div>
-            <p className="text-2xl font-semibold tracking-[-0.03em] text-card-foreground">
-              {total}
-            </p>
-            <p className="text-xs text-muted-foreground">Total users</p>
-          </div>
-        </div>
-
-        <div className="flex min-w-36 items-center gap-3 rounded-3xl border border-border bg-card p-4 shadow-lg">
-          <div className="flex size-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground">
-            <ShieldCheck className="size-5" />
-          </div>
-          <div>
-            <p className="text-2xl font-semibold tracking-[-0.03em] text-card-foreground">
-              {activeVisibleCount}
-            </p>
-            <p className="text-xs text-muted-foreground">Active here</p>
           </div>
         </div>
       </div>
 
-      <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-lg">
+      <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-lg">
         {loading ? (
           <div className="flex justify-center py-16">
             <div className="flex items-center gap-3 rounded-full border border-border bg-background/75 px-4 py-2 text-sm text-muted-foreground">
@@ -350,39 +377,71 @@ export default function AdminUsersPage() {
               Loading instructors
             </div>
           </div>
+        ) : showFilteredEmpty ? (
+          <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
+            <div className="flex size-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <SearchX className="size-6" />
+            </div>
+            <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-card-foreground">
+              No users match
+            </h3>
+            <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
+              Try another email fragment or clear your search to see everyone in the directory again.
+            </p>
+            <Button
+              type="button"
+              variant="secondary"
+              className="mt-4 rounded-full px-4"
+              onClick={() => setSearchInput("")}
+            >
+              Clear search
+            </Button>
+          </div>
+        ) : showDirectoryEmpty ? (
+          <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
+            <div className="flex size-14 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+              <UserPlus className="size-6" />
+            </div>
+            <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-card-foreground">
+              No instructors yet
+            </h3>
+            <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
+              Send the first invitation so someone can register and appear here.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              className="mt-4 rounded-full bg-primary px-4 text-primary-foreground hover:bg-primary/90"
+              onClick={openInvite}
+            >
+              <UserPlus className="mr-2 size-4" />
+              Invite user
+            </Button>
+          </div>
         ) : (
-          <Table>
-            <TableHeader className="bg-accent">
-              <TableRow className="border-border hover:bg-transparent">
-                <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                  Name
-                </TableHead>
-                <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                  Email
-                </TableHead>
-                <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                  Role
-                </TableHead>
-                <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                  Status
-                </TableHead>
-                <TableHead className="w-12 px-4 py-3 text-right text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                  Actions
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.length === 0 ? (
+          <>
+            <Table>
+              <TableHeader className="bg-accent">
                 <TableRow className="border-border hover:bg-transparent">
-                  <TableCell
-                    colSpan={5}
-                    className="py-14 text-center text-sm text-muted-foreground"
-                  >
-                    No users match this search.
-                  </TableCell>
+                  <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                    Name
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                    Email
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                    Role
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                    Status
+                  </TableHead>
+                  <TableHead className="w-12 px-4 py-3 text-right text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                    Actions
+                  </TableHead>
                 </TableRow>
-              ) : (
-                users.map((u) => {
+              </TableHeader>
+              <TableBody>
+                {users.map((u) => {
                   const banned = Boolean(u.banned);
                   const self = isSelf(u);
                   return (
@@ -402,7 +461,7 @@ export default function AdminUsersPage() {
                           className={cn(
                             "border-border bg-accent text-[11px] font-semibold text-accent-foreground",
                             u.role === "ADMIN" &&
-                              "border-primary bg-primary text-primary-foreground"
+                              "border-primary bg-primary text-primary-foreground",
                           )}
                         >
                           {u.role ?? "INSTRUCTOR"}
@@ -427,7 +486,7 @@ export default function AdminUsersPage() {
                           <DropdownMenuTrigger
                             className={cn(
                               buttonVariants({ variant: "ghost", size: "icon-sm" }),
-                              "shrink-0 rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground data-popup-open:bg-accent"
+                              "shrink-0 rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground data-popup-open:bg-accent",
                             )}
                             aria-label="Open row menu"
                           >
@@ -457,7 +516,10 @@ export default function AdminUsersPage() {
                               className="rounded-xl"
                               disabled={self || u.role !== "ADMIN"}
                               onClick={() =>
-                                setConfirmRole({ user: u, nextRole: "INSTRUCTOR" })
+                                setConfirmRole({
+                                  user: u,
+                                  nextRole: "INSTRUCTOR",
+                                })
                               }
                             >
                               Make instructor
@@ -486,42 +548,33 @@ export default function AdminUsersPage() {
                       </TableCell>
                     </TableRow>
                   );
-                })
-              )}
-            </TableBody>
-          </Table>
+                })}
+              </TableBody>
+            </Table>
+
+            <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+              <ExerciseLibraryPagination
+                page={page}
+                totalPages={totalPages}
+                loading={loading}
+                onPageChange={setPage}
+                ariaLabel="User list pagination"
+              />
+            </div>
+          </>
         )}
       </div>
 
-      <div className="relative flex flex-col gap-3 rounded-3xl border border-border bg-card p-3 text-sm text-muted-foreground shadow-lg sm:flex-row sm:items-center sm:justify-between">
-        <span className="px-2">
-          Page {page} of {totalPages} ({total} users)
-        </span>
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={page <= 1 || loading}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-          >
-            Previous
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={page >= totalPages || loading}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-          >
-            Next
-          </Button>
-        </div>
-      </div>
-
-      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+      <Dialog
+        open={inviteOpen}
+        onOpenChange={(open) => {
+          setInviteOpen(open);
+          if (!open) {
+            reset({ email: "", role: "INSTRUCTOR" });
+            setInviteLinkResult(null);
+          }
+        }}
+      >
         <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl sm:max-w-md">
           <DialogHeader>
             <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
@@ -534,41 +587,81 @@ export default function AdminUsersPage() {
               Creates an invitation link. The user registers with the same email.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-3">
-            <div className="grid gap-2">
+          <form
+            id="admin-invite-form"
+            className="grid gap-4 py-3"
+            onSubmit={handleSubmit(onInviteSubmit)}
+          >
+            <div className="space-y-2">
               <Label
                 htmlFor="invite-email"
-                className="text-sm font-medium text-foreground"
+                className="pl-1.5 text-sm font-medium text-foreground"
               >
                 Email
               </Label>
               <Input
                 id="invite-email"
                 type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
                 autoComplete="off"
-                className="h-11 rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                aria-invalid={errors.email ? true : undefined}
+                className={cn(
+                  "h-11 rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35",
+                  errors.email && "border-destructive",
+                )}
+                {...register("email")}
               />
+              {errors.email ? (
+                <p className="pl-1.5 text-sm text-destructive">{errors.email.message}</p>
+              ) : null}
             </div>
-            <div className="grid gap-2">
+            <div className="space-y-2">
               <Label
                 htmlFor="invite-role"
-                className="text-sm font-medium text-foreground"
+                className="pl-1.5 text-sm font-medium text-foreground"
               >
                 Role
               </Label>
-              <select
-                id="invite-role"
-                className="h-11 rounded-2xl border border-input bg-background/70 px-3 text-sm text-foreground shadow-none outline-none focus-visible:ring-2 focus-visible:ring-ring/35"
-                value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value as Role)}
-              >
-                <option value="INSTRUCTOR">Instructor</option>
-                <option value="ADMIN">Admin</option>
-              </select>
+              <Controller
+                control={control}
+                name="role"
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger
+                      id="invite-role"
+                      aria-invalid={errors.role ? true : undefined}
+                      className={cn(
+                        "box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground",
+                        errors.role && "border-destructive",
+                      )}
+                    >
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent
+                      align="start"
+                      sideOffset={6}
+                      className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                    >
+                      <SelectItem
+                        value="INSTRUCTOR"
+                        className="rounded-xl py-2.5 pl-3"
+                      >
+                        Instructor
+                      </SelectItem>
+                      <SelectItem value="ADMIN" className="rounded-xl py-2.5 pl-3">
+                        Admin
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.role ? (
+                <p className="pl-1.5 text-sm text-destructive">{errors.role.message}</p>
+              ) : null}
             </div>
-            {inviteLinkResult && (
+            {inviteLinkResult ? (
               <div className="rounded-2xl border border-border bg-accent p-3 text-xs break-all">
                 <p className="mb-2 font-semibold text-accent-foreground">
                   Invite link
@@ -585,8 +678,8 @@ export default function AdminUsersPage() {
                   Copy link
                 </Button>
               </div>
-            )}
-          </div>
+            ) : null}
+          </form>
           <DialogFooter>
             <Button
               type="button"
@@ -597,9 +690,9 @@ export default function AdminUsersPage() {
               Close
             </Button>
             <Button
-              type="button"
-              disabled={inviteSubmitting || !inviteEmail.trim()}
-              onClick={() => void submitInvite()}
+              type="submit"
+              form="admin-invite-form"
+              disabled={inviteSubmitting}
               className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
             >
               {inviteSubmitting ? (

@@ -16,3 +16,10 @@ export const registerFormSchema = z.object({
 });
 
 export type RegisterFormValues = z.infer<typeof registerFormSchema>;
+
+export const adminInviteFormSchema = z.object({
+  email: z.string().min(1, "Email is required").email("Enter a valid email"),
+  role: z.enum(["ADMIN", "INSTRUCTOR"]),
+});
+
+export type AdminInviteFormValues = z.infer<typeof adminInviteFormSchema>;
