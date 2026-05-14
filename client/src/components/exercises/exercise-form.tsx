@@ -39,6 +39,7 @@ import {
   exerciseFormSchema,
   type ExerciseFormValues,
 } from "@/lib/validation/exercise-form-schema";
+import { cn } from "@/lib/utils";
 
 const MAX_IMAGES = 3;
 const EXERCISE_FORM_IMAGE_GALLERY = "exercise-form-images";
@@ -797,7 +798,11 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                     >
                       <SelectTrigger
                         id="exercise-movement-type"
-                        className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+                        aria-invalid={errors.movementType ? true : undefined}
+                        className={cn(
+                          "box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground",
+                          errors.movementType && "border-destructive",
+                        )}
                       >
                         <SelectValue placeholder="Select movement type">
                           <span
