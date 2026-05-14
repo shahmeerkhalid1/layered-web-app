@@ -622,6 +622,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                   placeholder="Describe the movement, setup, and intention..."
                   rows={4}
                   className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                  bulletsEnabled={false}
                 />
               )}
             />
@@ -647,6 +648,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                   placeholder="e.g., Supine, feet on footbar"
                   rows={3}
                   className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                  bulletsEnabled={false}
                 />
               )}
             />
@@ -1059,7 +1061,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
                     name={`layers.${index}.content`}
                     render={({ field }) => (
                       <BulletTextarea
-                        bulletsEnabled
+                      bulletsEnabled={false}
                         showAddBulletButton
                         label={
                           <div className="flex flex-wrap items-center gap-2 pl-1.5">
@@ -1145,6 +1147,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
               name="cueing"
               render={({ field }) => (
                 <BulletTextarea
+                bulletsEnabled={false}
                   id="cueing"
                   label={
                     <Label
@@ -1368,6 +1371,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
               name="progressionNotes"
               render={({ field }) => (
                 <BulletTextarea
+                bulletsEnabled={false}
                   id="progressionNotes"
                   label={
                     <Label
@@ -1393,6 +1397,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
               name="regressionNotes"
               render={({ field }) => (
                 <BulletTextarea
+                bulletsEnabled={false}
                   id="regressionNotes"
                   label={
                     <Label

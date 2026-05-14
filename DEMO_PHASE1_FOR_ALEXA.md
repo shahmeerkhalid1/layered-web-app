@@ -1,89 +1,97 @@
 # Pilates Platform — Phase 1 Demo for Alexa
 
+## Overview — say first (about 30–40 seconds)
+
+"**Last time** we covered the foundation: login, the dashboard, admin panel, inviting instructors, and controlled signup."
+
+"**Since then** we built out the full exercise library. The forms now have **proper checks** so instructors cannot save incomplete or incorrect entries. We added a **layering system** where they build teaching steps in order, with an optional **finisher** on the last step. We improved the **look and feel** for things like equipment, spinal movement, chain type, photos, search, and folders. And everything is **connected to the live system** — when an instructor saves or edits, it actually stores and loads from the real server and database."
+
+"**Today** I will walk you through that library: how instructors browse exercises, open one, see the teaching layout, and how creating or editing works."
+
 ## Opening Line
 
-"Alexa, you already saw the safe login and admin area. Now we added the **exercise library**. It is one place to save moves, add photos, write how you teach them, and find them fast."
+"Alexa, you already saw the secure login and admin area. Now we added the **exercise library** — one place for instructors to save their moves, add photos, write teaching notes, and find them fast."
 
 ## Steps
 
 ### 1. Open the Exercise Library from the menu.
 
-"This screen is your list of exercises. You save each move once. Later you can use it again when I add class plans and the calendar."
+"This is the instructor's list of exercises. They save each move once, and later they can reuse it when we add class plans and the calendar."
 
-### 2. Show folders on the side (if you use them).
+### 2. Show folders on the side.
 
-"You can sort exercises into folders. For example: Reformer, Mat, or whatever names help you."
+"Instructors can sort exercises into folders — for example Reformer, Mat, or whatever names make sense to them."
 
-"So you are not scrolling one long list on a busy day."
+"So they are not scrolling through one long list."
 
 ### 3. Use search or filters.
 
-"When the list gets long, you type a word or pick a filter."
+"When the list gets long, they just type a word or pick a filter and get to the right exercise straight away."
 
-Show typing or a filter.
-
-"You get to the right exercise quickly. No hunting through old files."
+Show typing or picking a filter.
 
 ### 4. Open an exercise or click to add a new one.
 
-"Each exercise has a name, what it is for, how you start, and the steps in order."
+"Each exercise has a name, what it is for, starting position, and the teaching steps in order."
 
-Point at the big sections only. Do not read every box.
+Point at the big sections only. Do not go through every field.
 
-"The form reminds you what to fill in. You do not need to remember a special format."
+"The form guides the instructor through what to fill in — no need to remember any special format."
 
 ### 5. Equipment, spinal movement, and chain type.
 
-"**Equipment** is tick boxes. You tick what applies. If you pick **None**, the other ticks switch off so the card stays tidy."
+"**Equipment** is simple tick boxes. The instructor ticks what applies — Ring, Band, Ball, whatever they use. If they pick **None**, the other ticks switch off so it stays clean."
 
-Point at equipment and try None vs a few ticks.
+Point at equipment. Show None vs a few ticks.
 
-"**Spinal movement** works the same way: tick what fits, or **None** if it is not about that."
+"**Spinal movement** works the same way — tick what fits like Flexion or Extension, or pick **None** if it does not apply."
 
 Point at spinal movement.
 
-"**Chain type** is for open chain, closed chain, or both. You tick what fits. If you pick **Both**, the single-sided ticks turn off so the answer stays one clear story."
+"**Chain type** — open chain, closed chain, or both. If they pick **Both**, the single options turn off so there is no confusion."
 
 Point at chain type.
 
-"It only allows a couple of picks at once so one exercise does not turn into a long messy tag list."
-
-"Later, class plans will use the same exercises, so these labels stay consistent across your library."
+"These labels keep exercises consistent across the library. When we build class plans later, it all carries across."
 
 ### 6. Show the steps (layers), finisher, and bullet text.
 
-"Some moves have more than one step: easier bit, main work, maybe a strong finish at the end."
+"This is the layering system. Each exercise can have multiple steps — Layer 1, Layer 2, and so on. The instructor builds intensity as they go, just like they would in the studio."
 
 Point at Layer 1, Layer 2.
 
-"**Finisher** is only on the **last** step. You tick it when that step is meant as the big finish. You are not forced to use it."
+"The **finisher** checkbox only appears on the **last** step. They tick it if that step is meant as the big finish. It is completely optional — no one is forced to use it."
 
-Point at the finisher checkbox on the last layer only.
+Point at the finisher checkbox on the last layer.
 
-"For the long text boxes — description, cues, each step — you can write **bullets** like a mini script. **Enter** starts a new bullet. **Shift+Enter** is just a new line without a bullet. There is an **Add bullet** button if you want help starting a line."
+"For the longer text boxes — description, cues, each layer — instructors can write in **bullet points**. Press **Enter** and it starts a new bullet. Press **Shift+Enter** for just a new line without a bullet. There is also an **Add bullet** button."
 
-Show one box briefly. Do not explain code.
+Show one text box briefly.
 
-"That keeps long notes easy to scan when you are teaching from the screen."
+"That makes it easy for instructors to scan their notes when teaching from the screen."
 
 ### 7. Show photos.
 
-"You can add pictures. Drag them to change the order. Click a picture to see it big before class."
+"Instructors can add photos, drag them to change the order, and click on one to see it full size."
 
-Point at thumbnails and the big view.
+Point at thumbnails and the full-size view.
 
-"Good for you and good for remembering the shape you want to show."
+"Helpful for remembering the position or setup they want to show."
 
 ### 8. Show the exercise detail page (read-only).
 
-"This is the read view. It looks like neat notes. Bullets line up nicely when text wraps."
+"This is the read-only view — it looks like clean, organised teaching notes. Line breaks stay neat even when text wraps."
 
 Scroll a little.
 
-"Good for a quick look on a phone or tablet."
+"This is what an instructor would look at on their phone or tablet before a class."
 
 ## Closing
 
-"So Exercise Library is done: you can **build and edit exercises**, **use folders**, **search**, **tick equipment, spinal movement, and chain type in a guided way**, **write steps with an optional finisher on the last step**, **use bullet-friendly text boxes**, **add and sort photos**, and **read it all back** in a clear layout."
+"So the exercise library is fully working: instructors can **create and edit exercises**, **organise with folders**, **search and filter**, **tick equipment, spinal movement, and chain type** with guided selections, **build layered teaching steps with an optional finisher**, **write bullet-style notes**, **add and reorder photos**, and **read it all back** in a clear layout."
 
-"**Right now** I am working on **class plan templates** so your library exercises can sit inside real plans. **Scheduling** on the calendar is **still to come** after that."
+"**Right now** I am working on **class plan templates**. That means instructors will be able to build a full class plan — pick exercises from the library or create new ones on the spot, arrange them into sections like warm-up, main work, and cool down, and save the whole thing as a reusable template."
+
+"This phase will take roughly **one weeks**. Once it is ready I will send you a demo just like this one so you can see it working."
+
+"**After that**, the next step is **scheduling and the calendar** — so instructors can take those templates and place them on actual days and times. That is a separate phase and I will keep you updated as we get closer."

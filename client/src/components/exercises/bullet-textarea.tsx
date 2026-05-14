@@ -131,13 +131,25 @@ export function BulletTextarea({
 
   if (!bulletsEnabled) {
     return (
-      <Textarea
+      <div
+          className={cn(
+            "flex flex-wrap items-center gap-2",
+            label ? "justify-between" : "justify-end"
+          )}
+        >
+          {label ? (
+            <div className="min-w-0 flex-1">{label}</div>
+          ) : null}
+          <Textarea
         {...textareaProps}
         ref={textareaRef}
         value={value}
         onChange={(e) => onValueChange(e.target.value)}
         className={className}
       />
+
+        </div>
+      
     );
   }
 
