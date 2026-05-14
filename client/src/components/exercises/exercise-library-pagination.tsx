@@ -43,18 +43,26 @@ export type ExerciseLibraryPaginationProps =
       loading?: boolean;
       ariaLabel?: string;
     }
-  | Record<string, never>;
+  | {
+      /** Accessible name for the disabled preview bar (e.g. under class plans). */
+      previewAriaLabel?: string;
+    };
 
 /**
- * Pagination bar used under the exercise library grid. Omit props for the static preview;
+ * Pagination bar used under the exercise library grid. Omit handlers for the static preview;
  * pass `page`, `totalPages`, and `onPageChange` for live lists (e.g. admin user directory).
  */
 export function ExerciseLibraryPagination(
   props?: ExerciseLibraryPaginationProps,
 ) {
+  const previewAriaLabel =
+    props && "previewAriaLabel" in props && props.previewAriaLabel
+      ? props.previewAriaLabel
+      : "Exercise list pagination";
+
   if (!props || !("onPageChange" in props) || !props.onPageChange) {
     return (
-      <nav aria-label="Exercise list pagination" className={NAV_CLASS}>
+      <nav aria-label={previewAriaLabel} className={NAV_CLASS}>
         <p className="order-2 text-sm text-muted-foreground sm:order-1">
           Page <span className="font-medium text-foreground">1</span> of{" "}
           <span className="font-medium text-foreground">10</span>
