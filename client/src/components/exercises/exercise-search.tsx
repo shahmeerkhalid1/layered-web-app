@@ -4,14 +4,17 @@ import { Input } from "@/components/ui/input";
 interface ExerciseSearchProps {
   value: string;
   onChange: (value: string) => void;
+  /** Associates the input with an external `<Label htmlFor>` */
+  id?: string;
 }
 
-export function ExerciseSearch({ value, onChange }: ExerciseSearchProps) {
+export function ExerciseSearch({ value, onChange, id }: ExerciseSearchProps) {
   return (
     <div className="relative rounded-2xl border border-border bg-card shadow-md">
       <Search className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input
-        placeholder="Search by movement, apparatus, or cue..."
+        id={id}
+        placeholder="Search by exercise name or description…"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="h-12 rounded-2xl border-0 bg-transparent pr-11 pl-11 text-sm shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"

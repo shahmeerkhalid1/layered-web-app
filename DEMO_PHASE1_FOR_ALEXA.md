@@ -4,13 +4,13 @@
 
 "**Last time** we covered the foundation: login, the dashboard, admin panel, inviting instructors, and controlled signup."
 
-"**Since then** we built out the full exercise library. The forms now have **proper checks** so instructors cannot save incomplete or incorrect entries. We added a **layering system** where they build teaching steps in order, with an optional **finisher** on the last step. We improved the **look and feel** for things like equipment, spinal movement, chain type, photos, search, and folders. And everything is **connected to the live system** — when an instructor saves or edits, it actually stores and loads from the real server and database."
+"**Since then** we built out the full exercise library. The forms now have **proper checks** so instructors cannot save incomplete or incorrect entries. I added a **layering system** where they build teaching steps in order, with an optional **finisher** on the last step. I improved the **look and feel** for things like equipment, spinal movement, chain type, photos, search, and folders. I also **improve the listing page** — folders, search, and actions are all in one header now instead of a separate sidebar. Also everything is **connected to the live system** —  when an instructor saves or edits, it actually stores and loads from the real server and database."
 
 "**Today** I will walk you through that library: how instructors browse exercises, open one, see the teaching layout, and how creating or editing works."
 
 ## Opening Line
 
-"Alexa, you already saw the secure login and admin area. Now we added the **exercise library** — one place for instructors to save their moves, add photos, write teaching notes, and find them fast."
+"Alexa, you already saw the secure login and admin area. Now I added the **exercise library** — one place for instructors to save their moves, add photos, write teaching notes, and find them fast."
 
 ## Steps
 
@@ -18,17 +18,25 @@
 
 "This is the instructor's list of exercises. They save each move once, and later they can reuse it when we add class plans and the calendar."
 
-### 2. Show folders on the side.
+### 2. Show folders and search in the header.
 
-"Instructors can sort exercises into folders — for example Reformer, Mat, or whatever names make sense to them."
+"Everything an instructor needs to find exercises is right here at the top — no separate sidebar."
 
-"So they are not scrolling through one long list."
+"They pick a folder from the **dropdown** to narrow down — for example Reformer, Mat, or whatever names they created. The count next to each folder tells them how many exercises are inside."
 
-### 3. Use search or filters.
+Point at the folder Select dropdown. Pick a folder to show the count updating.
 
-"When the list gets long, they just type a word or pick a filter and get to the right exercise straight away."
+"If they need to manage folders, the **Rename** and **Delete** buttons appear right next to the dropdown when a folder is selected. And **New folder** is always up here too."
 
-Show typing or picking a filter.
+Point at the Rename / Delete buttons and New folder button.
+
+### 3. Use search.
+
+"When the list gets long, they just type a word — an exercise name or something from the description — and it filters straight away."
+
+Show typing in the search bar.
+
+"If a folder and search together show no results, the search bar have **Clear** button so they are never stuck."
 
 ### 4. Open an exercise or click to add a new one.
 
@@ -40,9 +48,9 @@ Point at the big sections only. Do not go through every field.
 
 ### 5. Equipment, spinal movement, and chain type.
 
-"**Equipment** is simple tick boxes. The instructor ticks what applies — Ring, Band, Ball, whatever they use. If they pick **None**, the other ticks switch off so it stays clean."
+"**Equipment** is simple Check boxes. The instructor check what applies — Ring, Band, Ball, whatever they use. If they pick **None**, the other checkboxes switch off so it stays clean."
 
-Point at equipment. Show None vs a few ticks.
+Point at equipment. Show None vs a few checks.
 
 "**Spinal movement** works the same way — tick what fits like Flexion or Extension, or pick **None** if it does not apply."
 
@@ -54,21 +62,13 @@ Point at chain type.
 
 "These labels keep exercises consistent across the library. When we build class plans later, it all carries across."
 
-### 6. Show the steps (layers), finisher, and bullet text.
+### 6. Show the steps (layers), finisher.
 
 "This is the layering system. Each exercise can have multiple steps — Layer 1, Layer 2, and so on. The instructor builds intensity as they go, just like they would in the studio."
 
 Point at Layer 1, Layer 2.
 
-"The **finisher** checkbox only appears on the **last** step. They tick it if that step is meant as the big finish. It is completely optional — no one is forced to use it."
-
-Point at the finisher checkbox on the last layer.
-
-"For the longer text boxes — description, cues, each layer — instructors can write in **bullet points**. Press **Enter** and it starts a new bullet. Press **Shift+Enter** for just a new line without a bullet. There is also an **Add bullet** button."
-
-Show one text box briefly.
-
-"That makes it easy for instructors to scan their notes when teaching from the screen."
+"The **finisher** checkbox only appears on the **last** step. Instructor check it if that step is meant as the finisher. It is completely optional — no one is forced to use it."
 
 ### 7. Show photos.
 
@@ -80,15 +80,11 @@ Point at thumbnails and the full-size view.
 
 ### 8. Show the exercise detail page (read-only).
 
-"This is the read-only view — it looks like clean, organised teaching notes. Line breaks stay neat even when text wraps."
-
-Scroll a little.
-
-"This is what an instructor would look at on their phone or tablet before a class."
+"This is the read-only view — it looks like clean, organised teaching notes."
 
 ## Closing
 
-"So the exercise library is fully working: instructors can **create and edit exercises**, **organise with folders**, **search and filter**, **tick equipment, spinal movement, and chain type** with guided selections, **build layered teaching steps with an optional finisher**, **write bullet-style notes**, **add and reorder photos**, and **read it all back** in a clear layout."
+"So the exercise library is fully working: instructors can **create and edit exercises**, **organise with folders from a single dropdown**, **search by name or description**, **check equipment, spinal movement, and chain type** with guided selections, **build layered teaching steps with an optional finisher**,  **add and reorder photos**, and **read it all back** in a clear layout. The listing page shows  — how many exercises are in the library, how many folders, and what is visible after filtering."
 
 "**Right now** I am working on **class plan templates**. That means instructors will be able to build a full class plan — pick exercises from the library or create new ones on the spot, arrange them into sections like warm-up, main work, and cool down, and save the whole thing as a reusable template."
 
