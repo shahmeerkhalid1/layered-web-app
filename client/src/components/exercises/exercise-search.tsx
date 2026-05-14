@@ -10,7 +10,7 @@ interface ExerciseSearchProps {
 
 export function ExerciseSearch({ value, onChange, id }: ExerciseSearchProps) {
   return (
-    <div className="relative rounded-2xl border border-border bg-card shadow-md">
+    <div className="relative rounded-2xl border border-border bg-card shadow-none">
       <Search className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         id={id}

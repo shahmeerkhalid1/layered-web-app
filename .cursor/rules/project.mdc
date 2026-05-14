@@ -35,7 +35,7 @@ pilates-platform/
 │       │   ├── layout.tsx               # Root layout (fonts, AuthProvider, Toaster)
 │       │   ├── globals.css              # Tailwind + shadcn theme tokens
 │       │   ├── (dashboard)/             # Route group — URL still at /
-│       │   │   ├── layout.tsx           # AppLayout (sidebar, topbar, auth gate)
+│       │   │   ├── layout.tsx           # AppLayout (sidebar + main, auth gate; no top bar)
 │       │   │   ├── page.tsx             # Dashboard home
 │       │   │   ├── exercises/           # Exercise library (list, new, detail, edit)
 │       │   │   └── admin/               # Admin (layout guard + sub-routes)
@@ -46,7 +46,7 @@ pilates-platform/
 │       │   ├── login/page.tsx
 │       │   └── register/page.tsx        # Invite token + signup toggle
 │       ├── components/
-│       │   ├── layout/                  # App shell (app-layout, sidebar, top-bar)
+│       │   ├── layout/                  # App shell (app-layout, sidebar)
 │       │   ├── ui/                      # shadcn primitives (@/components/ui/*)
 │       │   ├── dashboard/               # Dashboard-specific composites
 │       │   └── exercises/               # exercise-form, bullet-textarea, exercise-pre-text,
@@ -129,6 +129,7 @@ npm run seed --prefix server       # tsx prisma/seed.ts (bootstrap admin + setti
 ### Frontend
 - **"use client"** directive on interactive pages and layout components
 - **Auth gate**: `AppLayout` redirects unauthenticated users to `/login`; `AuthProvider` wraps Better Auth's `useSession()` hook
+- **App shell**: `AppLayout` renders `Sidebar` + scrollable `main` only (no top bar). **Sidebar** — fixed mobile menu button; drawer on small screens, rail on `md+`; nav links in a scrollable middle; **account menu pinned to the bottom** (`DropdownMenu`, opens upward) with avatar, name/email, and **Log out** (`useAuth().logout` then `router.replace("/login")`). **Main** uses `p-4 pt-14` on small screens so content clears the hamburger; `md:p-6 md:pt-6` from `md` up.
 - **Auth client**: `authClient` from `@/lib/auth-client` — provides `signIn.email()`, `signUp.email()`, `signOut()`, `useSession()`, plus `admin.*` methods via `adminClient` plugin
 - **Roles**: `useAuth()` exposes `isAdmin` boolean and `instructor.role`; sidebar conditionally renders admin navigation; admin routes under `(dashboard)/admin/` have a layout guard redirecting non-admins
 - **Path alias**: `@/*` maps to `./src/*`
