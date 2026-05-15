@@ -1,13 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  CalendarPlus,
-  Copy,
-  Layers,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { CalendarPlus, Copy, Pencil, Trash2 } from "lucide-react";
 import type { ClassPlanTemplate } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -35,6 +29,13 @@ export function ClassPlanCard({
   const sectionCount = template._count?.sections ?? 0;
   const durationLabel =
     template.durationMinutes != null ? `${template.durationMinutes} min` : "—";
+  const classTypeLabel = template.classType?.trim() || "—";
+  const classStyleLabel = template.classStyle?.trim() || "—";
+  const updatedLabel = new Date(template.updatedAt).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
   const handleSchedule = () => {
     toast.message("Scheduling coming soon", {
@@ -55,44 +56,57 @@ export function ClassPlanCard({
           className="flex min-h-0 flex-1 flex-col rounded-t-xl outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <CardContent className="flex flex-1 flex-col p-4 pb-3">
-            <div className="relative mb-4 flex shrink-0 aspect-4/3 items-center justify-center overflow-hidden rounded-2xl bg-muted/80 ring-1 ring-border/60">
-              <Layers className="size-10 text-muted-foreground/70" aria-hidden />
-            </div>
-
             <h3 className="line-clamp-2 min-h-11 text-base font-semibold leading-snug tracking-[-0.02em] text-card-foreground">
               {template.name}
             </h3>
 
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {template.classType && (
-                <Badge
-                  variant="outline"
-                  className="border-border bg-muted/40 text-[11px] font-medium text-foreground"
+            <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2.5 text-xs sm:grid-cols-2">
+              <div className="min-w-0">
+                <dt className="font-medium text-muted-foreground">Class type</dt>
+                <dd
+                  className={cn(
+                    "mt-0.5 truncate font-medium leading-snug text-foreground",
+                    classTypeLabel === "—" && "text-muted-foreground"
+                  )}
+                  title={classTypeLabel === "—" ? undefined : classTypeLabel}
                 >
-                  {template.classType}
-                </Badge>
-              )}
-              {template.classStyle && (
-                <Badge
-                  variant="outline"
-                  className="border-border bg-muted/40 text-[11px] font-medium text-foreground"
+                  {classTypeLabel}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="font-medium text-muted-foreground">Class style</dt>
+                <dd
+                  className={cn(
+                    "mt-0.5 truncate font-medium leading-snug text-foreground",
+                    classStyleLabel === "—" && "text-muted-foreground"
+                  )}
+                  title={classStyleLabel === "—" ? undefined : classStyleLabel}
                 >
-                  {template.classStyle}
-                </Badge>
-              )}
-              <Badge
-                variant="secondary"
-                className="border-transparent bg-secondary/90 text-[11px] font-medium tabular-nums text-secondary-foreground"
-              >
-                {durationLabel}
-              </Badge>
-              <Badge
-                variant="secondary"
-                className="border-transparent bg-secondary/90 text-[11px] font-medium tabular-nums text-secondary-foreground"
-              >
-                {sectionCount} section{sectionCount === 1 ? "" : "s"}
-              </Badge>
-            </div>
+                  {classStyleLabel}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-medium text-muted-foreground">Duration</dt>
+                <dd
+                  className={cn(
+                    "mt-0.5 font-medium tabular-nums leading-snug text-foreground",
+                    template.durationMinutes == null && "text-muted-foreground"
+                  )}
+                >
+                  {durationLabel}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-medium text-muted-foreground">Sections</dt>
+                <dd className="mt-0.5 font-medium tabular-nums leading-snug text-foreground">
+                  {sectionCount} section{sectionCount === 1 ? "" : "s"}
+                </dd>
+              </div>
+              <div className="sm:col-span-2">
+                <dt className="font-medium text-muted-foreground">Last updated</dt>
+                <dd className="mt-0.5 font-medium leading-snug text-foreground">{updatedLabel}</dd>
+              </div>
+            </dl>
 
             {tags.length > 0 && (
               <div className="mt-4 flex flex-wrap items-center gap-1.5">

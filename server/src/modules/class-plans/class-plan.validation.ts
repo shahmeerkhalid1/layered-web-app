@@ -16,8 +16,8 @@ const planSectionSchema = z.object({
 
 export const createClassPlanSchema = z.object({
   name: z.string().min(1).max(200),
-  classType: z.string().max(100).optional(),
-  classStyle: z.string().max(100).optional(),
+  classType: z.string().max(100).nullable().optional(),
+  classStyle: z.string().max(100).nullable().optional(),
   durationMinutes: z.number().int().positive().optional(),
   folderId: z.string().nullable().optional(),
   tags: z.array(z.string().max(50)).max(10).default([]),

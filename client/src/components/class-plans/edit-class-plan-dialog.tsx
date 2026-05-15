@@ -3,17 +3,17 @@
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { classPlanApi } from "@/services/class-plan-api";
-import type { ClassPlanFolder, DropdownOptionRow } from "@/lib/types";
+import type { ClassPlanFolder, ClassPlanTemplateDetail, DropdownOptionRow } from "@/lib/types";
 import {
   TAG_PRESETS,
   MAX_TAG_LEN,
   MAX_TAGS,
   buildClassPlanTemplateCreateDefaults,
+  buildClassPlanTemplateEditDefaults,
   classPlanTemplateFormSchema,
-  toCreateClassPlanBody,
+  toUpdateClassPlanBody,
   type ClassPlanTemplateFormValues,
 } from "@/lib/validation/class-plan-template-form-schema";
 import { Button } from "@/components/ui/button";
@@ -48,20 +48,21 @@ function optionLabel(
   return found?.label ?? value;
 }
 
-interface CreateTemplateDialogProps {
+interface EditClassPlanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  plan: ClassPlanTemplateDetail | null;
   folders: ClassPlanFolder[];
-  onCreated?: () => void;
+  onSaved?: () => void;
 }
 
-export function CreateTemplateDialog({
+export function EditClassPlanDialog({
   open,
   onOpenChange,
+  plan,
   folders,
-  onCreated,
-}: CreateTemplateDialogProps) {
-  const router = useRouter();
+  onSaved,
+}: EditClassPlanDialogProps) {
   const classTypeDd = useDropdownOptions("class_type");
   const classStyleDd = useDropdownOptions("class_style");
   const [customTag, setCustomTag] = useState("");
@@ -85,11 +86,11 @@ export function CreateTemplateDialog({
   const tags = watch("tags");
 
   useEffect(() => {
-    if (open) {
-      reset(buildClassPlanTemplateCreateDefaults());
+    if (open && plan) {
+      reset(buildClassPlanTemplateEditDefaults(plan));
       setCustomTag("");
     }
-  }, [open, reset]);
+  }, [open, plan, reset]);
 
   const togglePreset = (preset: string) => {
     const prev = getValues("tags");
@@ -120,15 +121,15 @@ export function CreateTemplateDialog({
   };
 
   const onSubmit = async (values: ClassPlanTemplateFormValues) => {
+    if (!plan) return;
     try {
-      const body = toCreateClassPlanBody(values);
-      const created = await classPlanApi.createClassPlan(body);
-      toast.success("Class plan created");
+      const body = toUpdateClassPlanBody(values);
+      await classPlanApi.updateClassPlan(plan.id, body);
+      toast.success("Class plan updated");
       onOpenChange(false);
-      onCreated?.();
-      router.push(`/class-plans/${created.id}`);
+      onSaved?.();
     } catch {
-      toast.error("Failed to create class plan");
+      toast.error("Failed to update class plan");
     }
   };
 
@@ -144,7 +145,7 @@ export function CreateTemplateDialog({
             Class template
           </p>
           <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-popover-foreground">
-            New class plan
+            Edit plan details
           </DialogTitle>
         </DialogHeader>
 
@@ -158,11 +159,11 @@ export function CreateTemplateDialog({
           <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain px-6 py-4 [scrollbar-gutter:stable]">
             <div className="space-y-4">
               <div className="space-y-2">
-              <Label htmlFor="plan-title" className="text-sm font-medium text-foreground">
+              <Label htmlFor="edit-plan-title" className="text-sm font-medium text-foreground">
                 Title <span className="text-destructive">*</span>
               </Label>
               <Input
-                id="plan-title"
+                id="edit-plan-title"
                 placeholder="e.g. Reformer Flow — Tuesday"
                 className={cn(
                   "h-11 rounded-2xl border-input bg-background/70 shadow-none focus-visible:ring-ring/35",
@@ -293,11 +294,11 @@ export function CreateTemplateDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="plan-duration" className="text-sm font-medium text-foreground">
+              <Label htmlFor="edit-plan-duration" className="text-sm font-medium text-foreground">
                 Duration (minutes)
               </Label>
               <Input
-                id="plan-duration"
+                id="edit-plan-duration"
                 type="number"
                 min={1}
                 max={999}
@@ -431,10 +432,10 @@ export function CreateTemplateDialog({
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !plan}
               className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90"
             >
-              {isSubmitting ? "Creating…" : "Create"}
+              {isSubmitting ? "Saving…" : "Save changes"}
             </Button>
           </DialogFooter>
         </form>

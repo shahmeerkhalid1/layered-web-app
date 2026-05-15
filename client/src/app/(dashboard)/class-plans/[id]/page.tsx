@@ -1,6 +1,4 @@
-import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { ClassPlanDetailView } from "@/components/class-plans/class-plan-detail-view";
 
 interface ClassPlanDetailPageProps {
   params: Promise<{ id: string }>;
@@ -10,29 +8,8 @@ export default async function ClassPlanDetailPage({ params }: ClassPlanDetailPag
   const { id } = await params;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 rounded-3xl border border-border bg-card p-8 shadow-lg">
-      <div>
-        <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
-          Class planner
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-card-foreground">
-          Plan editor
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          The visual planner for template <span className="font-mono text-foreground">{id}</span> is
-          not built yet. Use the listing page to duplicate or delete templates, or return to class
-          plans.
-        </p>
-      </div>
-      <Link
-        href="/class-plans"
-        className={cn(
-          buttonVariants({ variant: "outline" }),
-          "inline-flex rounded-full"
-        )}
-      >
-        Back to class plans
-      </Link>
+    <div className="mx-auto max-w-3xl space-y-6 p-4 pt-14 md:p-6 md:pt-6">
+      <ClassPlanDetailView planId={id} />
     </div>
   );
 }

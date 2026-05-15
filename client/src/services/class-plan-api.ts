@@ -4,6 +4,7 @@ import type {
   ClassPlanFoldersResponse,
   ClassPlanListResponse,
   ClassPlanTemplate,
+  ClassPlanTemplateDetail,
   PlanSection,
 } from "@/lib/types";
 
@@ -20,27 +21,30 @@ export type ClassPlanListParams = {
 
 export type CreateClassPlanBody = {
   name: string;
-  classType?: string;
-  classStyle?: string;
+  classType?: string | null;
+  classStyle?: string | null;
   durationMinutes?: number;
   folderId?: string | null;
   tags?: string[];
 };
 
+/** PATCH body — omit keys you do not want to change. `classType` / `classStyle` may be `null` to clear. */
 export type UpdateClassPlanBody = Partial<CreateClassPlanBody>;
 
 export const classPlanApi = {
   listClassPlans: (params?: ClassPlanListParams, signal?: AbortSignal) =>
     api.get<ClassPlanListResponse>("/class-plans", { params: toQueryParams(params), signal }),
 
-  getClassPlanById: (id: string) =>
-    api.get<ClassPlanTemplate>(`/class-plans/${encodeURIComponent(id)}`),
+  getClassPlanById: (id: string, signal?: AbortSignal) =>
+    api.get<ClassPlanTemplateDetail>(`/class-plans/${encodeURIComponent(id)}`, {
+      signal,
+    }),
 
   createClassPlan: (body: CreateClassPlanBody) =>
     api.post<ClassPlanTemplate>("/class-plans", body),
 
   updateClassPlan: (id: string, body: UpdateClassPlanBody) =>
-    api.patch<ClassPlanTemplate>(`/class-plans/${encodeURIComponent(id)}`, body),
+    api.patch<ClassPlanTemplateDetail>(`/class-plans/${encodeURIComponent(id)}`, body),
 
   deleteClassPlan: (id: string) =>
     api.delete<{ message: string }>(`/class-plans/${encodeURIComponent(id)}`),
