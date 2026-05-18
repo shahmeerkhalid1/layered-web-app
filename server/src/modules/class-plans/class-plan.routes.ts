@@ -3,10 +3,12 @@ import { authenticate } from "../../middleware/auth.middleware";
 import { validate, validateQuery } from "../../middleware/validate.middleware";
 import * as classPlanService from "./class-plan.service";
 import {
+  addExerciseToSectionSchema,
   addSectionSchema,
   createClassPlanSchema,
   listClassPlansSchema,
   updateClassPlanSchema,
+  updateSectionExerciseSchema,
   updateSectionSchema,
   type ListClassPlansQuery,
 } from "./class-plan.validation";
@@ -110,5 +112,47 @@ router.delete("/:id/sections/:sectionId", async (req: Request, res: Response) =>
   );
   res.json(result);
 });
+
+router.post(
+  "/:id/sections/:sectionId/exercises",
+  validate(addExerciseToSectionSchema),
+  async (req: Request, res: Response) => {
+    const row = await classPlanService.addExerciseToSection(
+      req.params.id as string,
+      req.params.sectionId as string,
+      req.user!.instructorId,
+      req.body
+    );
+    res.status(201).json(row);
+  }
+);
+
+router.patch(
+  "/:id/sections/:sectionId/exercises/:pseId",
+  validate(updateSectionExerciseSchema),
+  async (req: Request, res: Response) => {
+    const row = await classPlanService.updateSectionExercise(
+      req.params.id as string,
+      req.params.sectionId as string,
+      req.params.pseId as string,
+      req.user!.instructorId,
+      req.body
+    );
+    res.json(row);
+  }
+);
+
+router.delete(
+  "/:id/sections/:sectionId/exercises/:pseId",
+  async (req: Request, res: Response) => {
+    const result = await classPlanService.removeSectionExercise(
+      req.params.id as string,
+      req.params.sectionId as string,
+      req.params.pseId as string,
+      req.user!.instructorId
+    );
+    res.json(result);
+  }
+);
 
 export default router;

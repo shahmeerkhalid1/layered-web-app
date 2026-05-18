@@ -27,11 +27,14 @@ export function useExerciseList({
     setLoading(true);
 
     try {
-      const params: Record<string, string> = {};
-      if (debouncedSearch) params.search = debouncedSearch;
-      if (selectedFolder) params.folderId = selectedFolder;
-
-      const exerciseData = await exerciseApi.getExercises(params, controller.signal);
+      const exerciseData = await exerciseApi.getExercises(
+        {
+          search: debouncedSearch || undefined,
+          folderId: selectedFolder ?? undefined,
+          savedToLibrary: true,
+        },
+        controller.signal
+      );
       setExercises(exerciseData);
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") return;

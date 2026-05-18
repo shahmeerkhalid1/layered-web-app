@@ -13,9 +13,11 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { ClassPlanFolder, ClassPlanTemplateDetail, PlanSectionDetail } from "@/lib/types";
+import type { ClassPlanFolder, ClassPlanTemplateDetail, PlanSectionDetail, PlanSectionExerciseRow } from "@/lib/types";
 import { classPlanApi } from "@/services/class-plan-api";
 import { EditClassPlanDialog } from "@/components/class-plans/edit-class-plan-dialog";
+import { ExercisePickerDialog } from "@/components/class-plans/exercise-picker-dialog";
+import { SectionExerciseRow } from "@/components/class-plans/section-exercise-row";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -32,6 +34,13 @@ import { cn } from "@/lib/utils";
 
 function sortSections(sections: PlanSectionDetail[]): PlanSectionDetail[] {
   return [...sections].sort((a, b) => {
+    if (a.order !== b.order) return a.order - b.order;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+function sortSectionExercises(rows: PlanSectionExerciseRow[]): PlanSectionExerciseRow[] {
+  return [...rows].sort((a, b) => {
     if (a.order !== b.order) return a.order - b.order;
     return a.id.localeCompare(b.id);
   });
@@ -59,6 +68,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
 
   const [editPlanOpen, setEditPlanOpen] = useState(false);
   const [folders, setFolders] = useState<ClassPlanFolder[]>([]);
+  const [pickerSectionId, setPickerSectionId] = useState<string | null>(null);
 
   const fetchPlan = useCallback(
     async (signal?: AbortSignal) => {
@@ -72,27 +82,31 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
   useEffect(() => {
     const ac = new AbortController();
     let cancelled = false;
-    setLoading(true);
-    setError(null);
-    fetchPlan(ac.signal)
-      .catch((err: unknown) => {
-        if (cancelled || ac.signal.aborted) return;
-        const aborted =
-          err instanceof DOMException
-            ? err.name === "AbortError"
-            : typeof err === "object" &&
-              err !== null &&
-              "name" in err &&
-              (err as { name?: string }).name === "AbortError";
-        if (aborted) return;
-        setError("Could not load this class plan.");
-        setPlan(null);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    const t = window.setTimeout(() => {
+      if (cancelled) return;
+      setLoading(true);
+      setError(null);
+      fetchPlan(ac.signal)
+        .catch((err: unknown) => {
+          if (cancelled || ac.signal.aborted) return;
+          const aborted =
+            err instanceof DOMException
+              ? err.name === "AbortError"
+              : typeof err === "object" &&
+                err !== null &&
+                "name" in err &&
+                (err as { name?: string }).name === "AbortError";
+          if (aborted) return;
+          setError("Could not load this class plan.");
+          setPlan(null);
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, 0);
     return () => {
       cancelled = true;
+      window.clearTimeout(t);
       ac.abort();
     };
   }, [planId, fetchPlan]);
@@ -114,7 +128,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
 
   const sortedSections = useMemo(
     () => (plan?.sections ? sortSections(plan.sections) : []),
-    [plan?.sections]
+    [plan]
   );
 
   const refreshAfterMutation = async () => {
@@ -215,6 +229,37 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
       await refreshAfterMutation();
     } catch {
       toast.error("Could not reorder sections");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const moveExerciseInSection = async (
+    sectionId: string,
+    exerciseRowId: string,
+    direction: "up" | "down"
+  ) => {
+    if (!plan) return;
+    const section = plan.sections.find((s) => s.id === sectionId);
+    if (!section) return;
+    const sorted = sortSectionExercises(section.exercises ?? []);
+    const idx = sorted.findIndex((r) => r.id === exerciseRowId);
+    if (idx < 0) return;
+    const swapWith = direction === "up" ? idx - 1 : idx + 1;
+    if (swapWith < 0 || swapWith >= sorted.length) return;
+    const curr = sorted[idx];
+    const other = sorted[swapWith];
+    setPending(true);
+    try {
+      await classPlanApi.updateSectionExercise(planId, sectionId, curr.id, {
+        order: other.order,
+      });
+      await classPlanApi.updateSectionExercise(planId, sectionId, other.id, {
+        order: curr.order,
+      });
+      await refreshAfterMutation();
+    } catch {
+      toast.error("Could not reorder exercises");
     } finally {
       setPending(false);
     }
@@ -347,13 +392,11 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
       ) : (
         <ul className="space-y-4">
           {sortedSections.map((section, index) => {
-            const ex = section.exercises ?? [];
-            const preview = ex.slice(0, 4);
-            const more = ex.length - preview.length;
+            const exSorted = sortSectionExercises(section.exercises ?? []);
             return (
               <li key={section.id}>
-                <Card className="overflow-hidden border-border shadow-md">
-                  <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 border-b border-border/60 bg-muted/25 px-4 py-3 md:px-5">
+                <Card className="overflow-hidden border-border shadow-md py-0">
+                  <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 border-b border-border/60 bg-muted/25 px-4 py-5 md:px-5">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-medium text-muted-foreground">
                         Section {index + 1}
@@ -415,39 +458,45 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
                       </Button>
                     </div>
                   </CardHeader>
-                  <CardContent className="px-4 py-4 md:px-5">
-                    {ex.length === 0 ? (
+                  <CardContent className="space-y-3 px-4 py-4 md:px-5">
+                    {exSorted.length === 0 ? (
                       <p className="text-sm text-muted-foreground">
-                        No exercises in this section yet. Exercise slots will be editable when the
-                        exercise planner ships.
+                        No exercises in this section yet. Add from your library or create a new
+                        exercise.
                       </p>
                     ) : (
-                      <div className="space-y-2">
-                        <p className="text-xs font-medium text-muted-foreground">
-                          {ex.length} exercise{ex.length === 1 ? "" : "s"}
-                        </p>
-                        <ul className="flex flex-wrap gap-2">
-                          {preview.map((row) => (
-                            <li key={row.id}>
-                              <Badge
-                                variant="outline"
-                                className="max-w-56 truncate font-normal"
-                                title={row.exercise.name}
-                              >
-                                {row.exercise.name}
-                              </Badge>
-                            </li>
-                          ))}
-                          {more > 0 && (
-                            <li>
-                              <Badge variant="secondary" className="tabular-nums">
-                                +{more} more
-                              </Badge>
-                            </li>
-                          )}
-                        </ul>
-                      </div>
+                      <ul className="space-y-3">
+                        {exSorted.map((row, exIndex) => (
+                          <SectionExerciseRow
+                            key={row.id}
+                            templateId={planId}
+                            sectionId={section.id}
+                            row={row}
+                            disabled={pending}
+                            canMoveUp={exIndex > 0}
+                            canMoveDown={exIndex < exSorted.length - 1}
+                            onMoveUp={() =>
+                              void moveExerciseInSection(section.id, row.id, "up")
+                            }
+                            onMoveDown={() =>
+                              void moveExerciseInSection(section.id, row.id, "down")
+                            }
+                            onUpdated={() => void refreshAfterMutation()}
+                          />
+                        ))}
+                      </ul>
                     )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full border-dashed border-border"
+                      disabled={pending}
+                      onClick={() => setPickerSectionId(section.id)}
+                    >
+                      <Plus className="mr-1 size-4" aria-hidden />
+                      Add exercise
+                    </Button>
                   </CardContent>
                 </Card>
               </li>
@@ -592,6 +641,16 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
         plan={plan}
         folders={folders}
         onSaved={() => void refreshAfterMutation()}
+      />
+
+      <ExercisePickerDialog
+        open={pickerSectionId !== null}
+        onOpenChange={(open) => {
+          if (!open) setPickerSectionId(null);
+        }}
+        templateId={planId}
+        sectionId={pickerSectionId ?? ""}
+        onExerciseAdded={() => void refreshAfterMutation()}
       />
     </div>
   );

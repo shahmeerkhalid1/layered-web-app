@@ -56,3 +56,30 @@ export const updateSectionSchema = z
 
 export type AddSectionInput = z.infer<typeof addSectionSchema>;
 export type UpdateSectionInput = z.infer<typeof updateSectionSchema>;
+
+export const addExerciseToSectionSchema = z.object({
+  exerciseId: z.string().min(1),
+  order: z.number().int().nonnegative().optional(),
+  reps: z.string().max(100).optional(),
+  duration: z.string().max(100).optional(),
+  notes: z.string().max(500).optional(),
+});
+
+export const updateSectionExerciseSchema = z
+  .object({
+    order: z.number().int().nonnegative().optional(),
+    reps: z.string().max(100).nullable().optional(),
+    duration: z.string().max(100).nullable().optional(),
+    notes: z.string().max(500).nullable().optional(),
+  })
+  .refine(
+    (d) =>
+      d.order !== undefined ||
+      d.reps !== undefined ||
+      d.duration !== undefined ||
+      d.notes !== undefined,
+    { message: "At least one of order, reps, duration, or notes is required" }
+  );
+
+export type AddExerciseToSectionInput = z.infer<typeof addExerciseToSectionSchema>;
+export type UpdateSectionExerciseInput = z.infer<typeof updateSectionExerciseSchema>;

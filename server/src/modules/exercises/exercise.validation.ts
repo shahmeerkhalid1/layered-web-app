@@ -42,9 +42,22 @@ export const createExerciseSchema = z.object({
   folderId: z.string().optional().nullable(),
   progressionOfId: z.string().optional().nullable(),
   layers: layersField,
+  /** When false, exercise is hidden from library until promoted via save-to-library. */
+  savedToLibrary: z.boolean().optional(),
 });
 
 export const updateExerciseSchema = createExerciseSchema.partial();
+
+export const listExercisesQuerySchema = z.object({
+  search: z.string().optional(),
+  folderId: z.string().optional(),
+  tag: z.string().optional(),
+  savedToLibrary: z.enum(["true", "false"]).optional(),
+});
+
+export const saveToLibrarySchema = z.object({
+  folderId: z.string().nullable().optional(),
+});
 
 export const createFolderSchema = z.object({
   name: z.string().min(1, "Folder name is required"),
@@ -62,3 +75,5 @@ export const reorderImagesSchema = z.object({
 
 export type CreateExerciseInput = z.infer<typeof createExerciseSchema>;
 export type UpdateExerciseInput = z.infer<typeof updateExerciseSchema>;
+export type ListExercisesQuery = z.infer<typeof listExercisesQuerySchema>;
+export type SaveToLibraryInput = z.infer<typeof saveToLibrarySchema>;

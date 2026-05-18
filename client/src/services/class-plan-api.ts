@@ -6,6 +6,7 @@ import type {
   ClassPlanTemplate,
   ClassPlanTemplateDetail,
   PlanSection,
+  PlanSectionExerciseRow,
 } from "@/lib/types";
 
 export type ClassPlanListParams = {
@@ -71,6 +72,43 @@ export const classPlanApi = {
   deleteSection: (templateId: string, sectionId: string) =>
     api.delete<{ message: string }>(
       `/class-plans/${encodeURIComponent(templateId)}/sections/${encodeURIComponent(sectionId)}`
+    ),
+
+  addExerciseToSection: (
+    templateId: string,
+    sectionId: string,
+    body: {
+      exerciseId: string;
+      order?: number;
+      reps?: string;
+      duration?: string;
+      notes?: string;
+    }
+  ) =>
+    api.post<PlanSectionExerciseRow>(
+      `/class-plans/${encodeURIComponent(templateId)}/sections/${encodeURIComponent(sectionId)}/exercises`,
+      body
+    ),
+
+  updateSectionExercise: (
+    templateId: string,
+    sectionId: string,
+    pseId: string,
+    body: {
+      order?: number;
+      reps?: string | null;
+      duration?: string | null;
+      notes?: string | null;
+    }
+  ) =>
+    api.patch<PlanSectionExerciseRow>(
+      `/class-plans/${encodeURIComponent(templateId)}/sections/${encodeURIComponent(sectionId)}/exercises/${encodeURIComponent(pseId)}`,
+      body
+    ),
+
+  removeSectionExercise: (templateId: string, sectionId: string, pseId: string) =>
+    api.delete<{ message: string }>(
+      `/class-plans/${encodeURIComponent(templateId)}/sections/${encodeURIComponent(sectionId)}/exercises/${encodeURIComponent(pseId)}`
     ),
 
   getFolders: () => api.get<ClassPlanFoldersResponse>("/class-plan-folders"),

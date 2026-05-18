@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import multer from "multer";
 import { authenticate } from "../../middleware/auth.middleware";
-import { validate } from "../../middleware/validate.middleware";
+import { validate, validateQuery } from "../../middleware/validate.middleware";
 import * as exerciseService from "./exercise.service";
 import {
   createExerciseSchema,
@@ -9,6 +9,9 @@ import {
   createFolderSchema,
   setProgressionSchema,
   reorderImagesSchema,
+  listExercisesQuerySchema,
+  saveToLibrarySchema,
+  type ListExercisesQuery,
 } from "./exercise.validation";
 import { uploadImage, deleteImage } from "../../lib/cloudinary";
 
@@ -28,17 +31,17 @@ function extractImagePublicIds(req: Request, _res: Response, next: () => void) {
 
 // ─── Exercises ───────────────────────────────────────────────────────────────
 
-router.get("/", async (req: Request, res: Response) => {
-  const exercises = await exerciseService.listExercises(
-    req.user!.instructorId,
-    {
-      search: req.query.search as string,
-      folderId: req.query.folderId as string,
-      tag: req.query.tag as string,
-    }
-  );
-  res.json(exercises);
-});
+router.get(
+  "/",
+  validateQuery(listExercisesQuerySchema),
+  async (req: Request, res: Response) => {
+    const exercises = await exerciseService.listExercises(
+      req.user!.instructorId,
+      req.query as unknown as ListExercisesQuery
+    );
+    res.json(exercises);
+  }
+);
 
 router.get("/:id", async (req: Request, res: Response) => {
   const exercise = await exerciseService.getExercise(
@@ -47,6 +50,19 @@ router.get("/:id", async (req: Request, res: Response) => {
   );
   res.json(exercise);
 });
+
+router.patch(
+  "/:id/save-to-library",
+  validate(saveToLibrarySchema),
+  async (req: Request, res: Response) => {
+    const exercise = await exerciseService.saveExerciseToLibrary(
+      req.params.id as string,
+      req.user!.instructorId,
+      req.body
+    );
+    res.json(exercise);
+  }
+);
 
 router.post(
   "/",

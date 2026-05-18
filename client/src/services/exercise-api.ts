@@ -11,6 +11,8 @@ export type ExerciseListParams = {
   search?: string;
   folderId?: string;
   tag?: string;
+  /** When true/false, maps to `savedToLibrary` query on the list API. */
+  savedToLibrary?: boolean;
 };
 
 export type ExerciseLayerInput = {
@@ -41,6 +43,8 @@ export type SaveExerciseBody = {
   progressionOfId?: string | null;
   layers?: ExerciseLayerInput[];
   publicIds?: string[];
+  /** Omit for default (true). Set false for exercises created inside a class plan. */
+  savedToLibrary?: boolean;
 };
 
 export type TempUploadedImage = {
@@ -50,7 +54,10 @@ export type TempUploadedImage = {
 
 export const exerciseApi = {
   getExercises: (params?: ExerciseListParams, signal?: AbortSignal) =>
-    api.get<Exercise[]>("/exercises", { params, signal }),
+    api.get<Exercise[]>("/exercises", {
+      params: exerciseListParamsToQuery(params),
+      signal,
+    }),
   getExerciseById: (id: string) => api.get<Exercise>(`/exercises/${id}`),
   createExercise: (body: SaveExerciseBody) =>
     api.post<Exercise>("/exercises", body),
@@ -78,4 +85,20 @@ export const exerciseApi = {
     api.post<{ images: TempUploadedImage[] }>("/uploads/temp", formData),
   deleteTempImage: (publicId: string) =>
     api.delete<void>(`/uploads/temp/${encodeURIComponent(publicId)}`),
+
+  saveExerciseToLibrary: (id: string, body?: { folderId?: string | null }) =>
+    api.patch<Exercise>(`/exercises/${encodeURIComponent(id)}/save-to-library`, body ?? {}),
 };
+
+function exerciseListParamsToQuery(
+  params: ExerciseListParams | undefined
+): Record<string, string> | undefined {
+  if (!params) return undefined;
+  const out: Record<string, string> = {};
+  if (params.search) out.search = params.search;
+  if (params.folderId) out.folderId = params.folderId;
+  if (params.tag) out.tag = params.tag;
+  if (params.savedToLibrary === true) out.savedToLibrary = "true";
+  if (params.savedToLibrary === false) out.savedToLibrary = "false";
+  return Object.keys(out).length ? out : undefined;
+}

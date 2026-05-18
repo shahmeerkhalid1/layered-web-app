@@ -49,6 +49,8 @@ export interface Exercise {
   folderId?: string | null;
   instructorId: string;
   progressionOfId?: string | null;
+  /** When false, hidden from Exercise Library until promoted. */
+  savedToLibrary?: boolean;
   createdAt: string;
   updatedAt: string;
   images: ExerciseImage[];

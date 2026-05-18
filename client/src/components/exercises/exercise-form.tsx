@@ -72,11 +72,21 @@ function setupDropdownLabel(
 
 interface ExerciseFormProps {
   exercise?: Exercise;
+  /** Create flow inside class plan: omit redirect; optional save-to-library toggle. */
+  embedInClassPlan?: boolean;
+  onEmbedCreateSuccess?: (exercise: Exercise) => void | Promise<void>;
+  onEmbedCancel?: () => void;
 }
 
-export function ExerciseForm({ exercise }: ExerciseFormProps) {
+export function ExerciseForm({
+  exercise,
+  embedInClassPlan = false,
+  onEmbedCreateSuccess,
+  onEmbedCancel,
+}: ExerciseFormProps) {
   const router = useRouter();
   const isEdit = !!exercise;
+  const [saveToLibrary, setSaveToLibrary] = useState(() => !(embedInClassPlan && !exercise));
 
   const {
     control,
@@ -554,6 +564,7 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
         }));
       })(),
       ...(tempPublicIds.length > 0 ? { publicIds: tempPublicIds } : {}),
+      ...(embedInClassPlan && !isEdit ? { savedToLibrary: saveToLibrary } : {}),
     };
 
     try {
@@ -561,6 +572,10 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
         await exerciseApi.updateExercise(exercise.id, body);
         toast.success("Exercise updated");
         router.push(`/exercises/${exercise.id}`);
+      } else if (embedInClassPlan && onEmbedCreateSuccess) {
+        const created = await exerciseApi.createExercise(body);
+        toast.success("Exercise created");
+        await onEmbedCreateSuccess(created);
       } else {
         const created = await exerciseApi.createExercise(body);
         toast.success("Exercise created");
@@ -1471,6 +1486,32 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
             )}
           </div>
 
+          {embedInClassPlan && !isEdit && (
+            <div className="rounded-2xl border border-border bg-muted/20 p-4">
+              <div className="flex items-start gap-3">
+                <input
+                  id="exercise-save-to-library"
+                  type="checkbox"
+                  checked={saveToLibrary}
+                  onChange={(e) => setSaveToLibrary(e.target.checked)}
+                  className="mt-1 size-4 shrink-0 rounded border-input accent-primary"
+                />
+                <div className="min-w-0 space-y-1">
+                  <Label
+                    htmlFor="exercise-save-to-library"
+                    className="cursor-pointer text-sm font-medium text-foreground"
+                  >
+                    Save to Exercise Library
+                  </Label>
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    When off, this exercise stays available in class plans but won&apos;t appear on
+                    your Exercise Library page. You can promote it later from the exercise editor.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ─── Image Dropzone ──────────────────────────────────────── */}
           <div className="space-y-2">
             <Label className="pl-1.5 text-sm font-medium text-foreground">
@@ -1576,7 +1617,10 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.back()}
+          onClick={() => {
+            if (onEmbedCancel) onEmbedCancel();
+            else router.back();
+          }}
           className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         >
           <ArrowLeft className="mr-2 size-4" />
@@ -1592,7 +1636,13 @@ export function ExerciseForm({ exercise }: ExerciseFormProps) {
           // }
           className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
         >
-          {isSubmitting ? "Saving..." : isEdit ? "Update Exercise" : "Create Exercise"}
+          {isSubmitting
+            ? "Saving..."
+            : isEdit
+              ? "Update Exercise"
+              : embedInClassPlan
+                ? "Create & use exercise"
+                : "Create Exercise"}
         </Button>
       </div>
     </form>

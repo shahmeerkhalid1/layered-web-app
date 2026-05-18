@@ -1,14 +1,28 @@
 import { prisma } from "../../lib/prisma";
 import { NotFoundError } from "../../lib/errors";
 import type {
+  AddExerciseToSectionInput,
   AddSectionInput,
   CreateClassPlanInput,
   ListClassPlansQuery,
   UpdateClassPlanInput,
+  UpdateSectionExerciseInput,
   UpdateSectionInput,
 } from "./class-plan.validation";
 
 const activeFilter = { deletedAt: null };
+
+const sectionExerciseInclude = {
+  exercise: {
+    select: {
+      id: true,
+      name: true,
+      spinalMovement: true,
+      chainType: true,
+      jointLoading: true,
+    },
+  },
+} as const;
 
 const templateDetailInclude = {
   folder: true,
@@ -17,17 +31,7 @@ const templateDetailInclude = {
     include: {
       exercises: {
         orderBy: { order: "asc" as const },
-        include: {
-          exercise: {
-            select: {
-              id: true,
-              name: true,
-              spinalMovement: true,
-              chainType: true,
-              jointLoading: true,
-            },
-          },
-        },
+        include: sectionExerciseInclude,
       },
     },
   },
@@ -374,4 +378,91 @@ export async function deleteSection(
 
   await prisma.planSection.delete({ where: { id: sectionId } });
   return { message: "Section deleted" };
+}
+
+async function assertSectionInTemplate(
+  sectionId: string,
+  templateId: string,
+  instructorId: string
+): Promise<void> {
+  await assertTemplateOwned(templateId, instructorId);
+  const section = await prisma.planSection.findFirst({
+    where: { id: sectionId, templateId },
+    select: { id: true },
+  });
+  if (!section) throw new NotFoundError("Section");
+}
+
+export async function addExerciseToSection(
+  templateId: string,
+  sectionId: string,
+  instructorId: string,
+  data: AddExerciseToSectionInput
+) {
+  await assertSectionInTemplate(sectionId, templateId, instructorId);
+  await assertExercisesOwned(instructorId, [data.exerciseId]);
+
+  let order = data.order;
+  if (order === undefined) {
+    const agg = await prisma.planSectionExercise.aggregate({
+      where: { sectionId },
+      _max: { order: true },
+    });
+    order = (agg._max.order ?? -1) + 1;
+  }
+
+  return prisma.planSectionExercise.create({
+    data: {
+      sectionId,
+      exerciseId: data.exerciseId,
+      order,
+      reps: data.reps,
+      duration: data.duration,
+      notes: data.notes,
+    },
+    include: sectionExerciseInclude,
+  });
+}
+
+export async function updateSectionExercise(
+  templateId: string,
+  sectionId: string,
+  pseId: string,
+  instructorId: string,
+  data: UpdateSectionExerciseInput
+) {
+  await assertSectionInTemplate(sectionId, templateId, instructorId);
+
+  const row = await prisma.planSectionExercise.findFirst({
+    where: { id: pseId, sectionId },
+  });
+  if (!row) throw new NotFoundError("Plan section exercise");
+
+  return prisma.planSectionExercise.update({
+    where: { id: pseId },
+    data: {
+      ...(data.order !== undefined && { order: data.order }),
+      ...(data.reps !== undefined && { reps: data.reps }),
+      ...(data.duration !== undefined && { duration: data.duration }),
+      ...(data.notes !== undefined && { notes: data.notes }),
+    },
+    include: sectionExerciseInclude,
+  });
+}
+
+export async function removeSectionExercise(
+  templateId: string,
+  sectionId: string,
+  pseId: string,
+  instructorId: string
+) {
+  await assertSectionInTemplate(sectionId, templateId, instructorId);
+
+  const row = await prisma.planSectionExercise.findFirst({
+    where: { id: pseId, sectionId },
+  });
+  if (!row) throw new NotFoundError("Plan section exercise");
+
+  await prisma.planSectionExercise.delete({ where: { id: pseId } });
+  return { message: "Exercise removed from section" };
 }

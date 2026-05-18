@@ -1,13 +1,13 @@
 import { prisma } from "../../lib/prisma";
 import { NotFoundError } from "../../lib/errors";
 import { promoteImage, deleteImage } from "../../lib/cloudinary";
-import type { CreateExerciseInput, UpdateExerciseInput } from "./exercise.validation";
+import type { CreateExerciseInput, UpdateExerciseInput, ListExercisesQuery, SaveToLibraryInput } from "./exercise.validation";
 
 const activeFilter = { deletedAt: null };
 
 export async function listExercises(
   instructorId: string,
-  query?: { search?: string; folderId?: string; tag?: string }
+  query?: ListExercisesQuery
 ) {
   const where: Record<string, unknown> = {
     instructorId,
@@ -16,6 +16,8 @@ export async function listExercises(
 
   if (query?.folderId) where.folderId = query.folderId;
   if (query?.tag) where.tags = { has: query.tag };
+  if (query?.savedToLibrary === "true") where.savedToLibrary = true;
+  if (query?.savedToLibrary === "false") where.savedToLibrary = false;
   if (query?.search) {
     where.OR = [
       { name: { contains: query.search, mode: "insensitive" } },
@@ -49,14 +51,55 @@ export async function getExercise(id: string, instructorId: string) {
   return exercise;
 }
 
+async function assertExerciseFolderOwned(
+  folderId: string,
+  instructorId: string
+): Promise<void> {
+  const folder = await prisma.exerciseFolder.findFirst({
+    where: { id: folderId, instructorId, deletedAt: null },
+  });
+  if (!folder) throw new NotFoundError("Folder");
+}
+
+export async function saveExerciseToLibrary(
+  id: string,
+  instructorId: string,
+  data: SaveToLibraryInput
+) {
+  const exercise = await prisma.exercise.findFirst({
+    where: { id, instructorId, ...activeFilter },
+  });
+  if (!exercise) throw new NotFoundError("Exercise");
+
+  if (data.folderId !== undefined && data.folderId !== null) {
+    await assertExerciseFolderOwned(data.folderId, instructorId);
+  }
+
+  return prisma.exercise.update({
+    where: { id },
+    data: {
+      savedToLibrary: true,
+      ...(data.folderId !== undefined && { folderId: data.folderId }),
+    },
+    include: {
+      images: { orderBy: { order: "asc" } },
+      folder: true,
+      layers: { orderBy: { order: "asc" } },
+      progressionOf: { select: { id: true, name: true } },
+      progressions: { select: { id: true, name: true } },
+    },
+  });
+}
+
 export async function createExercise(
   instructorId: string,
   data: CreateExerciseInput
 ) {
-  const { layers, ...rest } = data;
+  const { layers, savedToLibrary, ...rest } = data;
   return prisma.exercise.create({
     data: {
       ...rest,
+      ...(savedToLibrary !== undefined && { savedToLibrary }),
       instructorId,
       layers: {
         create: layers.map((l) => ({
