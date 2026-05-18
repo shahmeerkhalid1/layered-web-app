@@ -75,6 +75,8 @@ interface ExerciseFormProps {
   /** Create flow inside class plan: omit redirect; optional save-to-library toggle. */
   embedInClassPlan?: boolean;
   onEmbedCreateSuccess?: (exercise: Exercise) => void | Promise<void>;
+  /** Edit flow inside class plan: omit redirect after update. */
+  onEmbedEditSuccess?: (exercise: Exercise) => void | Promise<void>;
   onEmbedCancel?: () => void;
 }
 
@@ -82,11 +84,18 @@ export function ExerciseForm({
   exercise,
   embedInClassPlan = false,
   onEmbedCreateSuccess,
+  onEmbedEditSuccess,
   onEmbedCancel,
 }: ExerciseFormProps) {
   const router = useRouter();
   const isEdit = !!exercise;
-  const [saveToLibrary, setSaveToLibrary] = useState(() => !(embedInClassPlan && !exercise));
+  /** Plan-only create, or plan-only edit while exercise is still not in the library. */
+  const showEmbedSaveToLibrary =
+    embedInClassPlan && (!exercise || exercise.savedToLibrary === false);
+  const [saveToLibrary, setSaveToLibrary] = useState(() => {
+    if (embedInClassPlan && (!exercise || exercise.savedToLibrary === false)) return false;
+    return true;
+  });
 
   const {
     control,
@@ -564,14 +573,18 @@ export function ExerciseForm({
         }));
       })(),
       ...(tempPublicIds.length > 0 ? { publicIds: tempPublicIds } : {}),
-      ...(embedInClassPlan && !isEdit ? { savedToLibrary: saveToLibrary } : {}),
+      ...(showEmbedSaveToLibrary ? { savedToLibrary: saveToLibrary } : {}),
     };
 
     try {
       if (isEdit) {
-        await exerciseApi.updateExercise(exercise.id, body);
+        const updated = await exerciseApi.updateExercise(exercise.id, body);
         toast.success("Exercise updated");
-        router.push(`/exercises/${exercise.id}`);
+        if (embedInClassPlan && onEmbedEditSuccess) {
+          await onEmbedEditSuccess(updated);
+        } else {
+          router.push(`/exercises/${exercise.id}`);
+        }
       } else if (embedInClassPlan && onEmbedCreateSuccess) {
         const created = await exerciseApi.createExercise(body);
         toast.success("Exercise created");
@@ -1486,11 +1499,11 @@ export function ExerciseForm({
             )}
           </div>
 
-          {embedInClassPlan && !isEdit && (
+          {showEmbedSaveToLibrary && (
             <div className="rounded-2xl border border-border bg-muted/20 p-4">
               <div className="flex items-start gap-3">
                 <input
-                  id="exercise-save-to-library"
+                  id="exercise-save-to-library-embed"
                   type="checkbox"
                   checked={saveToLibrary}
                   onChange={(e) => setSaveToLibrary(e.target.checked)}
@@ -1498,15 +1511,23 @@ export function ExerciseForm({
                 />
                 <div className="min-w-0 space-y-1">
                   <Label
-                    htmlFor="exercise-save-to-library"
+                    htmlFor="exercise-save-to-library-embed"
                     className="cursor-pointer text-sm font-medium text-foreground"
                   >
                     Save to Exercise Library
                   </Label>
-                  <p className="text-xs leading-relaxed text-muted-foreground">
-                    When off, this exercise stays available in class plans but won&apos;t appear on
-                    your Exercise Library page. You can promote it later from the exercise editor.
-                  </p>
+                  {!isEdit ? (
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      When off, this exercise stays available in class plans but won&apos;t appear on
+                      your Exercise Library page. You can promote it later from the exercise editor.
+                    </p>
+                  ) : (
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      Check to list this exercise on your Exercise Library page so you can pick it
+                      from &quot;Pick from library&quot; in class plans. Unchecked keeps it only on
+                      plans until you save it to the library later.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

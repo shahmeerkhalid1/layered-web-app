@@ -10,7 +10,7 @@ const LIST_LIMIT = 100;
 interface UseClassPlanListOptions {
   search: string;
   debouncedSearch: string;
-  /** `null` = all plans, `"none"` = unfiled, else folder id */
+  /** `null` = all plans, `"none"` = no folder assigned, else folder id */
   selectedFolder: string | null;
   classTypeFilter: string;
   classStyleFilter: string;

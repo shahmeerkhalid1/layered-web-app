@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { PlanSectionExerciseRow } from "@/lib/types";
 import { classPlanApi } from "@/services/class-plan-api";
-import { MovementAnalysisBadges } from "@/components/class-plans/movement-analysis-badges";
+import { ClassPlanExerciseProgrammingSummary } from "@/components/class-plans/class-plan-exercise-programming-summary";
+import { EditClassPlanExerciseDialog } from "@/components/class-plans/edit-class-plan-exercise-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -44,6 +45,7 @@ export function SectionExerciseRow({
   const [duration, setDuration] = useState(row.duration ?? "");
   const [notes, setNotes] = useState(row.notes ?? "");
   const [removeOpen, setRemoveOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -81,6 +83,8 @@ export function SectionExerciseRow({
     }
   };
 
+  const isDraftExercise = row.exercise.savedToLibrary === false;
+
   const confirmRemove = async () => {
     setPending(true);
     try {
@@ -101,17 +105,26 @@ export function SectionExerciseRow({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1 space-y-1.5">
             <p className="font-medium leading-snug text-foreground">{row.exercise.name}</p>
-            <MovementAnalysisBadges
-              spinalMovement={row.exercise.spinalMovement}
-              jointLoading={row.exercise.jointLoading}
-              chainType={row.exercise.chainType}
-            />
+            <ClassPlanExerciseProgrammingSummary exercise={row.exercise} />
           </div>
           <div
             className="flex shrink-0 flex-wrap items-center gap-0.5 self-end sm:self-start"
             role="toolbar"
-            aria-label={`Reorder ${row.exercise.name}`}
+            aria-label={`Actions for ${row.exercise.name}`}
           >
+            {isDraftExercise && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="text-muted-foreground hover:text-foreground"
+                disabled={disabled || pending}
+                aria-label={`Edit ${row.exercise.name} (not in library yet)`}
+                onClick={() => setEditOpen(true)}
+              >
+                <Pencil className="size-4" aria-hidden />
+              </Button>
+            )}
             <Button
               type="button"
               variant="ghost"
@@ -219,8 +232,10 @@ export function SectionExerciseRow({
               Remove exercise?
             </DialogTitle>
             <p className="text-sm leading-6 text-muted-foreground">
-              “{row.exercise.name}” will be removed from this section only. The exercise stays in
-              your library.
+              “{row.exercise.name}” will be removed from this section only.{" "}
+              {isDraftExercise
+                ? "You can still edit it from this plan until you remove or delete the exercise."
+                : "The exercise stays in your library."}
             </p>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -245,6 +260,13 @@ export function SectionExerciseRow({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EditClassPlanExerciseDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        exerciseId={editOpen && isDraftExercise ? row.exercise.id : null}
+        onSaved={onUpdated}
+      />
     </>
   );
 }

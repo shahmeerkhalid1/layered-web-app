@@ -28,6 +28,7 @@ export interface ExerciseLibraryHeaderProps {
   onSearchChange: (value: string) => void;
   folders: ExerciseFolder[];
   totalExerciseCount?: number;
+  /** `null` = all exercises, `"none"` = no folder assigned, else folder id */
   selectedFolder: string | null;
   onSelectFolder: (folderId: string | null) => void;
   onEditFolder: (folder: ExerciseFolder) => void;
@@ -56,15 +57,21 @@ export function ExerciseLibraryHeader({
   const selectValue = selectedFolder ?? "all";
 
   const selectedFolderRow = useMemo(
-    () => (selectedFolder ? folders.find((f) => f.id === selectedFolder) : undefined),
+    () =>
+      selectedFolder && selectedFolder !== "none"
+        ? folders.find((f) => f.id === selectedFolder)
+        : undefined,
     [folders, selectedFolder],
   );
 
   const folderSelectLabel = useMemo(() => {
-    if (!selectedFolder) {
+    if (selectedFolder === null) {
       return totalExerciseCount !== undefined
         ? `All exercises (${totalExerciseCount})`
         : "All exercises";
+    }
+    if (selectedFolder === "none") {
+      return "Unorganized";
     }
     const f = folders.find((x) => x.id === selectedFolder);
     if (!f) return "Folder";
@@ -142,6 +149,7 @@ export function ExerciseLibraryHeader({
             value={selectValue}
             onValueChange={(value) => {
               if (!value || value === "all") onSelectFolder(null);
+              else if (value === "none") onSelectFolder("none");
               else onSelectFolder(value);
             }}
           >
@@ -162,6 +170,9 @@ export function ExerciseLibraryHeader({
                 ) : (
                   <span>All exercises</span>
                 )}
+              </SelectItem>
+              <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                <span>Unorganized</span>
               </SelectItem>
               {folders.length > 0 && (
                 <>

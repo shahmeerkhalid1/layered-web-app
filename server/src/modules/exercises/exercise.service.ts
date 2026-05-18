@@ -14,7 +14,11 @@ export async function listExercises(
     ...activeFilter,
   };
 
-  if (query?.folderId) where.folderId = query.folderId;
+  if (query?.folderId === "none") {
+    where.folderId = null;
+  } else if (query?.folderId) {
+    where.folderId = query.folderId;
+  }
   if (query?.tag) where.tags = { has: query.tag };
   if (query?.savedToLibrary === "true") where.savedToLibrary = true;
   if (query?.savedToLibrary === "false") where.savedToLibrary = false;

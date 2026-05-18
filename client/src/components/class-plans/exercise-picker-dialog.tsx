@@ -7,8 +7,7 @@ import { classPlanApi } from "@/services/class-plan-api";
 import { exerciseApi } from "@/services/exercise-api";
 import { ExerciseForm } from "@/components/exercises/exercise-form";
 import { ExerciseSearch } from "@/components/exercises/exercise-search";
-import { MovementAnalysisBadges } from "@/components/class-plans/movement-analysis-badges";
-import { Badge } from "@/components/ui/badge";
+import { ClassPlanExerciseProgrammingSummary } from "@/components/class-plans/class-plan-exercise-programming-summary";
 import {
   Dialog,
   DialogContent,
@@ -112,120 +111,96 @@ export function ExercisePickerDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs
-          value={tab}
-          onValueChange={(v) => v && setTab(v)}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 pt-4 pb-6"
-        >
-          <TabsList className="mb-4 w-full max-w-xl mx-auto shrink-0">
-            <TabsTrigger value="library" className="flex-1">
-              Pick from library
-            </TabsTrigger>
-            <TabsTrigger value="create" className="flex-1">
-              Create new
-            </TabsTrigger>
-          </TabsList>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pt-4 pb-6 [-webkit-overflow-scrolling:touch]">
+          <Tabs
+            value={tab}
+            onValueChange={(v) => v && setTab(v)}
+            className="flex flex-col gap-0"
+          >
+            <TabsList className="mb-4 w-full max-w-xl mx-auto shrink-0">
+              <TabsTrigger value="library" className="flex-1">
+                Pick from library
+              </TabsTrigger>
+              <TabsTrigger value="create" className="flex-1">
+                Create new
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="library" className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden">
-            <div className="flex min-h-0 flex-1 flex-col gap-3">
-              <div className="shrink-0 p-2 w-[98.4%]">
-                <ExerciseSearch
-                  id="exercise-picker-search"
-                  value={search}
-                  onChange={setSearch}
-                  placeholder="Search by name or description…"
-                />
-              </div>
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-2xl  bg-muted/15 p-2 [-webkit-overflow-scrolling:touch]">
-                {loadingLibrary ? (
-                  <div className="flex justify-center py-12">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  </div>
-                ) : library.length === 0 ? (
-                  <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-                    {debouncedSearch.trim()
-                      ? "No exercises match your search."
-                      : "No exercises in your library yet."}
-                  </p>
-                ) : (
-                  <ul className="space-y-2">
-                    {library.map((ex) => {
-                      const eq = (ex.equipment ?? []).filter(
-                        (s) => s != null && String(s).trim() !== ""
-                      );
-                      const busy = addingId === ex.id;
-                      return (
-                        <li key={ex.id}>
-                          <button
-                            type="button"
-                            disabled={busy || addingId !== null}
-                            onClick={() => void addFromLibrary(ex.id)}
-                            className={cn(
-                              "w-full rounded-2xl border border-bottom bg-card p-3 text-left transition-colors",
-                              "hover:border-border hover:ring-1 hover:ring-border hover:bg-card/90",
-                              "disabled:pointer-events-none disabled:opacity-60"
-                            )}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <span className="font-medium text-foreground">{ex.name}</span>
-                              {busy && (
-                                <span className="text-xs text-muted-foreground">Adding…</span>
+            <TabsContent value="library" className="mt-0">
+              <div className="flex flex-col gap-3">
+                <div className="shrink-0 p-2 w-full max-w-full">
+                  <ExerciseSearch
+                    id="exercise-picker-search"
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="Search by name or description…"
+                  />
+                </div>
+                <div className="rounded-2xl bg-muted/15 p-2">
+                  {loadingLibrary ? (
+                    <div className="flex justify-center py-12">
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    </div>
+                  ) : library.length === 0 ? (
+                    <p className="px-3 py-8 text-center text-sm text-muted-foreground">
+                      {debouncedSearch.trim()
+                        ? "No exercises match your search."
+                        : "No exercises in your library yet."}
+                    </p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {library.map((ex) => {
+                        const busy = addingId === ex.id;
+                        return (
+                          <li key={ex.id}>
+                            <button
+                              type="button"
+                              disabled={busy || addingId !== null}
+                              onClick={() => void addFromLibrary(ex.id)}
+                              className={cn(
+                                "w-full rounded-2xl border border-bottom bg-card p-3 text-left transition-colors",
+                                "hover:border-border hover:ring-1 hover:ring-border hover:bg-card/90",
+                                "disabled:pointer-events-none disabled:opacity-60"
                               )}
-                            </div>
-                            {ex.movementType && String(ex.movementType).trim() !== "" && (
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                {ex.movementType}
-                              </p>
-                            )}
-                            <MovementAnalysisBadges
-                              className="mt-2"
-                              spinalMovement={ex.spinalMovement}
-                              jointLoading={ex.jointLoading}
-                              chainType={ex.chainType}
-                            />
-                            {eq.length > 0 && (
-                              <div className="mt-2 flex flex-wrap gap-1">
-                                {eq.slice(0, 5).map((v, i) => (
-                                  <Badge
-                                    key={`${ex.id}-eq-${i}`}
-                                    variant="outline"
-                                    className="text-[10px]"
-                                  >
-                                    {v}
-                                  </Badge>
-                                ))}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <span className="font-medium text-foreground">{ex.name}</span>
+                                {busy && (
+                                  <span className="text-xs text-muted-foreground">Adding…</span>
+                                )}
                               </div>
-                            )}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
+                              <ClassPlanExerciseProgrammingSummary className="mt-2" exercise={ex} />
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
               </div>
-            </div>
-          </TabsContent>
+            </TabsContent>
 
-          <TabsContent value="create" className="mt-0 min-h-0 flex-1 overflow-y-auto pr-1">
-            <ExerciseForm
-              key={formKey}
-              embedInClassPlan
-              onEmbedCancel={() => onOpenChange(false)}
-              onEmbedCreateSuccess={async (created: Exercise) => {
-                try {
-                  await classPlanApi.addExerciseToSection(templateId, sectionId, {
-                    exerciseId: created.id,
-                  });
-                  toast.success("Exercise added to section");
-                  onOpenChange(false);
-                  await onExerciseAdded();
-                } catch {
-                  toast.error("Exercise was created but could not be added to this section");
-                }
-              }}
-            />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="create" className="mt-0">
+              <ExerciseForm
+                key={formKey}
+                embedInClassPlan
+                onEmbedCancel={() => onOpenChange(false)}
+                onEmbedCreateSuccess={async (created: Exercise) => {
+                  try {
+                    await classPlanApi.addExerciseToSection(templateId, sectionId, {
+                      exerciseId: created.id,
+                    });
+                    toast.success("Exercise added to section");
+                    onOpenChange(false);
+                    await onExerciseAdded();
+                  } catch {
+                    toast.error("Exercise was created but could not be added to this section");
+                  }
+                }}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   );

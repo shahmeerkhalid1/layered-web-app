@@ -8,6 +8,7 @@ import type { Exercise } from "@/lib/types";
 interface UseExerciseListOptions {
   search: string;
   debouncedSearch: string;
+  /** `null` = all exercises, `"none"` = no folder assigned, else folder id */
   selectedFolder: string | null;
 }
 

@@ -9,6 +9,7 @@ import type {
 
 export type ExerciseListParams = {
   search?: string;
+  /** Omit for all; real folder id; use `"none"` for exercises with no folder */
   folderId?: string;
   tag?: string;
   /** When true/false, maps to `savedToLibrary` query on the list API. */
@@ -58,7 +59,8 @@ export const exerciseApi = {
       params: exerciseListParamsToQuery(params),
       signal,
     }),
-  getExerciseById: (id: string) => api.get<Exercise>(`/exercises/${id}`),
+  getExerciseById: (id: string, signal?: AbortSignal) =>
+    api.get<Exercise>(`/exercises/${encodeURIComponent(id)}`, { signal }),
   createExercise: (body: SaveExerciseBody) =>
     api.post<Exercise>("/exercises", body),
   updateExercise: (id: string, body: Partial<SaveExerciseBody>) =>

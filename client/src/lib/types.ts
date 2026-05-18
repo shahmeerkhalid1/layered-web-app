@@ -107,6 +107,14 @@ export interface PlanSectionExerciseRow {
   exercise: {
     id: string;
     name: string;
+    /** When false, exercise was created for a class plan and is not in the library list yet. */
+    savedToLibrary?: boolean;
+    orientation?: string | null;
+    directionFaced?: string | null;
+    movementType?: string | null;
+    springs?: string | null;
+    machineSetup?: string | null;
+    equipment?: string[];
     spinalMovement?: string[];
     chainType?: string[];
     jointLoading?: string[];

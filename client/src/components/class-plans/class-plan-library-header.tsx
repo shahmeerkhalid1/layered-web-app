@@ -29,7 +29,7 @@ export interface ClassPlanLibraryHeaderProps {
   onSearchChange: (value: string) => void;
   folders: ClassPlanFolder[];
   totalTemplateCount?: number;
-  /** `null` = all, `"none"` = unfiled, else folder id */
+  /** `null` = all, `"none"` = plans not in any folder, else folder id */
   selectedFolder: string | null;
   onSelectFolder: (folderId: string | null) => void;
   onEditFolder: (folder: ClassPlanFolder) => void;
@@ -102,7 +102,7 @@ export function ClassPlanLibraryHeader({
         : "All plans";
     }
     if (selectedFolder === "none") {
-      return "Unfiled";
+      return "Unorganized";
     }
     const f = folders.find((x) => x.id === selectedFolder);
     if (!f) return "Folder";
@@ -205,7 +205,7 @@ export function ClassPlanLibraryHeader({
                 )}
               </SelectItem>
               <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
-                <span>Unfiled</span>
+                <span>Unorganized</span>
               </SelectItem>
               {folders.length > 0 && (
                 <>

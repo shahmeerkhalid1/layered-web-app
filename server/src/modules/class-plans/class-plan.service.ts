@@ -17,6 +17,13 @@ const sectionExerciseInclude = {
     select: {
       id: true,
       name: true,
+      savedToLibrary: true,
+      orientation: true,
+      directionFaced: true,
+      movementType: true,
+      springs: true,
+      machineSetup: true,
+      equipment: true,
       spinalMovement: true,
       chainType: true,
       jointLoading: true,
