@@ -90,17 +90,15 @@ export default function ClassPlansPage() {
         onClearFilters={clearAllFilters}
       />
 
-      {library.totalPages > 1 ? (
-        <div className="px-4 pb-4 sm:px-5 sm:pb-5">
-          <ExerciseLibraryPagination
-            page={library.page}
-            totalPages={library.totalPages}
-            onPageChange={library.setPage}
-            loading={library.loading}
-            ariaLabel="Class plan list pagination"
-          />
-        </div>
-      ) : null}
+      <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+        <ExerciseLibraryPagination
+          page={library.page}
+          totalPages={library.totalPages}
+          onPageChange={library.setPage}
+          loading={library.loading}
+          ariaLabel="Class plan list pagination"
+        />
+      </div>
 
       <FolderDialog
         open={folderDialog.open}

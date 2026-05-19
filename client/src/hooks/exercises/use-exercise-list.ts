@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * Server-backed exercise **library** list only: every fetch uses
+ * `exerciseApi.getExerciseListPage` with `page` and `limit` (never
+ * `exerciseApi.getExercises`). Pickers and dialogs use `getExercises` instead.
+ */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -83,6 +88,7 @@ export function useExerciseList({
             folderId: selectedFolder ?? undefined,
             savedToLibrary: true,
             page,
+            limit: EXERCISE_LIBRARY_PAGE_SIZE,
           },
           controller.signal
         );

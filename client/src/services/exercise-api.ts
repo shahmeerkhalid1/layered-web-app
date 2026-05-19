@@ -75,7 +75,11 @@ export const exerciseApi = {
       signal,
     }),
 
-  /** Paginated list: pass `page` (1-based). Omit from `getExercises` so pickers keep a full array. */
+  /**
+   * Paginated `GET /exercises`: always send `page` + `limit`.
+   * The `/exercises` library page must use this (via `useExerciseList`), never `getExercises`.
+   * Pickers use `getExercises` (no `page`) for a full array.
+   */
   getExerciseListPage: (
     params: ExerciseListParams & { page: number },
     signal?: AbortSignal

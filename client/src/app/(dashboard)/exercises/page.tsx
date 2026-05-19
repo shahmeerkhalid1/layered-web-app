@@ -51,16 +51,15 @@ export default function ExercisesPage() {
         }}
       />
 
-      {library.totalPages > 1 ? (
-        <div className="px-4 pb-4 sm:px-5 sm:pb-5">
-          <ExerciseLibraryPagination
-            page={library.page}
-            totalPages={library.totalPages}
-            onPageChange={library.setPage}
-            loading={library.loading}
-          />
-        </div>
-      ) : null}
+      <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+        <ExerciseLibraryPagination
+          page={library.page}
+          totalPages={library.totalPages}
+          onPageChange={library.setPage}
+          loading={library.loading}
+          ariaLabel="Exercise list pagination"
+        />
+      </div>
 
       <FolderDialog
         open={folderDialog.open}
