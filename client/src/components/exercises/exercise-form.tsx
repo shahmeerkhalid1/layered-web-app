@@ -1132,7 +1132,7 @@ export function ExerciseForm({
                           </div>
                         }
                         toolbarEndSlot={
-                          layerFields.length > 1 ? (
+                          index > 0 && layerFields.length > 1 ? (
                             <button
                               type="button"
                               onClick={() => remove(index)}

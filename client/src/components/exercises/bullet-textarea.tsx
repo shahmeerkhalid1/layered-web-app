@@ -130,26 +130,35 @@ export function BulletTextarea({
   const showToolbar = bulletsEnabled && showAddBulletButton;
 
   if (!bulletsEnabled) {
+    const showTopRow = Boolean(label) || Boolean(toolbarEndSlot);
     return (
-      <div
-          className={cn(
-            "flex flex-wrap items-center gap-2",
-            label ? "justify-between" : "justify-end"
-          )}
-        >
-          {label ? (
-            <div className="min-w-0 flex-1">{label}</div>
-          ) : null}
-          <Textarea
-        {...textareaProps}
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => onValueChange(e.target.value)}
-        className={className}
-      />
-
-        </div>
-      
+      <div className={cn("space-y-2", wrapperClassName)}>
+        {showTopRow ? (
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-2",
+              label ? "justify-between" : "justify-end"
+            )}
+          >
+            {label ? <div className="min-w-0 flex-1">{label}</div> : null}
+            {toolbarEndSlot ? (
+              <div
+                className="flex shrink-0 flex-wrap items-center justify-end gap-1 pr-0.5"
+                data-bullet-textarea-toolbar
+              >
+                {toolbarEndSlot}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        <Textarea
+          {...textareaProps}
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => onValueChange(e.target.value)}
+          className={className}
+        />
+      </div>
     );
   }
 
