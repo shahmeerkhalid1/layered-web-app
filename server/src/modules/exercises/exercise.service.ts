@@ -1,14 +1,28 @@
 import { prisma } from "../../lib/prisma";
 import { NotFoundError } from "../../lib/errors";
 import { promoteImage, deleteImage } from "../../lib/cloudinary";
-import type { CreateExerciseInput, UpdateExerciseInput, ListExercisesQuery, SaveToLibraryInput } from "./exercise.validation";
+import type {
+  CreateExerciseInput,
+  UpdateExerciseInput,
+  ListExercisesQuery,
+  SaveToLibraryInput,
+} from "./exercise.validation";
 
 const activeFilter = { deletedAt: null };
 
-export async function listExercises(
+const DEFAULT_PAGE_SIZE = 24;
+
+export type PaginatedExerciseList = {
+  exercises: Awaited<ReturnType<typeof prisma.exercise.findMany>>;
+  total: number;
+  page: number;
+  limit: number;
+};
+
+function listExercisesWhere(
   instructorId: string,
   query?: ListExercisesQuery
-) {
+): Record<string, unknown> {
   const where: Record<string, unknown> = {
     instructorId,
     ...activeFilter,
@@ -29,13 +43,46 @@ export async function listExercises(
     ];
   }
 
+  return where;
+}
+
+const exerciseListInclude = {
+  images: { orderBy: { order: "asc" as const } },
+  folder: true,
+  layers: { orderBy: { order: "asc" as const } },
+} as const;
+
+export async function listExercises(
+  instructorId: string,
+  query?: ListExercisesQuery
+): Promise<
+  | Awaited<ReturnType<typeof prisma.exercise.findMany>>
+  | PaginatedExerciseList
+> {
+  const where = listExercisesWhere(instructorId, query);
+
+  if (query?.page !== undefined) {
+    const limit = Math.min(query.limit ?? DEFAULT_PAGE_SIZE, 100);
+    const page = query.page;
+    const skip = (page - 1) * limit;
+
+    const [total, exercises] = await Promise.all([
+      prisma.exercise.count({ where }),
+      prisma.exercise.findMany({
+        where,
+        include: exerciseListInclude,
+        orderBy: { name: "asc" },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return { exercises, total, page, limit };
+  }
+
   return prisma.exercise.findMany({
     where,
-    include: {
-      images: { orderBy: { order: "asc" } },
-      folder: true,
-      layers: { orderBy: { order: "asc" } },
-    },
+    include: exerciseListInclude,
     orderBy: { name: "asc" },
   });
 }

@@ -21,8 +21,7 @@ export default function NewExercisePage() {
         <div className="min-w-0 flex-1">
           <h2 className="text-2xl font-bold tracking-tight">New exercise</h2>
           <p className="text-muted-foreground">
-            Step through the same fields as the full editor — options load from your account, and
-            saving creates the exercise in your library.
+            Work through the guided steps below to create a new exercise.
           </p>
         </div>
       </div>

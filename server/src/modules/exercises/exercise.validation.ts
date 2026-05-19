@@ -53,6 +53,9 @@ export const listExercisesQuerySchema = z.object({
   folderId: z.string().optional(),
   tag: z.string().optional(),
   savedToLibrary: z.enum(["true", "false"]).optional(),
+  /** When set, response is `{ exercises, total, page, limit }` instead of a bare array. */
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
 export const saveToLibrarySchema = z.object({

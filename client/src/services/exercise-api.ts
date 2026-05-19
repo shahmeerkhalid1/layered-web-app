@@ -14,7 +14,22 @@ export type ExerciseListParams = {
   tag?: string;
   /** When true/false, maps to `savedToLibrary` query on the list API. */
   savedToLibrary?: boolean;
+  /** When set on `GET /exercises`, response is paginated JSON instead of a bare array. */
+  page?: number;
+  /** When sent with `page`, caps page size server-side (max 100). */
+  limit?: number;
 };
+
+/** Server returns this shape when `page` is present on `GET /exercises`. */
+export type PaginatedExerciseList = {
+  exercises: Exercise[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+/** Default page size for library list requests (server default matches). */
+export const EXERCISE_LIBRARY_PAGE_SIZE = 24;
 
 export type ExerciseLayerInput = {
   content: string;
@@ -57,6 +72,19 @@ export const exerciseApi = {
   getExercises: (params?: ExerciseListParams, signal?: AbortSignal) =>
     api.get<Exercise[]>("/exercises", {
       params: exerciseListParamsToQuery(params),
+      signal,
+    }),
+
+  /** Paginated list: pass `page` (1-based). Omit from `getExercises` so pickers keep a full array. */
+  getExerciseListPage: (
+    params: ExerciseListParams & { page: number },
+    signal?: AbortSignal
+  ) =>
+    api.get<PaginatedExerciseList>("/exercises", {
+      params: exerciseListParamsToQuery({
+        ...params,
+        limit: params.limit ?? EXERCISE_LIBRARY_PAGE_SIZE,
+      }),
       signal,
     }),
   getExerciseById: (id: string, signal?: AbortSignal) =>
@@ -102,5 +130,7 @@ function exerciseListParamsToQuery(
   if (params.tag) out.tag = params.tag;
   if (params.savedToLibrary === true) out.savedToLibrary = "true";
   if (params.savedToLibrary === false) out.savedToLibrary = "false";
+  if (params.page !== undefined) out.page = String(params.page);
+  if (params.limit !== undefined) out.limit = String(params.limit);
   return Object.keys(out).length ? out : undefined;
 }

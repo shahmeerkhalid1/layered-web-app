@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { exerciseApi } from "@/services/exercise-api";
+import {
+  exerciseApi,
+  EXERCISE_LIBRARY_PAGE_SIZE,
+} from "@/services/exercise-api";
 import type { Exercise } from "@/lib/types";
 
 interface UseExerciseListOptions {
@@ -19,57 +22,110 @@ export function useExerciseList({
 }: UseExerciseListOptions) {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [listTotalCount, setListTotalCount] = useState<number | undefined>(
+    undefined
+  );
+  const [pageSize, setPageSize] = useState(EXERCISE_LIBRARY_PAGE_SIZE);
+  const [fetchVersion, setFetchVersion] = useState(0);
   const activeRequestRef = useRef<AbortController | null>(null);
+  const prevFiltersRef = useRef({ debouncedSearch, selectedFolder });
+  const fetchWaitersRef = useRef<VoidFunction[]>([]);
 
-  const refreshExercises = useCallback(async () => {
-    activeRequestRef.current?.abort();
-    const controller = new AbortController();
-    activeRequestRef.current = controller;
-    setLoading(true);
+  const totalPages = Math.max(
+    1,
+    listTotalCount !== undefined
+      ? Math.ceil(listTotalCount / pageSize)
+      : 1
+  );
 
-    try {
-      const exerciseData = await exerciseApi.getExercises(
-        {
-          search: debouncedSearch || undefined,
-          folderId: selectedFolder ?? undefined,
-          savedToLibrary: true,
-        },
-        controller.signal
-      );
-      setExercises(exerciseData);
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") return;
-      toast.error("Failed to load exercises");
-    } finally {
-      if (activeRequestRef.current === controller) {
-        activeRequestRef.current = null;
-        setLoading(false);
-      }
-    }
-  }, [debouncedSearch, selectedFolder]);
+  const refreshExercises = useCallback((): Promise<void> => {
+    return new Promise<void>((resolve) => {
+      fetchWaitersRef.current.push(resolve);
+      setFetchVersion((v) => v + 1);
+    });
+  }, []);
 
   useEffect(() => {
     activeRequestRef.current?.abort();
   }, [search]);
 
   useEffect(() => {
-    let cancelled = false;
+    const prev = prevFiltersRef.current;
+    const filterChanged =
+      prev.debouncedSearch !== debouncedSearch ||
+      prev.selectedFolder !== selectedFolder;
+    prevFiltersRef.current = { debouncedSearch, selectedFolder };
 
-    queueMicrotask(() => {
-      if (!cancelled) {
-        void refreshExercises();
+    if (filterChanged && page !== 1) {
+      setLoading(true);
+      setPage(1);
+      return;
+    }
+
+    let cancelled = false;
+    let skipLoadingClear = false;
+    const controller = new AbortController();
+    activeRequestRef.current?.abort();
+    activeRequestRef.current = controller;
+    setLoading(true);
+
+    const flushWaiters = () => {
+      const waiters = fetchWaitersRef.current.splice(0);
+      for (const w of waiters) w();
+    };
+
+    void (async () => {
+      try {
+        const data = await exerciseApi.getExerciseListPage(
+          {
+            search: debouncedSearch || undefined,
+            folderId: selectedFolder ?? undefined,
+            savedToLibrary: true,
+            page,
+          },
+          controller.signal
+        );
+        if (cancelled) return;
+
+        const maxPage = Math.max(1, Math.ceil(data.total / data.limit));
+        if (page > maxPage) {
+          setPage(maxPage);
+          skipLoadingClear = true;
+          return;
+        }
+
+        setExercises(data.exercises);
+        setListTotalCount(data.total);
+        setPageSize(data.limit);
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") return;
+        if (!cancelled) toast.error("Failed to load exercises");
+      } finally {
+        if (!cancelled && activeRequestRef.current === controller) {
+          activeRequestRef.current = null;
+          flushWaiters();
+          if (!skipLoadingClear) {
+            setLoading(false);
+          }
+        }
       }
-    });
+    })();
 
     return () => {
       cancelled = true;
-      activeRequestRef.current?.abort();
+      controller.abort();
     };
-  }, [refreshExercises]);
+  }, [debouncedSearch, selectedFolder, page, fetchVersion]);
 
   return {
     exercises,
     loading,
     refreshExercises,
+    page,
+    setPage,
+    listTotalCount,
+    pageSize,
+    totalPages,
   };
 }

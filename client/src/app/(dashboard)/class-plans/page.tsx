@@ -47,13 +47,16 @@ export default function ClassPlansPage() {
     !library.loading &&
     library.templates.length === 0 &&
     hasActiveFilters &&
+    library.listTotalCount === 0 &&
     library.totalTemplateCount !== undefined &&
     library.totalTemplateCount > 0;
 
   return (
     <div className="space-y-6 rounded-[2rem] bg-background px-2 pb-6  sm:px-4">
       <ClassPlanLibraryHeader
-        totalPlans={library.totalTemplateCount}
+        totalPlans={
+          library.listTotalCount ?? library.totalTemplateCount
+        }
         folderCount={library.folders.length}
         visiblePlanCount={library.templates.length}
         loading={library.loading}
@@ -87,8 +90,16 @@ export default function ClassPlansPage() {
         onClearFilters={clearAllFilters}
       />
 
-      {!library.loading && library.templates.length > 0 ? (
-        <ExerciseLibraryPagination previewAriaLabel="Class plan list pagination" />
+      {library.totalPages > 1 ? (
+        <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+          <ExerciseLibraryPagination
+            page={library.page}
+            totalPages={library.totalPages}
+            onPageChange={library.setPage}
+            loading={library.loading}
+            ariaLabel="Class plan list pagination"
+          />
+        </div>
       ) : null}
 
       <FolderDialog

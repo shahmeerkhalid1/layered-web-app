@@ -32,6 +32,9 @@ export type CreateClassPlanBody = {
 /** PATCH body — omit keys you do not want to change. `classType` / `classStyle` may be `null` to clear. */
 export type UpdateClassPlanBody = Partial<CreateClassPlanBody>;
 
+/** Default page size for class plan library list (server max is 100). */
+export const CLASS_PLAN_LIBRARY_PAGE_SIZE = 24;
+
 export const classPlanApi = {
   listClassPlans: (params?: ClassPlanListParams, signal?: AbortSignal) =>
     api.get<ClassPlanListResponse>("/class-plans", { params: toQueryParams(params), signal }),
