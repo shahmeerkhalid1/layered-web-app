@@ -180,7 +180,6 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
     wChainType,
     wTags,
     wJointLoading,
-    wProgressionOfId,
   ] = useWatch({
     control,
     name: [
@@ -195,7 +194,6 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
       "chainType",
       "tags",
       "jointLoading",
-      "progressionOfId",
     ],
   });
 
@@ -204,7 +202,6 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
   const [equipmentCustomInput, setEquipmentCustomInput] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [folders, setFolders] = useState<ExerciseFolder[]>([]);
-  const [progressionPickList, setProgressionPickList] = useState<Exercise[]>([]);
   /** Edit only: cannot pick self or a harder step in the same chain (would cycle). */
   const [blockedParentIds, setBlockedParentIds] = useState<Set<string>>(() =>
     exercise?.id ? new Set([exercise.id]) : new Set()
@@ -241,13 +238,6 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
     exerciseApi
       .getFolders()
       .then((data) => setFolders(data.folders))
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    exerciseApi
-      .getExercises()
-      .then((list) => setProgressionPickList(list))
       .catch(() => {});
   }, []);
 
@@ -289,32 +279,6 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
     if (exercise?.folder?.id === folderId) return exercise.folder.name;
     return "No folder";
   }, [wFolderId, folders, exercise?.folder?.id, exercise?.folder?.name]);
-
-  const orphanProgressionParent = useMemo(() => {
-    const pid = wProgressionOfId ?? "none";
-    if (pid === "none") return null;
-    if (progressionPickList.some((e) => e.id === pid)) return null;
-    if (exercise?.progressionOf?.id === pid) return exercise.progressionOf;
-    return { id: pid, name: "Missing exercise" };
-  }, [wProgressionOfId, progressionPickList, exercise?.progressionOf]);
-
-  const progressionSelectable = useMemo(() => {
-    if (!isEdit || !exercise) return progressionPickList;
-    return progressionPickList.filter(
-      (ex) => ex.id !== exercise.id && !blockedParentIds.has(ex.id)
-    );
-  }, [isEdit, exercise, progressionPickList, blockedParentIds]);
-
-  const progressionTriggerLabel = useMemo(() => {
-    const pid = wProgressionOfId ?? "none";
-    if (pid === "none") return "None — this is the easiest step (root)";
-    const ex = progressionPickList.find((e) => e.id === pid);
-    if (ex) return ex.name;
-    if (orphanProgressionParent?.id === pid) {
-      return `${orphanProgressionParent.name} (restore or clear)`;
-    }
-    return "Select exercise";
-  }, [wProgressionOfId, progressionPickList, orphanProgressionParent]);
 
   const orientationLabel = useMemo(
     () =>
@@ -1490,6 +1454,10 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                 )}
               />
             </div>
+            {/*
+            Easier-version (progression) Select — same intent as single-page ExerciseForm (commented).
+            Restore this block + progressionPickList/getExercises + useWatch(progressionOfId) + related useMemos when re-enabling the picker.
+
             <div className="space-y-2">
               <Label className="pl-1.5 text-sm font-medium text-foreground">
                 Easier version (progression)
@@ -1542,6 +1510,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                 )}
               />
             </div>
+            */}
           </div>
         );
       default:
