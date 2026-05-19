@@ -1,9 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useForm, useFieldArray, Controller, useWatch } from "react-hook-form";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import {
+  useForm,
+  useFieldArray,
+  Controller,
+  useWatch,
+  type SubmitErrorHandler,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useDropzone, type FileRejection } from "react-dropzone";
 import { toast } from "sonner";
+import { exerciseApi } from "@/services/exercise-api";
+import type { TempUploadedImage } from "@/services/exercise-api";
+import type { DropdownOptionRow, Exercise, ExerciseFolder, ExerciseImage } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { getLayerStepTitle } from "@/lib/exercise-layer-labels";
+import { chainTypeTooltipForValue } from "@/lib/chain-type-tooltips";
 import {
   buildExerciseFormDefaults,
   exerciseFormSchema,
@@ -31,74 +43,47 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  GripVertical,
+  ImagePlus,
   Layers,
   ListChecks,
+  Loader2,
+  Plus,
   Sparkles,
   Wrench,
   X,
 } from "lucide-react";
+import { useDropdownOptions } from "@/hooks/use-dropdown-options";
+import { useFancybox } from "@/hooks/use-fancybox";
 
-/** Local-only demo options — no API calls. */
-const DEMO_ORIENTATION = [
-  { value: "none", label: "Not specified" },
-  { value: "supine", label: "Supine" },
-  { value: "prone", label: "Prone" },
-  { value: "side_lying", label: "Side lying" },
-  { value: "seated", label: "Seated" },
-];
+const MAX_IMAGES = 3;
+const EXERCISE_FORM_IMAGE_GALLERY = "exercise-form-multistep-images";
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-const DEMO_DIRECTION = [
-  { value: "none", label: "Not specified" },
-  { value: "facing_front", label: "Facing front" },
-  { value: "facing_side", label: "Facing side" },
-  { value: "facing_reformer", label: "Facing reformer" },
-];
+type ImageItem =
+  | { type: "saved"; data: ExerciseImage }
+  | { type: "temp"; data: TempUploadedImage };
 
-const DEMO_MOVEMENT_TYPES = [
-  { value: "stability", label: "Stability" },
-  { value: "mobility", label: "Mobility" },
-  { value: "strength", label: "Strength" },
-  { value: "coordination", label: "Coordination" },
-];
+function imageKey(item: ImageItem): string {
+  return item.type === "saved" ? item.data.id : item.data.publicId;
+}
 
-const DEMO_MACHINE_SETUP = [
-  { value: "none", label: "Not specified" },
-  { value: "footbar_mid", label: "Footbar — mid" },
-  { value: "footbar_high", label: "Footbar — high" },
-  { value: "long_box", label: "Long box" },
-];
+function optionalField(s: string): string | undefined {
+  const t = s.trim();
+  return t.length > 0 ? t : undefined;
+}
 
-const DEMO_EQUIPMENT = [
-  { value: "None", label: "None" },
-  { value: "Reformer", label: "Reformer" },
-  { value: "Mat", label: "Mat" },
-  { value: "Chair", label: "Chair" },
-  { value: "Magic_circle", label: "Magic circle" },
-];
-
-const DEMO_SPINAL = [
-  { value: "None", label: "None" },
-  { value: "Flexion", label: "Flexion" },
-  { value: "Extension", label: "Extension" },
-  { value: "Rotation", label: "Rotation" },
-  { value: "Lateral_flexion", label: "Lateral flexion" },
-];
-
-const DEMO_CHAIN = [
-  { value: "Long", label: "Long" },
-  { value: "Short", label: "Short" },
-  { value: "Both", label: "Both" },
-];
-
-const DEMO_JOINT = [
-  { value: "Closed_chain", label: "Closed chain" },
-  { value: "Open_chain", label: "Open chain" },
-  { value: "Mixed", label: "Mixed" },
-];
-
-const NONE_EQUIPMENT = "None";
-const NONE_SPINAL = "None";
-const BOTH_CHAIN = "Both";
+function setupDropdownLabel(
+  value: string,
+  placeholder: string,
+  options: DropdownOptionRow[],
+  loading: boolean
+): string {
+  if (loading && options.length === 0) return "Loading options…";
+  if (value === "none" || value === "") return placeholder;
+  const found = options.find((o) => o.value === value);
+  return found?.label ?? value;
+}
 
 const STEPS = [
   {
@@ -140,7 +125,7 @@ type ExerciseStringSelectField =
   | "machineSetup";
 
 const STEP_FIELD_GROUPS: (keyof ExerciseFormValues)[][] = [
-  ["name", "description", "startingPosition"],
+  ["name", "description", "startingPosition", "folderId"],
   ["orientation", "directionFaced", "movementType", "springs", "equipment", "machineSetup"],
   ["layers", "transitionCues", "cueing"],
   ["spinalMovement", "chainType", "jointLoading", "tags"],
@@ -150,56 +135,261 @@ const STEP_FIELD_GROUPS: (keyof ExerciseFormValues)[][] = [
 const selectTriggerClass =
   "box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground";
 
-export function ExerciseFormMultistep() {
-  const [stepIndex, setStepIndex] = useState(0);
+export interface ExerciseFormMultistepProps {
+  exercise?: Exercise;
+}
 
-  const defaultValues = useMemo((): ExerciseFormValues => {
-    const base = buildExerciseFormDefaults();
-    return {
-      ...base,
-      movementType: DEMO_MOVEMENT_TYPES[0]?.value ?? "stability",
-    };
-  }, []);
+export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) {
+  const router = useRouter();
+  const isEdit = !!exercise;
+  const [stepIndex, setStepIndex] = useState(0);
 
   const {
     control,
     register,
     handleSubmit,
+    reset,
     setValue,
     getValues,
     trigger,
     formState: { errors, isSubmitting },
   } = useForm<ExerciseFormValues>({
     resolver: zodResolver(exerciseFormSchema),
-    defaultValues,
+    defaultValues: buildExerciseFormDefaults(exercise),
   });
+
+  useEffect(() => {
+    reset(buildExerciseFormDefaults(exercise));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when switching exercises by id only; avoid wiping edits on parent re-renders
+  }, [exercise?.id, reset]);
 
   const { fields: layerFields, append, remove, update } = useFieldArray({
     control,
     name: "layers",
   });
 
-  const [wEquipment, wSpinalMovement, wChainType, wTags, wJointLoading] = useWatch({
+  const [
+    wName,
+    wFolderId,
+    wOrientation,
+    wDirectionFaced,
+    wMovementType,
+    wMachineSetup,
+    wEquipment,
+    wSpinalMovement,
+    wChainType,
+    wTags,
+    wJointLoading,
+    wProgressionOfId,
+  ] = useWatch({
     control,
-    name: ["equipment", "spinalMovement", "chainType", "tags", "jointLoading"],
+    name: [
+      "name",
+      "folderId",
+      "orientation",
+      "directionFaced",
+      "movementType",
+      "machineSetup",
+      "equipment",
+      "spinalMovement",
+      "chainType",
+      "tags",
+      "jointLoading",
+      "progressionOfId",
+    ],
   });
 
   const layersWatch = useWatch({ control, name: "layers" }) ?? [];
 
   const [equipmentCustomInput, setEquipmentCustomInput] = useState("");
   const [tagInput, setTagInput] = useState("");
+  const [folders, setFolders] = useState<ExerciseFolder[]>([]);
+  const [progressionPickList, setProgressionPickList] = useState<Exercise[]>([]);
+  /** Edit only: cannot pick self or a harder step in the same chain (would cycle). */
+  const [blockedParentIds, setBlockedParentIds] = useState<Set<string>>(() =>
+    exercise?.id ? new Set([exercise.id]) : new Set()
+  );
+  const [uploading, setUploading] = useState(false);
+
+  const [images, setImages] = useState<ImageItem[]>(() => {
+    const saved: ImageItem[] = (exercise?.images ?? []).map((img) => ({
+      type: "saved",
+      data: img,
+    }));
+    return saved;
+  });
+
+  const totalImages = images.length;
+  const availableSlots = MAX_IMAGES - totalImages;
+
+  const imageGalleryFancyboxKey = useMemo(
+    () => images.map(imageKey).join("|"),
+    [images]
+  );
+  const bindExerciseImageGallery = useFancybox(imageGalleryFancyboxKey);
+
+  const orientationDd = useDropdownOptions("orientation");
+  const directionDd = useDropdownOptions("direction_faced");
+  const movementTypeDd = useDropdownOptions("movement_type");
+  const equipmentDd = useDropdownOptions("equipment");
+  const machineSetupDd = useDropdownOptions("machine_setup");
+  const spinalDd = useDropdownOptions("spinal_movement");
+  const chainDd = useDropdownOptions("chain_type");
+  const jointDd = useDropdownOptions("joint_loading");
+
+  useEffect(() => {
+    exerciseApi
+      .getFolders()
+      .then((data) => setFolders(data.folders))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    exerciseApi
+      .getExercises()
+      .then((list) => setProgressionPickList(list))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!exercise?.id) {
+      setImages([]);
+      setBlockedParentIds(new Set());
+      return;
+    }
+    setImages(
+      (exercise.images ?? []).map((img): ImageItem => ({ type: "saved", data: img }))
+    );
+  }, [exercise?.id]);
+
+  useEffect(() => {
+    if (!exercise?.id) return;
+    exerciseApi
+      .getProgressionChain(exercise.id)
+      .then((chain) => {
+        const i = chain.findIndex((c) => c.id === exercise.id);
+        const blocked = new Set<string>([exercise.id]);
+        if (i >= 0) {
+          for (let j = i + 1; j < chain.length; j++) {
+            blocked.add(chain[j].id);
+          }
+        }
+        setBlockedParentIds(blocked);
+      })
+      .catch(() => {
+        setBlockedParentIds(new Set([exercise.id]));
+      });
+  }, [exercise?.id]);
+
+  const folderTriggerLabel = useMemo(() => {
+    const folderId = wFolderId ?? "none";
+    if (folderId === "none") return "No folder";
+    const fromList = folders.find((f) => f.id === folderId);
+    if (fromList) return fromList.name;
+    if (exercise?.folder?.id === folderId) return exercise.folder.name;
+    return "No folder";
+  }, [wFolderId, folders, exercise?.folder?.id, exercise?.folder?.name]);
+
+  const orphanProgressionParent = useMemo(() => {
+    const pid = wProgressionOfId ?? "none";
+    if (pid === "none") return null;
+    if (progressionPickList.some((e) => e.id === pid)) return null;
+    if (exercise?.progressionOf?.id === pid) return exercise.progressionOf;
+    return { id: pid, name: "Missing exercise" };
+  }, [wProgressionOfId, progressionPickList, exercise?.progressionOf]);
+
+  const progressionSelectable = useMemo(() => {
+    if (!isEdit || !exercise) return progressionPickList;
+    return progressionPickList.filter(
+      (ex) => ex.id !== exercise.id && !blockedParentIds.has(ex.id)
+    );
+  }, [isEdit, exercise, progressionPickList, blockedParentIds]);
+
+  const progressionTriggerLabel = useMemo(() => {
+    const pid = wProgressionOfId ?? "none";
+    if (pid === "none") return "None — this is the easiest step (root)";
+    const ex = progressionPickList.find((e) => e.id === pid);
+    if (ex) return ex.name;
+    if (orphanProgressionParent?.id === pid) {
+      return `${orphanProgressionParent.name} (restore or clear)`;
+    }
+    return "Select exercise";
+  }, [wProgressionOfId, progressionPickList, orphanProgressionParent]);
+
+  const orientationLabel = useMemo(
+    () =>
+      setupDropdownLabel(
+        wOrientation ?? "none",
+        "Select orientation",
+        orientationDd.options,
+        orientationDd.loading
+      ),
+    [wOrientation, orientationDd.options, orientationDd.loading]
+  );
+
+  const directionLabel = useMemo(
+    () =>
+      setupDropdownLabel(
+        wDirectionFaced ?? "none",
+        "Select direction",
+        directionDd.options,
+        directionDd.loading
+      ),
+    [wDirectionFaced, directionDd.options, directionDd.loading]
+  );
+
+  const movementTypeLabel = useMemo(
+    () =>
+      setupDropdownLabel(
+        wMovementType ?? "none",
+        "Select movement type",
+        movementTypeDd.options,
+        movementTypeDd.loading
+      ),
+    [wMovementType, movementTypeDd.options, movementTypeDd.loading]
+  );
+
+  const machineSetupLabel = useMemo(
+    () =>
+      setupDropdownLabel(
+        wMachineSetup ?? "none",
+        "Select setup",
+        machineSetupDd.options,
+        machineSetupDd.loading
+      ),
+    [wMachineSetup, machineSetupDd.options, machineSetupDd.loading]
+  );
+
+  const noneEquipmentValue = useMemo(() => {
+    const o = equipmentDd.options.find(
+      (x) => x.label === "None" || x.value === "None" || x.value === "none"
+    );
+    return o?.value ?? "None";
+  }, [equipmentDd.options]);
+
+  const noneSpinalMovementValue = useMemo(() => {
+    const o = spinalDd.options.find(
+      (x) => x.label === "None" || x.value === "None" || x.value === "none"
+    );
+    return o?.value ?? "None";
+  }, [spinalDd.options]);
+
+  const bothChainValue = useMemo(() => {
+    const o = chainDd.options.find((x) => x.label === "Both" || x.value === "Both");
+    return o?.value ?? "Both";
+  }, [chainDd.options]);
 
   const toggleEquipmentValue = (value: string) => {
     const equipment = getValues("equipment");
     setValue(
       "equipment",
       (() => {
-        const isNone = value === NONE_EQUIPMENT;
+        const isNone = value === noneEquipmentValue;
         if (isNone) {
           if (equipment.includes(value)) return [];
           return [value];
         }
-        const withoutNone = equipment.filter((v) => v !== NONE_EQUIPMENT);
+        const withoutNone = equipment.filter((v) => v !== noneEquipmentValue);
         if (withoutNone.includes(value)) {
           return withoutNone.filter((v) => v !== value);
         }
@@ -210,8 +400,8 @@ export function ExerciseFormMultistep() {
   };
 
   const isEquipmentOptionDisabled = (value: string): boolean => {
-    if (value === NONE_EQUIPMENT) return false;
-    return (wEquipment ?? []).includes(NONE_EQUIPMENT);
+    if (value === noneEquipmentValue) return false;
+    return (wEquipment ?? []).includes(noneEquipmentValue);
   };
 
   const addCustomEquipment = () => {
@@ -221,7 +411,7 @@ export function ExerciseFormMultistep() {
     setValue(
       "equipment",
       (() => {
-        const withoutNone = equipment.filter((v) => v !== NONE_EQUIPMENT);
+        const withoutNone = equipment.filter((v) => v !== noneEquipmentValue);
         if (withoutNone.includes(raw)) return withoutNone;
         return [...withoutNone, raw];
       })(),
@@ -237,8 +427,8 @@ export function ExerciseFormMultistep() {
       (() => {
         const has = chainType.includes(value);
         if (has) return chainType.filter((v) => v !== value);
-        if (value === BOTH_CHAIN) return [BOTH_CHAIN];
-        if (chainType.includes(BOTH_CHAIN)) return chainType;
+        if (value === bothChainValue) return [bothChainValue];
+        if (chainType.includes(bothChainValue)) return chainType;
         if (chainType.length >= 2) return chainType;
         return [...chainType, value];
       })(),
@@ -250,8 +440,8 @@ export function ExerciseFormMultistep() {
     const chainType = wChainType ?? [];
     const checked = chainType.includes(value);
     if (checked) return false;
-    if (chainType.includes(BOTH_CHAIN) && value !== BOTH_CHAIN) return true;
-    if (value === BOTH_CHAIN && chainType.some((v) => v !== BOTH_CHAIN)) return true;
+    if (chainType.includes(bothChainValue) && value !== bothChainValue) return true;
+    if (value === bothChainValue && chainType.some((v) => v !== bothChainValue)) return true;
     if (chainType.length >= 2) return true;
     return false;
   };
@@ -261,12 +451,12 @@ export function ExerciseFormMultistep() {
     setValue(
       "spinalMovement",
       (() => {
-        const isNone = value === NONE_SPINAL;
+        const isNone = value === noneSpinalMovementValue;
         if (isNone) {
           if (spinalMovement.includes(value)) return [];
           return [value];
         }
-        const withoutNone = spinalMovement.filter((v) => v !== NONE_SPINAL);
+        const withoutNone = spinalMovement.filter((v) => v !== noneSpinalMovementValue);
         if (withoutNone.includes(value)) {
           return withoutNone.filter((v) => v !== value);
         }
@@ -277,8 +467,8 @@ export function ExerciseFormMultistep() {
   };
 
   const isSpinalMovementOptionDisabled = (value: string): boolean => {
-    if (value === NONE_SPINAL) return false;
-    return (wSpinalMovement ?? []).includes(NONE_SPINAL);
+    if (value === noneSpinalMovementValue) return false;
+    return (wSpinalMovement ?? []).includes(noneSpinalMovementValue);
   };
 
   const toggleJointLoading = (value: string) => {
@@ -306,13 +496,127 @@ export function ExerciseFormMultistep() {
     setValue("tags", tags, { shouldDirty: true, shouldValidate: true });
   };
 
+  const onDrop = useCallback(
+    async (accepted: File[], rejections: FileRejection[]) => {
+      for (const r of rejections) {
+        for (const err of r.errors) {
+          if (err.code === "file-too-large") {
+            toast.error(`${r.file.name} exceeds the 5 MB limit`);
+          } else if (err.code === "file-invalid-type") {
+            toast.error(`${r.file.name} is not a supported image type`);
+          } else if (err.code === "too-many-files") {
+            toast.error(`You can add up to ${availableSlots} more image(s)`);
+          } else {
+            toast.error(err.message);
+          }
+        }
+      }
+
+      if (accepted.length === 0) return;
+
+      const formData = new FormData();
+      for (const file of accepted) {
+        formData.append("images", file);
+      }
+
+      setUploading(true);
+      try {
+        const res = await exerciseApi.uploadTempImages(formData);
+        setImages((prev) => [
+          ...prev,
+          ...res.images.map((img): ImageItem => ({ type: "temp", data: img })),
+        ]);
+      } catch {
+        toast.error("Failed to upload images");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [availableSlots]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      "image/jpeg": [],
+      "image/png": [],
+      "image/webp": [],
+    },
+    maxSize: MAX_FILE_SIZE,
+    maxFiles: Math.max(availableSlots, 0),
+    multiple: true,
+    disabled: uploading || availableSlots <= 0,
+  });
+
+  const removeImage = async (item: ImageItem) => {
+    if (item.type === "temp") {
+      try {
+        await exerciseApi.deleteTempImage(item.data.publicId);
+        setImages((prev) => prev.filter((i) => imageKey(i) !== imageKey(item)));
+      } catch {
+        toast.error("Failed to remove image — try again");
+      }
+    } else if (isEdit && exercise) {
+      try {
+        await exerciseApi.deleteImage(exercise.id, item.data.id);
+        setImages((prev) => prev.filter((i) => imageKey(i) !== imageKey(item)));
+        toast.success("Image removed");
+      } catch {
+        toast.error("Failed to remove image — try again");
+      }
+    }
+  };
+
+  const dragIdx = useRef<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const handleDragStart = (index: number) => {
+    dragIdx.current = index;
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIdx(index);
+  };
+
+  const handleDropReorder = async (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    setDragOverIdx(null);
+    const from = dragIdx.current;
+    dragIdx.current = null;
+    if (from === null || from === dropIndex) return;
+
+    const reordered = [...images];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(dropIndex, 0, moved);
+    setImages(reordered);
+
+    if (isEdit && exercise) {
+      const savedIds = reordered
+        .filter((i): i is ImageItem & { type: "saved" } => i.type === "saved")
+        .map((i) => i.data.id);
+      if (savedIds.length > 1) {
+        try {
+          await exerciseApi.reorderImages(exercise.id, savedIds);
+        } catch {
+          toast.error("Failed to save new image order");
+        }
+      }
+    }
+  };
+
+  const handleDragEnd = () => {
+    dragIdx.current = null;
+    setDragOverIdx(null);
+  };
+
   const lastStep = stepIndex === STEPS.length - 1;
 
   const goNext = async () => {
     const fields = STEP_FIELD_GROUPS[stepIndex];
     const ok = await trigger(fields);
     if (!ok) {
-      toast.error("Fix the highlighted fields before continuing.");
+      toast.error("Fill the highlighted fields before continuing.");
       return;
     }
     setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
@@ -320,65 +624,165 @@ export function ExerciseFormMultistep() {
 
   const goPrev = () => setStepIndex((i) => Math.max(i - 1, 0));
 
-  const onDemoSubmit = handleSubmit((values) => {
-    toast.success("Form is valid — demo only (nothing was saved).", {
-      description: `Captured “${values.name.trim() || "Untitled"}” with ${values.layers.length} layer(s).`,
-    });
-  });
+  const onSubmitInvalid: SubmitErrorHandler<ExerciseFormValues> = (errors) => {
+    for (let i = 0; i < STEP_FIELD_GROUPS.length; i++) {
+      const hasError = STEP_FIELD_GROUPS[i].some((field) => errors[field] != null);
+      if (hasError) {
+        setStepIndex(i);
+        toast.error("Fix the highlighted fields before saving.");
+        return;
+      }
+    }
+    toast.error("Fix the highlighted fields before saving.");
+  };
 
-  function renderSelect(
+  const submitForm = handleSubmit(
+    async (formValues) => {
+    const tempPublicIds = images
+      .filter((i): i is ImageItem & { type: "temp" } => i.type === "temp")
+      .map((i) => i.data.publicId);
+
+    const nextProgressionOfId =
+      formValues.progressionOfId === "none" ? null : formValues.progressionOfId;
+
+    if (isEdit && nextProgressionOfId && blockedParentIds.has(nextProgressionOfId)) {
+      toast.error("That easier exercise would break the progression chain");
+      return;
+    }
+
+    const body = {
+      name: formValues.name,
+      description: optionalField(formValues.description) ?? null,
+      startingPosition: optionalField(formValues.startingPosition) ?? null,
+      orientation: formValues.orientation === "none" ? null : formValues.orientation,
+      directionFaced:
+        formValues.directionFaced === "none" ? null : formValues.directionFaced,
+      movementType:
+        formValues.movementType === "none" ? null : formValues.movementType,
+      springs: optionalField(formValues.springs) ?? null,
+      equipment: formValues.equipment,
+      machineSetup:
+        formValues.machineSetup === "none" ? null : formValues.machineSetup,
+      transitionCues: optionalField(formValues.transitionCues) ?? null,
+      cueing: optionalField(formValues.cueing) ?? null,
+      spinalMovement: formValues.spinalMovement,
+      chainType: formValues.chainType,
+      jointLoading: formValues.jointLoading,
+      progressionNotes: optionalField(formValues.progressionNotes) ?? null,
+      regressionNotes: optionalField(formValues.regressionNotes) ?? null,
+      tags: formValues.tags,
+      folderId: formValues.folderId === "none" ? null : formValues.folderId,
+      progressionOfId: nextProgressionOfId,
+      layers: (() => {
+        const trimmed = formValues.layers
+          .map((r) => ({ ...r, content: r.content.trim() }))
+          .filter((r) => r.content.length > 0);
+        const last = trimmed.length - 1;
+        return trimmed.map((r, i) => ({
+          content: r.content,
+          order: i,
+          isFinisher: i === last ? r.isFinisher : false,
+        }));
+      })(),
+      ...(tempPublicIds.length > 0 ? { publicIds: tempPublicIds } : {}),
+    };
+
+    try {
+      if (isEdit && exercise) {
+        const updated = await exerciseApi.updateExercise(exercise.id, body);
+        toast.success("Exercise updated");
+        router.push(`/exercises/${updated.id}`);
+      } else {
+        const created = await exerciseApi.createExercise(body);
+        toast.success("Exercise created");
+        router.push(`/exercises/${created.id}`);
+      }
+    } catch {
+      toast.error("Failed to save exercise");
+    }
+  },
+    onSubmitInvalid
+  );
+
+  /** Block native submit (e.g. Enter in inputs) until the final step — avoids save firing while using Continue. */
+  const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    if (!lastStep) {
+      e.preventDefault();
+      return;
+    }
+    void submitForm(e);
+  };
+
+  const renderCatalogSelect = (
     name: ExerciseStringSelectField,
     label: string,
-    options: { value: string; label: string }[],
+    options: DropdownOptionRow[],
+    loading: boolean,
+    displayLabel: string,
+    nonePlaceholder: string,
     required?: boolean
-  ) {
-    return (
-      <div className="space-y-2">
-        <Label className="pl-1.5 text-sm font-medium text-foreground">
-          {label}
-          {required ? <span className="text-destructive"> *</span> : null}
-        </Label>
-        <Controller
-          control={control}
-          name={name}
-          render={({ field }) => (
-            <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
-              <SelectTrigger className={selectTriggerClass}>
-                <SelectValue placeholder={label} />
-              </SelectTrigger>
-              <SelectContent
-                align="start"
-                sideOffset={6}
-                className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
-              >
-                {options.map((o) => (
-                  <SelectItem key={o.value} value={o.value} className="rounded-xl py-2.5 pl-3">
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-        {errors[name] && (
-          <p className="pl-1.5 text-sm text-destructive">
-            {(errors[name] as { message?: string })?.message}
-          </p>
+  ) => (
+    <div className="space-y-2">
+      <Label className="pl-1.5 text-sm font-medium text-foreground">
+        {label}
+        {required ? <span className="text-destructive"> *</span> : null}
+      </Label>
+      <Controller
+        control={control}
+        name={name}
+        render={({ field }) => (
+          <Select
+            value={field.value}
+            onValueChange={(v) => field.onChange(v ?? "none")}
+            disabled={loading && options.length === 0}
+          >
+            <SelectTrigger
+              aria-invalid={errors[name] ? true : undefined}
+              className={cn(selectTriggerClass, errors[name] && "border-destructive")}
+            >
+              <SelectValue placeholder={nonePlaceholder}>
+                <span
+                  className={
+                    field.value === "none" || (loading && options.length === 0)
+                      ? "text-muted-foreground"
+                      : undefined
+                  }
+                >
+                  {displayLabel}
+                </span>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent
+              align="start"
+              sideOffset={6}
+              className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+            >
+              <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                <span className="text-muted-foreground">{nonePlaceholder}</span>
+              </SelectItem>
+              {options.length > 0 && <SelectSeparator className="mx-1 bg-border/70" />}
+              {options.map((o) => (
+                <SelectItem key={o.id} value={o.value} className="rounded-xl py-2.5 pl-3">
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
-      </div>
-    );
-  }
+      />
+      {errors[name] && (
+        <p className="pl-1.5 text-sm text-destructive">
+          {(errors[name] as { message?: string })?.message}
+        </p>
+      )}
+    </div>
+  );
 
   const stepContent = (() => {
     switch (stepIndex) {
       case 0:
         return (
           <div className="space-y-6">
-            <div className="rounded-2xl border border-dashed border-border/80 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-              This multistep layout mirrors the full exercise form fields with{" "}
-              <span className="font-medium text-foreground">no server calls</span>. Use it to
-              compare pacing and density before wiring save behavior.
-            </div>
             <div className="space-y-2">
               <Label htmlFor="ms-name" className="pl-1.5 text-sm font-medium text-foreground">
                 Name <span className="text-destructive">*</span>
@@ -413,6 +817,7 @@ export function ExerciseFormMultistep() {
                     onValueChange={field.onChange}
                     placeholder="Describe the movement, setup, and intention..."
                     rows={4}
+                    bulletsEnabled={false}
                     className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                   />
                 )}
@@ -437,10 +842,150 @@ export function ExerciseFormMultistep() {
                     onValueChange={field.onChange}
                     placeholder="e.g. Supine, headpiece flat, straps in hands"
                     rows={3}
+                    bulletsEnabled={false}
                     className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                   />
                 )}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ms-folder" className="pl-1.5 text-sm font-medium text-foreground">
+                Folder
+              </Label>
+              <Controller
+                control={control}
+                name="folderId"
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) => field.onChange(value ?? "none")}
+                  >
+                    <SelectTrigger
+                      id="ms-folder"
+                      className="h-12 w-full min-w-0 rounded-2xl border-input bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+                    >
+                      <SelectValue placeholder="No folder">{folderTriggerLabel}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent
+                      align="start"
+                      sideOffset={6}
+                      className="max-h-72 rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                    >
+                      <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                        No folder
+                      </SelectItem>
+                      {folders.length > 0 && (
+                        <>
+                          <SelectSeparator className="mx-1 bg-border/70" />
+                          {folders.map((f) => (
+                            <SelectItem key={f.id} value={f.id} className="rounded-xl py-2.5 pl-3">
+                              {f.name}
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="pl-1.5 text-sm font-medium text-foreground">
+                Images
+                <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                  ({totalImages}/{MAX_IMAGES})
+                </span>
+              </Label>
+
+              {totalImages > 0 && (
+                <div ref={bindExerciseImageGallery} className="grid grid-cols-3 gap-3">
+                  {images.map((item, index) => (
+                    <div
+                      key={imageKey(item)}
+                      draggable
+                      onDragStart={() => handleDragStart(index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDrop={(e) => handleDropReorder(e, index)}
+                      onDragEnd={handleDragEnd}
+                      className={cn(
+                        "group relative aspect-square overflow-hidden rounded-2xl border bg-muted transition-all",
+                        dragOverIdx === index
+                          ? "border-primary ring-2 ring-primary/30"
+                          : "border-border"
+                      )}
+                    >
+                      <a
+                        href={item.data.url}
+                        data-fancybox={EXERCISE_FORM_IMAGE_GALLERY}
+                        data-caption={
+                          (wName ?? "").trim().length > 0
+                            ? `${(wName ?? "").trim()} — Image ${index + 1}${item.type === "temp" ? " (unsaved)" : ""}`
+                            : `Image ${index + 1}${item.type === "temp" ? " (unsaved)" : ""}`
+                        }
+                        title="View full size"
+                        className="relative block size-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+                        draggable={false}
+                        onDragStart={(e) => e.preventDefault()}
+                      >
+                        <img
+                          src={item.data.url}
+                          alt=""
+                          className="size-full object-cover"
+                          draggable={false}
+                        />
+                      </a>
+                      <div className="pointer-events-none absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100" />
+                      <div className="pointer-events-none absolute left-1.5 top-1.5 flex size-6 cursor-grab items-center justify-center rounded-full bg-black text-white opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing">
+                        <GripVertical className="size-3.5" aria-hidden />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void removeImage(item)}
+                        className="pointer-events-auto absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                        aria-label="Remove image"
+                      >
+                        <X className="size-3.5 text-white" />
+                      </button>
+                      {item.type === "temp" && (
+                        <span className="pointer-events-none absolute bottom-1.5 left-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                          New
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {availableSlots > 0 && (
+                <div
+                  {...getRootProps()}
+                  className={cn(
+                    "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-8 transition-colors",
+                    isDragActive
+                      ? "border-primary bg-primary/5"
+                      : "border-input bg-background/70 hover:border-muted-foreground/40",
+                    uploading && "pointer-events-none opacity-60"
+                  )}
+                >
+                  <input {...getInputProps()} />
+                  {uploading ? (
+                    <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                  ) : (
+                    <ImagePlus className="size-6 text-muted-foreground" />
+                  )}
+                  <p className="text-center text-sm text-muted-foreground">
+                    {uploading
+                      ? "Uploading..."
+                      : isDragActive
+                        ? "Drop images here"
+                        : `Drag & drop or click to add (max ${availableSlots} more)`}
+                  </p>
+                  <p className="text-center text-xs text-muted-foreground/70">
+                    JPG, PNG, or WebP up to 5 MB each
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -448,10 +993,32 @@ export function ExerciseFormMultistep() {
         return (
           <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
-              {renderSelect("orientation", "Orientation", DEMO_ORIENTATION)}
-              {renderSelect("directionFaced", "Direction faced", DEMO_DIRECTION)}
+              {renderCatalogSelect(
+                "orientation",
+                "Orientation",
+                orientationDd.options,
+                orientationDd.loading,
+                orientationLabel,
+                "Select orientation"
+              )}
+              {renderCatalogSelect(
+                "directionFaced",
+                "Direction faced",
+                directionDd.options,
+                directionDd.loading,
+                directionLabel,
+                "Select direction"
+              )}
             </div>
-            {renderSelect("movementType", "Movement type", DEMO_MOVEMENT_TYPES, true)}
+            {renderCatalogSelect(
+              "movementType",
+              "Movement type",
+              movementTypeDd.options,
+              movementTypeDd.loading,
+              movementTypeLabel,
+              "Select movement type",
+              true
+            )}
             <div className="space-y-2">
               <Label htmlFor="ms-springs" className="pl-1.5 text-sm font-medium text-foreground">
                 Springs
@@ -487,18 +1054,19 @@ export function ExerciseFormMultistep() {
                 Equipment
               </Label>
               <p className="pl-1.5 text-xs text-muted-foreground">
-                Demo checklist — &quot;None&quot; clears other selections.
+                Select all that apply, or add custom props. &quot;None&quot; clears other selections.
               </p>
               <fieldset
                 aria-labelledby="ms-equipment-label"
+                disabled={equipmentDd.loading}
                 className="m-0 min-w-0 space-y-2 border-0 p-0"
               >
                 <div className="space-y-2 pl-1.5">
-                  {DEMO_EQUIPMENT.map((o) => {
+                  {equipmentDd.options.map((o) => {
                     const disabled = isEquipmentOptionDisabled(o.value);
                     return (
                       <label
-                        key={o.value}
+                        key={o.id}
                         className={cn(
                           "flex cursor-pointer items-center gap-2 text-sm text-foreground",
                           disabled && "cursor-not-allowed opacity-50"
@@ -516,7 +1084,7 @@ export function ExerciseFormMultistep() {
                     );
                   })}
                   {(wEquipment ?? [])
-                    .filter((v) => !DEMO_EQUIPMENT.some((o) => o.value === v))
+                    .filter((v) => !equipmentDd.options.some((o) => o.value === v))
                     .map((val) => (
                       <label
                         key={val}
@@ -545,7 +1113,7 @@ export function ExerciseFormMultistep() {
                     value={equipmentCustomInput}
                     onChange={(e) => setEquipmentCustomInput(e.target.value)}
                     placeholder="Custom equipment…"
-                    disabled={(wEquipment ?? []).includes(NONE_EQUIPMENT)}
+                    disabled={(wEquipment ?? []).includes(noneEquipmentValue)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -558,7 +1126,7 @@ export function ExerciseFormMultistep() {
                     type="button"
                     variant="outline"
                     onClick={addCustomEquipment}
-                    disabled={(wEquipment ?? []).includes(NONE_EQUIPMENT)}
+                    disabled={(wEquipment ?? []).includes(noneEquipmentValue)}
                     className="h-12 w-full shrink-0 rounded-2xl border-input px-4 text-sm font-medium sm:w-auto sm:min-w-22 disabled:cursor-not-allowed"
                   >
                     Add
@@ -566,7 +1134,14 @@ export function ExerciseFormMultistep() {
                 </div>
               </fieldset>
             </div>
-            {renderSelect("machineSetup", "Machine setup", DEMO_MACHINE_SETUP)}
+            {renderCatalogSelect(
+              "machineSetup",
+              "Machine setup",
+              machineSetupDd.options,
+              machineSetupDd.loading,
+              machineSetupLabel,
+              "Select setup"
+            )}
           </div>
         );
       case 2:
@@ -588,6 +1163,7 @@ export function ExerciseFormMultistep() {
                   }}
                   className="h-9 gap-1.5 rounded-full border-input px-4 text-sm font-medium"
                 >
+                  <Plus className="size-4 shrink-0" aria-hidden />
                   Add layer
                 </Button>
               </div>
@@ -607,7 +1183,7 @@ export function ExerciseFormMultistep() {
                       name={`layers.${index}.content`}
                       render={({ field }) => (
                         <BulletTextarea
-                          bulletsEnabled
+                          bulletsEnabled={false}
                           showAddBulletButton
                           label={
                             <div className="flex flex-wrap items-center gap-2 pl-1.5">
@@ -707,6 +1283,7 @@ export function ExerciseFormMultistep() {
                     onValueChange={field.onChange}
                     placeholder="Key coaching points, modifications, breathing cues..."
                     rows={3}
+                    bulletsEnabled={false}
                     className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                   />
                 )}
@@ -717,19 +1294,19 @@ export function ExerciseFormMultistep() {
       case 3:
         return (
           <div className="space-y-6">
-            <fieldset className="space-y-2">
+            <fieldset className="space-y-2" disabled={spinalDd.loading}>
               <legend className="mb-2 pl-1.5 text-sm font-medium text-foreground">
                 Spinal movement
               </legend>
               <p className="mb-2 pl-1.5 text-xs text-muted-foreground">
-                &quot;None&quot; clears other selections (same pattern as equipment).
+                Select all that apply. &quot;None&quot; clears other selections (same as equipment).
               </p>
               <div className="space-y-2 pl-1">
-                {DEMO_SPINAL.map((o) => {
+                {spinalDd.options.map((o) => {
                   const disabled = isSpinalMovementOptionDisabled(o.value);
                   return (
                     <label
-                      key={o.value}
+                      key={o.id}
                       className={cn(
                         "flex cursor-pointer items-center gap-2 text-sm text-foreground",
                         disabled && "cursor-not-allowed opacity-50"
@@ -749,19 +1326,21 @@ export function ExerciseFormMultistep() {
               </div>
             </fieldset>
             <Separator className="bg-border/70" />
-            <fieldset className="space-y-2">
+            <fieldset className="space-y-2" disabled={chainDd.loading}>
               <legend className="mb-2 pl-1.5 text-sm font-medium text-foreground">
                 Chain type
               </legend>
               <p className="mb-2 pl-1.5 text-xs text-muted-foreground">
-                At most two types, or &quot;Both&quot; alone (same rules as the main form).
+                Up to two options, or &quot;Both&quot; alone. Hover a label for a short description.
               </p>
               <div className="space-y-2 pl-1">
-                {DEMO_CHAIN.map((o) => {
+                {chainDd.options.map((o) => {
+                  const checked = (wChainType ?? []).includes(o.value);
                   const disabled = isChainTypeOptionDisabled(o.value);
+                  const tip = chainTypeTooltipForValue(o.value);
                   return (
                     <label
-                      key={o.value}
+                      key={o.id}
                       className={cn(
                         "flex cursor-pointer items-center gap-2 text-sm text-foreground",
                         disabled && "cursor-not-allowed opacity-50"
@@ -769,12 +1348,12 @@ export function ExerciseFormMultistep() {
                     >
                       <input
                         type="checkbox"
-                        checked={(wChainType ?? []).includes(o.value)}
+                        checked={checked}
                         disabled={disabled}
                         onChange={() => toggleChainTypeValue(o.value)}
                         className="size-4 rounded border-input accent-primary disabled:cursor-not-allowed"
                       />
-                      {o.label}
+                      <span title={tip}>{o.label}</span>
                     </label>
                   );
                 })}
@@ -784,14 +1363,18 @@ export function ExerciseFormMultistep() {
               )}
             </fieldset>
             <Separator className="bg-border/70" />
-            <fieldset className="space-y-2">
+            <fieldset className="space-y-2" disabled={jointDd.loading}>
               <legend className="mb-2 pl-1.5 text-sm font-medium text-foreground">
                 Joint loading
               </legend>
+              <p className="mb-2 pl-1.5 text-xs text-muted-foreground">
+                Alternating loaded vs unloaded positions reduces cumulative stress and supports client
+                comfort, confidence, and joint resilience.
+              </p>
               <div className="space-y-2 pl-1">
-                {DEMO_JOINT.map((o) => (
+                {jointDd.options.map((o) => (
                   <label
-                    key={o.value}
+                    key={o.id}
                     className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
                   >
                     <input
@@ -808,47 +1391,49 @@ export function ExerciseFormMultistep() {
             <Separator className="bg-border/70" />
             <div className="space-y-2">
               <Label className="pl-1.5 text-sm font-medium text-foreground">Tags</Label>
-              <div className="flex flex-wrap gap-2 pl-1.5">
-                {(wTags ?? []).map((t) => (
-                  <Badge
-                    key={t}
-                    variant="secondary"
-                    className="gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
-                  >
-                    {t}
-                    <button
-                      type="button"
-                      className="ml-0.5 rounded-full p-0.5 hover:bg-background/80"
-                      onClick={() => removeTag(t)}
-                      aria-label={`Remove tag ${t}`}
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
                 <Input
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
-                  placeholder="Add a tag…"
+                  placeholder="Add apparatus, level, or focus..."
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
                       addTag();
                     }
                   }}
-                  className="h-12 rounded-2xl border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 sm:flex-1"
+                  className="h-12 min-w-0 flex-1 rounded-2xl border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   onClick={addTag}
-                  className="h-12 shrink-0 rounded-2xl border-input px-4 sm:w-auto"
+                  className="h-12 shrink-0 gap-2 rounded-2xl border-input bg-background/70 px-5 text-sm font-medium text-foreground shadow-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring/35"
                 >
-                  Add tag
+                  <Plus className="size-5 shrink-0" aria-hidden />
+                  Add
                 </Button>
               </div>
+              {(wTags ?? []).length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-2">
+                  {(wTags ?? []).map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="outline"
+                      className="gap-1 border-border bg-accent text-accent-foreground"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        aria-label={`Remove ${tag} tag`}
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         );
@@ -872,8 +1457,9 @@ export function ExerciseFormMultistep() {
                     }
                     value={field.value}
                     onValueChange={field.onChange}
-                    placeholder="How to make this harder for confident clients..."
+                    placeholder="How to make this exercise harder (load, range, tempo, props…)"
                     rows={3}
+                    bulletsEnabled={false}
                     className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                   />
                 )}
@@ -896,8 +1482,9 @@ export function ExerciseFormMultistep() {
                     }
                     value={field.value}
                     onValueChange={field.onChange}
-                    placeholder="Support options for beginners or fatigue days..."
+                    placeholder="How to make this exercise easier (modifications, support, range…)"
                     rows={3}
+                    bulletsEnabled={false}
                     className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                   />
                 )}
@@ -908,7 +1495,8 @@ export function ExerciseFormMultistep() {
                 Easier version (progression)
               </Label>
               <p className="pl-1.5 text-xs text-muted-foreground">
-                In this demo, progression stays disconnected from the library.
+                Pick the movement clients do before this one. The detail page shows a Level 1 → 2 →
+                3 chain from root to harder steps.
               </p>
               <Controller
                 control={control}
@@ -916,20 +1504,39 @@ export function ExerciseFormMultistep() {
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className={selectTriggerClass}>
-                      <SelectValue placeholder="None" />
+                      <SelectValue placeholder="None — root level">
+                        {progressionTriggerLabel}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent
                       align="start"
                       sideOffset={6}
-                      className="rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                      className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
                     >
                       <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
-                        None
+                        None — this is the easiest step (root)
                       </SelectItem>
-                      <SelectSeparator className="mx-1 bg-border/70" />
-                      <SelectItem value="demo-parent" disabled className="rounded-xl py-2.5 pl-3">
-                        <span className="text-muted-foreground">Pick from library (demo)</span>
-                      </SelectItem>
+                      {orphanProgressionParent && (
+                        <>
+                          <SelectSeparator className="mx-1 bg-border/70" />
+                          <SelectItem
+                            value={orphanProgressionParent.id}
+                            className="rounded-xl py-2.5 pl-3 text-muted-foreground italic"
+                          >
+                            {orphanProgressionParent.name} (restore or clear)
+                          </SelectItem>
+                        </>
+                      )}
+                      {progressionSelectable.length > 0 && (
+                        <>
+                          <SelectSeparator className="mx-1 bg-border/70" />
+                          {progressionSelectable.map((ex) => (
+                            <SelectItem key={ex.id} value={ex.id} className="rounded-xl py-2.5 pl-3">
+                              {ex.name}
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 )}
@@ -943,14 +1550,8 @@ export function ExerciseFormMultistep() {
   })();
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        void onDemoSubmit();
-      }}
-      className="w-full min-w-0"
-    >
-      <Card className="border-border bg-card shadow-xl">
+    <form onSubmit={onFormSubmit} className="w-full min-w-0">
+      <Card className="gap-0 border-border bg-card py-0 shadow-xl">
         <CardContent className="p-0">
           <div className="border-b border-border bg-muted/15">
             <div
@@ -1010,7 +1611,7 @@ export function ExerciseFormMultistep() {
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
-                  Multistep (demo)
+                  {isEdit ? "Edit exercise" : "New exercise"}
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-card-foreground">
                   {STEPS[stepIndex]?.title}
@@ -1027,7 +1628,7 @@ export function ExerciseFormMultistep() {
             <Separator className="bg-border/70" />
 
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -1044,17 +1645,30 @@ export function ExerciseFormMultistep() {
                     <ChevronRight className="ml-1 size-4" />
                   </Button>
                 ) : (
-                  <Button type="submit" className="rounded-2xl" disabled={isSubmitting}>
-                    Validate draft
+                  <Button
+                    type="button"
+                    className="rounded-2xl"
+                    disabled={isSubmitting || uploading}
+                    onClick={() => void submitForm()}
+                  >
+                    {isSubmitting ? "Saving…" : isEdit ? "Update exercise" : "Create exercise"}
                     <ArrowRight className="ml-1 size-4" />
                   </Button>
                 )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="rounded-2xl text-muted-foreground"
+                  onClick={() => router.back()}
+                >
+                  Cancel
+                </Button>
               </div>
-              <p className="text-xs text-muted-foreground sm:text-right">
+              {/* <p className="text-xs text-muted-foreground sm:text-right">
                 Steps in the row above jump freely;{" "}
-                <span className="font-medium text-foreground">Continue</span> validates this
-                section only.
-              </p>
+                <span className="font-medium text-foreground">Continue</span> validates this section
+                only.
+              </p> */}
             </div>
           </div>
         </CardContent>

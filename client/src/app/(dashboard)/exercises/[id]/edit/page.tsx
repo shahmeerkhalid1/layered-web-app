@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { Exercise } from "@/lib/types";
 import { exerciseApi } from "@/services/exercise-api";
-import { ExerciseForm } from "@/components/exercises/exercise-form";
+import { ExerciseFormMultistep } from "@/components/exercises/exercise-form-multistep";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -37,21 +37,17 @@ export default function EditExercisePage() {
   if (!exercise) return null;
 
   return (
-    <div className="space-y-6 relative">
+    <div className="relative space-y-6">
       <div className="flex min-w-0 items-start gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-        >
+        <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label="Go back">
           <ArrowLeft className="size-4" />
         </Button>
         <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-bold tracking-tight">Edit Exercise</h2>
-        <p className="text-muted-foreground">Update {exercise.name}</p>
+          <h2 className="text-2xl font-bold tracking-tight">Edit exercise</h2>
+          <p className="text-muted-foreground">Update {exercise.name}</p>
+        </div>
       </div>
+      <ExerciseFormMultistep exercise={exercise} />
     </div>
-    <ExerciseForm exercise={exercise} />
-  </div>
-);
+  );
 }

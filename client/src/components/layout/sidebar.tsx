@@ -13,7 +13,6 @@ import {
   Dumbbell,
   FileText,
   Users,
-  ListOrdered,
   LogOut,
   User,
   ChevronsUpDown,
@@ -43,17 +42,7 @@ type MainNavItem = {
 const navItems: MainNavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/calendar", label: "Calendar", icon: Calendar },
-  {
-    href: "/exercises",
-    label: "Exercises",
-    icon: Dumbbell,
-    isActive: (p) => p.startsWith("/exercises") && !p.startsWith("/exercises/multistep"),
-  },
-  {
-    href: "/exercises/multistep",
-    label: "Multistep form",
-    icon: ListOrdered,
-  },
+  { href: "/exercises", label: "Exercises", icon: Dumbbell },
   { href: "/class-plans", label: "Class Plans", icon: FileText },
   { href: "/clients", label: "Clients", icon: Users },
 ];
