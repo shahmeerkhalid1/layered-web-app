@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
+  CalendarPlus,
   ChevronLeft,
   Layers,
   Pencil,
@@ -17,6 +18,7 @@ import type { ClassPlanFolder, ClassPlanTemplateDetail, PlanSectionDetail, PlanS
 import { classPlanApi } from "@/services/class-plan-api";
 import { EditClassPlanDialog } from "@/components/class-plans/edit-class-plan-dialog";
 import { ExercisePickerDialog } from "@/components/class-plans/exercise-picker-dialog";
+import { QuickScheduleDialog } from "@/components/scheduling/quick-schedule-dialog";
 import { SectionExerciseRow } from "@/components/class-plans/section-exercise-row";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -67,6 +69,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
   const [deletingSection, setDeletingSection] = useState<PlanSectionDetail | null>(null);
 
   const [editPlanOpen, setEditPlanOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [folders, setFolders] = useState<ClassPlanFolder[]>([]);
   const [pickerSectionId, setPickerSectionId] = useState<string | null>(null);
 
@@ -296,6 +299,15 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
 
   return (
     <div className="space-y-6">
+      <QuickScheduleDialog
+        open={scheduleOpen}
+        onOpenChange={setScheduleOpen}
+        templatePrefill={{
+          id: plan.id,
+          name: plan.name,
+          durationMinutes: plan.durationMinutes,
+        }}
+      />
       <div className="rounded-3xl border border-border bg-card p-6 shadow-lg md:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-2">
@@ -337,6 +349,17 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
             )}
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="rounded-full"
+              onClick={() => setScheduleOpen(true)}
+              disabled={pending}
+            >
+              <CalendarPlus className="mr-1 size-4" aria-hidden />
+              Schedule this plan
+            </Button>
             <Link
               href="/class-plans"
               className={cn(

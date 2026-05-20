@@ -29,7 +29,7 @@ export type PaginatedExerciseList = {
 };
 
 /** Default page size for library list requests (server default matches). */
-export const EXERCISE_LIBRARY_PAGE_SIZE = 24;
+export const EXERCISE_LIBRARY_PAGE_SIZE = 6;
 
 export type ExerciseLayerInput = {
   content: string;

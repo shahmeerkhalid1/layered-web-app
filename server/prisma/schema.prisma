@@ -44,6 +44,8 @@ model Instructor {
   dropdownOptions    DropdownOption[]
   classPlanFolders   ClassPlanFolder[]
   classPlanTemplates ClassPlanTemplate[]
+  classes            Class[]
+  classInstances     ClassInstance[]
 }
 
 model Session {
@@ -249,6 +251,8 @@ model ClassPlanTemplate {
   instructor Instructor        @relation(fields: [instructorId], references: [id])
   folder     ClassPlanFolder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
   sections   PlanSection[]
+  classInstances ClassInstance[]
+  classes        Class[]
 
   @@index([instructorId])
   @@index([folderId])
@@ -262,8 +266,9 @@ model PlanSection {
   classInstanceId String?
   createdAt       DateTime @default(now())
 
-  template  ClassPlanTemplate?    @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  exercises PlanSectionExercise[]
+  template      ClassPlanTemplate? @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  classInstance ClassInstance?   @relation(fields: [classInstanceId], references: [id], onDelete: Cascade)
+  exercises     PlanSectionExercise[]
 
   @@index([templateId])
   @@index([classInstanceId])
@@ -314,7 +319,39 @@ model Class {
   createdAt        DateTime  @default(now())
   deletedAt        DateTime?
 
+  instructor Instructor          @relation(fields: [instructorId], references: [id])
+  template   ClassPlanTemplate?   @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  instances  ClassInstance[]
 
   @@index([instructorId])
+  @@index([templateId])
   @@index([startDate])
+}
+
+model ClassInstance {
+  id              String         @id @default(cuid())
+  classId         String
+  date            DateTime       @db.Date
+  time            DateTime       @db.Timestamptz()
+  status          InstanceStatus @default(SCHEDULED)
+  instructorId    String
+  templateId      String?
+  isCustomised    Boolean        @default(false)
+  classType       String?
+  classStyle      String?
+  rating          Int?
+  reflectionNotes String?
+  reviewedAt      DateTime?
+  createdAt       DateTime       @default(now())
+  deletedAt       DateTime?
+
+  class      Class              @relation(fields: [classId], references: [id], onDelete: Cascade)
+  instructor Instructor         @relation(fields: [instructorId], references: [id])
+  template   ClassPlanTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  sections   PlanSection[]
+
+  @@index([classId])
+  @@index([instructorId])
+  @@index([date])
+  @@index([templateId])
 }

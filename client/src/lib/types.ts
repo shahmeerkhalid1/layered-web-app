@@ -153,3 +153,122 @@ export interface ClassPlanListResponse {
   page: number;
   limit: number;
 }
+
+// ─── Scheduling / Calendar ───────────────────────────────────────────────────
+
+export type ScheduledClassType = "GROUP" | "PRIVATE";
+
+export type InstanceStatus = "SCHEDULED" | "COMPLETED" | "CANCELLED";
+
+export interface ScheduledClass {
+  id: string;
+  title: string;
+  type: ScheduledClassType;
+  isRecurring: boolean;
+  recurrenceRule?: unknown;
+  startDate: string;
+  endDate?: string | null;
+  time: string;
+  durationMinutes: number;
+  templateId?: string | null;
+  syncWithTemplate: boolean;
+  instructorId: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _count?: { instances: number };
+  instances?: ClassInstanceSummary[];
+}
+
+export interface ClassInstanceSummary {
+  id: string;
+  classId: string;
+  date: string;
+  time: string;
+  status: InstanceStatus;
+  instructorId: string;
+  templateId?: string | null;
+  isCustomised: boolean;
+  classType?: string | null;
+  classStyle?: string | null;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+
+/** Row from GET /api/class-instances?start&end */
+export interface CalendarClassInstance {
+  id: string;
+  classId: string;
+  date: string;
+  time: string;
+  status: InstanceStatus;
+  instructorId: string;
+  templateId?: string | null;
+  isCustomised: boolean;
+  classType?: string | null;
+  classStyle?: string | null;
+  class: {
+    id: string;
+    title: string;
+    type: ScheduledClassType;
+    durationMinutes: number;
+  };
+  _count: { sections: number };
+}
+
+export interface ClassInstanceDetail {
+  id: string;
+  classId: string;
+  date: string;
+  time: string;
+  status: InstanceStatus;
+  instructorId: string;
+  templateId?: string | null;
+  isCustomised: boolean;
+  classType?: string | null;
+  classStyle?: string | null;
+  createdAt: string;
+  deletedAt?: string | null;
+  class: ScheduledClass;
+  sections: PlanSectionDetail[];
+}
+
+export interface ClassListResponse {
+  data: ScheduledClass[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface QuickScheduleResponse {
+  class: ScheduledClass;
+  instance: ClassInstanceSummary & { class: ScheduledClass };
+}
+
+export interface RecurrenceRuleInput {
+  daysOfWeek: number[];
+}
+
+export interface CreateClassBody {
+  title: string;
+  type: ScheduledClassType;
+  isRecurring: boolean;
+  recurrenceRule?: RecurrenceRuleInput | null;
+  startDate: string;
+  endDate?: string | null;
+  time: string;
+  durationMinutes: number;
+  templateId?: string | null;
+}
+
+export interface UpdateClassBody {
+  title?: string;
+  type?: ScheduledClassType;
+  isRecurring?: boolean;
+  recurrenceRule?: RecurrenceRuleInput | null;
+  startDate?: string;
+  endDate?: string | null;
+  time?: string;
+  durationMinutes?: number;
+  templateId?: string | null;
+  regenerateFutureInstancesFrom?: string;
+}

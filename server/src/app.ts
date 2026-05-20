@@ -12,6 +12,9 @@ import exerciseRoutes from "./modules/exercises/exercise.routes";
 import folderRoutes from "./modules/exercises/folder.routes";
 import classPlanFolderRoutes from "./modules/class-plans/class-plan-folder.routes";
 import classPlanRoutes from "./modules/class-plans/class-plan.routes";
+import classRoutes from "./modules/scheduling/class.routes";
+import classInstanceRoutes from "./modules/scheduling/class-instance.routes";
+import quickScheduleRoutes from "./modules/scheduling/quick-schedule.routes";
 import uploadRoutes from "./modules/uploads/upload.routes";
 import dropdownRoutes from "./modules/dropdowns/dropdown.routes";
 
@@ -57,6 +60,9 @@ app.use("/api/exercises", exerciseRoutes);
 app.use("/api/exercise-folders", folderRoutes);
 app.use("/api/class-plan-folders", classPlanFolderRoutes);
 app.use("/api/class-plans", classPlanRoutes);
+app.use("/api/classes", classRoutes);
+app.use("/api/class-instances", classInstanceRoutes);
+app.use("/api/quick-schedule", quickScheduleRoutes);
 app.use("/api/dropdowns", authenticate, dropdownRoutes);
 app.use(errorHandler);
 

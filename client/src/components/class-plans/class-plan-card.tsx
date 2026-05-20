@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { CalendarPlus, Copy, Pencil, Trash2 } from "lucide-react";
 import type { ClassPlanTemplate } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { QuickScheduleDialog } from "@/components/scheduling/quick-schedule-dialog";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 const MAX_TAGS_VISIBLE = 4;
 
@@ -22,6 +23,7 @@ export function ClassPlanCard({
   onDuplicate,
   onRequestDelete,
 }: ClassPlanCardProps) {
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const tags = template.tags ?? [];
   const visibleTags = tags.slice(0, MAX_TAGS_VISIBLE);
   const overflowCount = tags.length - visibleTags.length;
@@ -37,14 +39,18 @@ export function ClassPlanCard({
     year: "numeric",
   });
 
-  const handleSchedule = () => {
-    toast.message("Scheduling coming soon", {
-      description: "Quick schedule from class plans will be available with the calendar.",
-    });
-  };
-
   return (
-    <Card
+    <>
+      <QuickScheduleDialog
+        open={scheduleOpen}
+        onOpenChange={setScheduleOpen}
+        templatePrefill={{
+          id: template.id,
+          name: template.name,
+          durationMinutes: template.durationMinutes,
+        }}
+      />
+      <Card
       className={cn(
         "group relative h-full gap-0 overflow-hidden border-border bg-card py-0 shadow-lg ring-1 ring-foreground/10",
         "transition-all duration-300 hover:-translate-y-0.5 hover:border-ring hover:shadow-xl"
@@ -162,7 +168,7 @@ export function ClassPlanCard({
             size="icon-xs"
             className="text-muted-foreground hover:bg-background/80 hover:text-foreground"
             aria-label="Schedule class"
-            onClick={handleSchedule}
+            onClick={() => setScheduleOpen(true)}
           >
             <CalendarPlus className="size-3.5" aria-hidden />
           </Button>
@@ -189,5 +195,6 @@ export function ClassPlanCard({
         </div>
       </div>
     </Card>
+    </>
   );
 }

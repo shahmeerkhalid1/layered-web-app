@@ -10,6 +10,7 @@ import {
   Settings,
   UserPlus,
   Calendar,
+  CalendarDays,
   Dumbbell,
   FileText,
   Users,
@@ -42,6 +43,7 @@ type MainNavItem = {
 const navItems: MainNavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/calendar", label: "Calendar", icon: Calendar },
+  { href: "/week-overview", label: "Week Overview", icon: CalendarDays },
   { href: "/exercises", label: "Exercises", icon: Dumbbell },
   { href: "/class-plans", label: "Class Plans", icon: FileText },
   { href: "/clients", label: "Clients", icon: Users },
