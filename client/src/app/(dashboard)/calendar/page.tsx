@@ -94,6 +94,7 @@ export default function CalendarPage() {
           setDrawerOpen(o);
           if (!o) setDrawerId(null);
         }}
+        onInstanceIdChange={setDrawerId}
         onUpdated={() => void refresh()}
       />
 

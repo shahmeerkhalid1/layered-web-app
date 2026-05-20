@@ -62,6 +62,11 @@ export const updateClassSchema = z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .optional(),
+    /** Target calendar date when rescheduling a recurring series from an instance drawer. */
+    rescheduleToDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
   })
   .refine(
     (d) =>
@@ -74,7 +79,8 @@ export const updateClassSchema = z
       d.time !== undefined ||
       d.durationMinutes !== undefined ||
       d.templateId !== undefined ||
-      d.regenerateFutureInstancesFrom !== undefined,
+      d.regenerateFutureInstancesFrom !== undefined ||
+      d.rescheduleToDate !== undefined,
     { message: "At least one field is required" }
   );
 

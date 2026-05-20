@@ -112,6 +112,19 @@ function eachUtcCalendarDay(from: Date, to: Date, fn: (day: Date) => void): void
   }
 }
 
+function calendarDayDiff(from: Date, to: Date): number {
+  const start = utcCalendarDate(from).getTime();
+  const end = utcCalendarDate(to).getTime();
+  return Math.round((end - start) / 86400000);
+}
+
+function shiftDaysOfWeek(days: number[], deltaDays: number): number[] {
+  const normalized = ((deltaDays % 7) + 7) % 7;
+  if (normalized === 0) return [...days].sort((a, b) => a - b);
+  const shifted = days.map((d) => ((d - 1 + normalized) % 7) + 1);
+  return [...new Set(shifted)].sort((a, b) => a - b);
+}
+
 async function assertTemplateOwned(id: string, instructorId: string): Promise<void> {
   const ok = await prisma.classPlanTemplate.findFirst({
     where: { id, instructorId, ...active },
@@ -439,6 +452,28 @@ export async function updateClass(classId: string, instructorId: string, data: U
 
     if (data.regenerateFutureInstancesFrom && updatedRow.isRecurring) {
       const anchor = parseYmd(data.regenerateFutureInstancesFrom);
+      const targetDate = data.rescheduleToDate
+        ? parseYmd(data.rescheduleToDate)
+        : data.time !== undefined
+          ? utcCalendarDate(data.time)
+          : anchor;
+      const deltaDays = calendarDayDiff(anchor, targetDate);
+
+      let recurrenceRule = updatedRow.recurrenceRule;
+      if (deltaDays !== 0) {
+        const rule = updatedRow.recurrenceRule as { daysOfWeek?: number[] } | null;
+        const days = rule?.daysOfWeek ?? [];
+        if (days.length === 0) {
+          throw new ValidationError("recurrenceRule.daysOfWeek is required to reschedule a recurring class");
+        }
+        const shifted = { daysOfWeek: shiftDaysOfWeek(days, deltaDays) };
+        recurrenceRule = shifted as Prisma.JsonValue;
+        await tx.class.update({
+          where: { id: classId },
+          data: { recurrenceRule: shifted as Prisma.InputJsonValue },
+        });
+      }
+
       await tx.classInstance.deleteMany({
         where: {
           classId,
@@ -453,15 +488,21 @@ export async function updateClass(classId: string, instructorId: string, data: U
         throw new ValidationError("endDate is required on the class to regenerate recurring instances");
       }
 
+      const generationStart =
+        deltaDays !== 0
+          ? targetDate
+          : anchor > utcCalendarDate(updatedRow.startDate)
+            ? anchor
+            : utcCalendarDate(updatedRow.startDate);
+      const filterFrom = deltaDays !== 0 ? targetDate : anchor;
+
       const slots = buildOccurrenceSlots(
         true,
-        anchor > utcCalendarDate(updatedRow.startDate)
-          ? anchor
-          : utcCalendarDate(updatedRow.startDate),
+        generationStart,
         endD,
         updatedRow.time,
-        updatedRow.recurrenceRule
-      ).filter((s) => utcCalendarDate(s.date) >= utcCalendarDate(anchor));
+        recurrenceRule
+      ).filter((s) => utcCalendarDate(s.date) >= utcCalendarDate(filterFrom));
 
       if (slots.length > MAX_INSTANCES) {
         throw new ValidationError(`Cannot create more than ${MAX_INSTANCES} class instances`);

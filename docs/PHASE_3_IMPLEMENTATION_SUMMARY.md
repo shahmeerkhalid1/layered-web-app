@@ -69,8 +69,19 @@ All scheduling routes use **`authenticate`** and instructor ownership checks; li
 - **`copyTemplateToInstanceInternal`**: Loads template sections + exercises, deletes existing instance sections, recreates rows with `classInstanceId` only, sets instance `templateId` / denormalized fields / `isCustomised: false`.
 - **`POST /api/quick-schedule`**: One-off `Class` + one `ClassInstance`; optional template copy; `syncWithTemplate` forced off for MVP.
 - **`POST /api/classes`**: One-off or recurring; optional `templateId` copies plan to **each** generated instance; recurrence JSON shape `{ daysOfWeek: number[] }` (ISO Mon=1 … Sun=7); cap on generated instance count (**520**).
-- **`PATCH /api/classes/:id`**: Series updates; optional **`regenerateFutureInstancesFrom`** (`YYYY-MM-DD`) for recurring: deletes future **SCHEDULED** instances from that anchor and regenerates.
+- **`PATCH /api/classes/:id`**: Series updates; optional **`regenerateFutureInstancesFrom`** (`YYYY-MM-DD`) for recurring: deletes future **SCHEDULED** instances from that anchor and regenerates. Optional **`rescheduleToDate`** (`YYYY-MM-DD`) — used with regeneration from the instance drawer: when the target date differs from the anchor, the service computes a **calendar-day offset**, **shifts `recurrenceRule.daysOfWeek`** by that offset, and regenerates from the target date (calendar-style “this and following” move). When only **time** changes (same calendar date), weekdays are unchanged.
 - **Instance plan CRUD** (nested routes): section add/update/delete, exercise add/update/remove — sets **`isCustomised: true`** on the instance (except assign-template flow, which resets copy state).
+
+### Recurring instance reschedule (drawer → API)
+
+| Scope | API | Effect |
+|-------|-----|--------|
+| **Just this class** | `PATCH /api/class-instances/:id` with `date` + `time` | Moves **one** occurrence to any calendar date/time. Past and other future sessions keep the existing series pattern. |
+| **All future classes** | `PATCH /api/classes/:id` with `time`, `regenerateFutureInstancesFrom` (anchor = edited instance date), `rescheduleToDate` (user’s chosen date) | Deletes **SCHEDULED** instances on or after the anchor, updates series clock, optionally **shifts weekdays** by anchor→target day offset, regenerates future slots. Past instances before the anchor are untouched. |
+
+**Regeneration side effects:** future instances are **hard-deleted** and recreated with **new IDs** (not soft-deleted). The drawer must not reload the old instance id after “all future” — see frontend notes below.
+
+**Helpers in `scheduling.service.ts`:** `calendarDayDiff`, `shiftDaysOfWeek`, `buildOccurrenceSlots`, `applyUTCTimeToDay` (series `time` stores clock; occurrence dates come from recurrence + calendar days).
 
 ### Recurrence
 
@@ -84,7 +95,7 @@ All scheduling routes use **`authenticate`** and instructor ownership checks; li
 | Area | Location |
 |------|----------|
 | HTTP client | `client/src/services/scheduling-api.ts` |
-| Shared types | `client/src/lib/types.ts` (scheduling block: `ScheduledClass`, `CalendarClassInstance`, `ClassInstanceDetail`, list/create/update bodies, etc.) |
+| Shared types | `client/src/lib/types.ts` (scheduling block: `ScheduledClass`, `CalendarClassInstance`, `ClassInstanceDetail`, list/create/update bodies; **`UpdateClassBody.regenerateFutureInstancesFrom`**, **`UpdateClassBody.rescheduleToDate`**, etc.) |
 | Calendar helpers | `client/src/lib/calendar-utils.ts` |
 | Local date/time → ISO | `client/src/lib/datetime-local.ts` |
 | Quick schedule Zod | `client/src/lib/validation/quick-schedule-form-schema.ts` |
@@ -114,6 +125,14 @@ All scheduling routes use **`authenticate`** and instructor ownership checks; li
 - **Component:** `client/src/components/scheduling/class-instance-drawer.tsx`
 - **Uses:** `client/src/components/scheduling/instance-exercise-row.tsx` for per-row metadata edits (reps/duration/notes) against instance APIs.
 - **Features:** Mark complete / cancel; assign or swap template (list from class plans); add/remove sections; clients placeholder copy; **reschedule** date/time with **`edit-scope-dialog.tsx`** when the parent class is recurring (**this instance** vs **all future**).
+
+**Recurring reschedule UX (current):**
+
+- **Just this class** — one-off move to any date (e.g. skip a holiday week without changing the series weekdays).
+- **All future classes** — calendar-style “this and following”: changing **date** shifts the whole series by the day offset (e.g. Sat → Mon if the user picks a Monday). Changing **time only** updates the series clock for future occurrences on the same weekdays.
+- **Not the same as “edit series start date”** — changing `startDate` / `daysOfWeek` while keeping the same weekly pattern is **series-level** editing (see follow-ups: **Edit class dialog**). The drawer date picker is optimized for **occurrence** moves, not full series rule edits.
+
+**Post-regeneration drawer behavior:** `ClassInstanceDrawer` accepts optional **`onInstanceIdChange`**. After “all future”, the parent (`calendar/page.tsx`, `week-overview/page.tsx`) updates `drawerId` to the replacement instance from `PATCH /api/classes/:id` response (`instances[]` matched by `rescheduleToDate`, else first future scheduled row). Avoids `GET /api/class-instances/:oldId` 404 after hard-delete regeneration.
 
 **Layout / shell (shadcn `Sheet`):** `client/src/components/ui/sheet.tsx` applies high-specificity defaults (`data-[side=right]:w-3/4`, `data-[side=right]:sm:max-w-sm`). The drawer overrides with **`data-[side=right]:w-full`** and **`data-[side=right]:sm:max-w-3xl`** so width changes actually apply.
 
@@ -167,6 +186,8 @@ Suggested checks before demo or release:
 - [ ] Editing instance exercise fields sets **customised** (via row blur saves).
 - [ ] **Recurring create** yields instances on selected weekdays within date range.
 - [ ] **Just this class** vs **all future** reschedule paths for recurring instances.
+- [ ] **All future** with **date change**: future sessions shift weekday by day offset; drawer stays open on new instance id (not 404 on old id).
+- [ ] **All future** with **time-only change**: same weekdays, updated clock for following sessions.
 - [ ] Soft-deleted classes/instances **do not** appear in calendar range queries.
 - [ ] Cross-instructor access is denied (401/404 as implemented).
 
@@ -174,7 +195,10 @@ Suggested checks before demo or release:
 
 ## 8. Known gaps / follow-ups (optional)
 
+- **Edit class dialog (recommended):** Add an **`EditClassDialog`** mirroring **`create-class-dialog.tsx`** (`startDate`, `endDate`, `daysOfWeek`, time, duration, title) wired to **`GET/PATCH /api/classes/:id`**. Intended for **series-level** changes (e.g. change series start date or recurring weekdays **without** day-offset shift). Keep the instance drawer for **session** actions and quick “this / following” reschedules. Entry point: **“Edit series…”** from the instance drawer; show recurrence summary in drawer (“Repeats: Sat · until …”).
+- **Drawer copy polish:** Clarify **All future classes** as “move this and following sessions to the new date/time” vs series edit; optionally nudge users to **Edit series** when changing `daysOfWeek` / start date intent.
 - **New class dialog:** replace “paste template ID” with the same **searchable template picker + confirm** pattern as the instance drawer (or a compact combobox); drawer attach flow already uses that pattern.
+- **Regenerate modes:** Today, weekday shift applies whenever drawer sends `rescheduleToDate` ≠ anchor. Series edit dialog should regenerate with **explicit** `daysOfWeek` / `startDate` and **no** automatic day-offset shift.
 - **Hooks:** plan mentioned `useQuickSchedule` / `useClassInstanceDetail`; current code inlines fetch in components or uses `useCalendarInstances` only — add dedicated hooks if you want stricter reuse.
 - **Timezone edge cases:** calendar uses local dates for range queries vs server `DATE` storage; document instructor timezone assumptions if you expand globally.
 
@@ -222,4 +246,4 @@ Suggested checks before demo or release:
 
 ---
 
-*Last updated: May 2026 — Phase 3 scope plus post-delivery validation fix and scheduling UI/UX polish (drawer width, attach-template dialog, session actions copy, button cursor).*
+*Last updated: May 2026 — Phase 3 scope plus post-delivery validation fix, scheduling UI/UX polish (drawer width, attach-template dialog, session actions copy, button cursor), recurring reschedule fixes (`rescheduleToDate`, weekday shift on “all future”, drawer `onInstanceIdChange` after regeneration), and documented follow-up for **Edit class dialog** (series-level vs instance-level UX split).*

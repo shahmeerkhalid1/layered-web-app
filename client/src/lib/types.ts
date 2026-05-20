@@ -271,4 +271,5 @@ export interface UpdateClassBody {
   durationMinutes?: number;
   templateId?: string | null;
   regenerateFutureInstancesFrom?: string;
+  rescheduleToDate?: string;
 }

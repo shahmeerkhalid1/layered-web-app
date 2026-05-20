@@ -40,6 +40,8 @@ export interface ClassInstanceDrawerProps {
   instanceId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Called when a series regenerate replaces the open instance with a new row id. */
+  onInstanceIdChange?: (id: string) => void;
   onUpdated?: () => void;
 }
 
@@ -47,6 +49,7 @@ export function ClassInstanceDrawer({
   instanceId,
   open,
   onOpenChange,
+  onInstanceIdChange,
   onUpdated,
 }: ClassInstanceDrawerProps) {
   const [detail, setDetail] = useState<ClassInstanceDetail | null>(null);
@@ -201,15 +204,38 @@ export function ClassInstanceDrawer({
           time: p.newIso,
           date: p.newDateStr,
         });
-      } else {
-        await schedulingApi.updateClass(detail.class.id, {
-          time: p.newIso,
-          regenerateFutureInstancesFrom: p.anchorYmd,
-        });
+        toast.success("Schedule updated");
+        pendingRef.current = null;
+        await refresh();
+        return;
       }
+
+      const updated = await schedulingApi.updateClass(detail.class.id, {
+        time: p.newIso,
+        regenerateFutureInstancesFrom: p.anchorYmd,
+        rescheduleToDate: p.newDateStr,
+      });
       toast.success("Schedule updated");
       pendingRef.current = null;
-      await refresh();
+      onUpdated?.();
+
+      const replacement =
+        updated.instances?.find(
+          (i) => i.status === "SCHEDULED" && i.date.slice(0, 10) === p.newDateStr
+        ) ??
+        updated.instances?.find(
+          (i) => i.status === "SCHEDULED" && i.date.slice(0, 10) >= p.anchorYmd
+        );
+
+      if (replacement) {
+        if (onInstanceIdChange) {
+          onInstanceIdChange(replacement.id);
+        } else {
+          onOpenChange(false);
+        }
+      } else {
+        onOpenChange(false);
+      }
     } catch {
       toast.error("Could not update schedule");
     } finally {

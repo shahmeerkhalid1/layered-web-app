@@ -54,6 +54,7 @@ export default function WeekOverviewPage() {
           setDrawerOpen(o);
           if (!o) setDrawerId(null);
         }}
+        onInstanceIdChange={setDrawerId}
         onUpdated={() => void refresh()}
       />
 
