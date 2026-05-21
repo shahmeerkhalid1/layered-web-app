@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { schedulingApi } from "@/services/scheduling-api";
@@ -19,8 +19,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TimePicker } from "@/components/ui/time-picker";
 import {
   Select,
   SelectContent,
@@ -40,13 +42,16 @@ const WEEKDAY_OPTS: { label: string; value: number }[] = [
   { label: "Sun", value: 7 },
 ];
 
-function todayYmd(): string {
-  const n = new Date();
-  const y = n.getFullYear();
-  const m = String(n.getMonth() + 1).padStart(2, "0");
-  const d = String(n.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
+const EMPTY_CREATE_CLASS_VALUES: CreateClassFormValues = {
+  title: "",
+  type: "GROUP",
+  durationMinutes: 60,
+  templateId: "",
+  isRecurring: false,
+  startDate: "",
+  endDate: "",
+  clockTime: "",
+};
 
 interface CreateClassDialogProps {
   open: boolean;
@@ -59,6 +64,7 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     watch,
@@ -66,16 +72,7 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
     formState: { errors, isSubmitting },
   } = useForm<CreateClassFormValues>({
     resolver: zodResolver(createClassFormSchema),
-    defaultValues: {
-      title: "",
-      type: "GROUP",
-      durationMinutes: 60,
-      templateId: "",
-      isRecurring: false,
-      startDate: todayYmd(),
-      endDate: "",
-      clockTime: "09:00",
-    },
+    defaultValues: EMPTY_CREATE_CLASS_VALUES,
   });
 
   const isRecurring = watch("isRecurring");
@@ -84,16 +81,7 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
     if (!open) return;
     const ds = new Set([1, 3, 5]);
     setDaySet(ds);
-    reset({
-      title: "",
-      type: "GROUP",
-      durationMinutes: 60,
-      templateId: "",
-      isRecurring: false,
-      startDate: todayYmd(),
-      endDate: "",
-      clockTime: "09:00",
-    });
+    reset(EMPTY_CREATE_CLASS_VALUES);
   }, [open, reset]);
 
   const toggleDay = (v: number) => {
@@ -208,11 +196,33 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="cc-start">Start date</Label>
-              <Input id="cc-start" type="date" {...register("startDate")} />
+              <Controller
+                name="startDate"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    id="cc-start"
+                    value={field.value}
+                    onChange={field.onChange}
+                    aria-invalid={!!errors.startDate}
+                  />
+                )}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cc-clock">Time</Label>
-              <Input id="cc-clock" type="time" {...register("clockTime")} />
+              <Controller
+                name="clockTime"
+                control={control}
+                render={({ field }) => (
+                  <TimePicker
+                    id="cc-clock"
+                    value={field.value}
+                    onChange={field.onChange}
+                    aria-invalid={!!errors.clockTime}
+                  />
+                )}
+              />
             </div>
           </div>
 
@@ -237,7 +247,18 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cc-end">End date</Label>
-                <Input id="cc-end" type="date" {...register("endDate")} />
+                <Controller
+                  name="endDate"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePicker
+                      id="cc-end"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      aria-invalid={!!errors.endDate}
+                    />
+                  )}
+                />
                 {errors.endDate && (
                   <p className="text-xs text-destructive">{errors.endDate.message}</p>
                 )}

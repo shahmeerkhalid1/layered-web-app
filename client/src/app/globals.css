@@ -117,6 +117,79 @@
   --sidebar-ring: oklch(0.63 0.032 78);
 }
 
+/* react-day-picker — theme tokens (see https://daypicker.dev/docs/styling) */
+.rdp-root,
+.rdp-themed {
+  --rdp-accent-color: var(--primary);
+  --rdp-accent-background-color: var(--accent);
+  --rdp-today-color: var(--primary);
+  --rdp-range_start-color: var(--primary-foreground);
+  --rdp-range_end-color: var(--primary-foreground);
+  --rdp-range_start-date-background-color: var(--primary);
+  --rdp-range_end-date-background-color: var(--primary);
+  --rdp-range_middle-background-color: var(--accent);
+  --rdp-range_middle-color: var(--accent-foreground);
+  --rdp-selected-border: 2px solid transparent;
+  --rdp-day-height: 2.25rem;
+  --rdp-day-width: 2.25rem;
+  --rdp-day_button-height: 2.25rem;
+  --rdp-day_button-width: 2.25rem;
+  --rdp-day_button-border-radius: var(--radius-md);
+  --rdp-nav_button-height: 2rem;
+  --rdp-nav_button-width: 2rem;
+  --rdp-nav-height: 2.25rem;
+  --rdp-dropdown-gap: 0.375rem;
+  --rdp-font-family: inherit;
+}
+
+.dark .rdp-root,
+.dark .rdp-themed {
+  --rdp-accent-color: var(--primary);
+  --rdp-accent-background-color: var(--accent);
+}
+
+/* Selected / today — align with CSS variables + Tailwind classNames */
+.rdp-themed .rdp-selected .rdp-day_button {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-color: transparent;
+}
+
+.rdp-themed .rdp-today:not(.rdp-outside) .rdp-day_button {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.rdp-themed .rdp-today.rdp-selected .rdp-day_button {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.rdp-themed .rdp-month_caption {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.rdp-themed .rdp-caption_label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.rdp-themed .rdp-chevron {
+  fill: var(--muted-foreground);
+}
+
+.rdp-themed .rdp-dropdown_root .rdp-chevron {
+  opacity: 0.7;
+}
+
+.rdp-themed .rdp-weekday {
+  color: var(--muted-foreground);
+  opacity: 1;
+  font-weight: 500;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
