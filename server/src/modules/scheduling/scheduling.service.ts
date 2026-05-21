@@ -23,6 +23,7 @@ const sectionExerciseInclude = {
     select: {
       id: true,
       name: true,
+      description: true,
       savedToLibrary: true,
       orientation: true,
       directionFaced: true,
@@ -33,6 +34,15 @@ const sectionExerciseInclude = {
       spinalMovement: true,
       chainType: true,
       jointLoading: true,
+      layers: {
+        orderBy: { order: "asc" as const },
+        select: {
+          id: true,
+          order: true,
+          content: true,
+          isFinisher: true,
+        },
+      },
     },
   },
 } as const;

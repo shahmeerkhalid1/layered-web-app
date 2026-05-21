@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { PlanSectionExerciseRow } from "@/lib/types";
 import { classPlanApi } from "@/services/class-plan-api";
 import { ClassPlanExerciseProgrammingSummary } from "@/components/class-plans/class-plan-exercise-programming-summary";
+import { ExercisePlanPreview } from "@/components/class-plans/exercise-plan-preview";
 import { EditClassPlanExerciseDialog } from "@/components/class-plans/edit-class-plan-exercise-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -107,6 +108,7 @@ export function SectionExerciseRow({
             <p className="font-medium leading-snug text-foreground">{row.exercise.name}</p>
             <ClassPlanExerciseProgrammingSummary exercise={row.exercise} />
           </div>
+            
           <div
             className="flex shrink-0 flex-wrap items-center gap-0.5 self-end sm:self-start"
             role="toolbar"
@@ -159,6 +161,9 @@ export function SectionExerciseRow({
               <Trash2 className="size-4" aria-hidden />
             </Button>
           </div>
+        </div>
+        <div className="mt-3 max-w-full">
+        <ExercisePlanPreview exercise={row.exercise} previewId={row.id} />
         </div>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-2">

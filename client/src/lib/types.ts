@@ -107,6 +107,8 @@ export interface PlanSectionExerciseRow {
   exercise: {
     id: string;
     name: string;
+    description?: string | null;
+    layers?: Pick<ExerciseLayer, "id" | "order" | "content" | "isFinisher">[];
     /** When false, exercise was created for a class plan and is not in the library list yet. */
     savedToLibrary?: boolean;
     orientation?: string | null;

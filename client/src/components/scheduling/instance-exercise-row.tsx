@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import type { PlanSectionExerciseRow } from "@/lib/types";
 import { schedulingApi } from "@/services/scheduling-api";
 import { ClassPlanExerciseProgrammingSummary } from "@/components/class-plans/class-plan-exercise-programming-summary";
+import { ExercisePlanPreview } from "@/components/class-plans/exercise-plan-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -92,6 +93,9 @@ export function InstanceExerciseRow({
           >
             Remove
           </Button>
+        </div>
+        <div className="mt-3 max-w-full">
+        <ExercisePlanPreview exercise={row.exercise} previewId={row.id} />
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <div>
