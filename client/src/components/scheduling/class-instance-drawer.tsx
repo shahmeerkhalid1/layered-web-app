@@ -17,8 +17,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TimePicker } from "@/components/ui/time-picker";
 import {
   Sheet,
   SheetContent,
@@ -504,11 +506,10 @@ export function ClassInstanceDrawer({
                       <Label htmlFor="rs-date" className="text-xs">
                         Date
                       </Label>
-                      <Input
+                      <DatePicker
                         id="rs-date"
-                        type="date"
                         value={reschedule.date}
-                        onChange={(e) => setReschedule((r) => ({ ...r, date: e.target.value }))}
+                        onChange={(date) => setReschedule((r) => ({ ...r, date }))}
                         disabled={pending}
                         className="mt-1"
                       />
@@ -517,11 +518,10 @@ export function ClassInstanceDrawer({
                       <Label htmlFor="rs-time" className="text-xs">
                         Start
                       </Label>
-                      <Input
+                      <TimePicker
                         id="rs-time"
-                        type="time"
                         value={reschedule.time}
-                        onChange={(e) => setReschedule((r) => ({ ...r, time: e.target.value }))}
+                        onChange={(time) => setReschedule((r) => ({ ...r, time }))}
                         disabled={pending}
                         className="mt-1"
                       />

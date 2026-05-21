@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -21,8 +21,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TimePicker } from "@/components/ui/time-picker";
 import {
   Select,
   SelectContent,
@@ -50,13 +52,13 @@ const CLASS_TYPE_LABELS: Record<"GROUP" | "PRIVATE", string> = {
   PRIVATE: "Private",
 };
 
-function todayLocalYmd(): string {
-  const n = new Date();
-  const y = n.getFullYear();
-  const mo = String(n.getMonth() + 1).padStart(2, "0");
-  const da = String(n.getDate()).padStart(2, "0");
-  return `${y}-${mo}-${da}`;
-}
+const EMPTY_QUICK_SCHEDULE_VALUES: QuickScheduleFormValues = {
+  title: "",
+  type: "GROUP",
+  durationMinutes: 60,
+  date: "",
+  time: "",
+};
 
 interface QuickScheduleDialogProps {
   open: boolean;
@@ -77,6 +79,7 @@ export function QuickScheduleDialog({
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     setValue,
@@ -84,25 +87,17 @@ export function QuickScheduleDialog({
     formState: { errors, isSubmitting },
   } = useForm<QuickScheduleFormValues>({
     resolver: zodResolver(quickScheduleFormSchema),
-    defaultValues: {
-      title: "",
-      type: "GROUP",
-      durationMinutes: 60,
-      date: todayLocalYmd(),
-      time: "09:00",
-    },
+    defaultValues: EMPTY_QUICK_SCHEDULE_VALUES,
   });
 
   useEffect(() => {
     if (!open) return;
-    const date = slotPrefill?.date ?? todayLocalYmd();
-    const time = slotPrefill?.time ?? "09:00";
     reset({
       title: templatePrefill?.name ?? "",
       type: "GROUP",
       durationMinutes: templatePrefill?.durationMinutes ?? 60,
-      date,
-      time,
+      date: slotPrefill?.date ?? "",
+      time: slotPrefill?.time ?? "",
     });
   }, [open, templatePrefill, slotPrefill, reset]);
 
@@ -174,12 +169,18 @@ export function QuickScheduleDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="qs-date">Date</Label>
-              <Input
-                id="qs-date"
-                type="date"
-                disabled={isSubmitting}
-                className={cn(errors.date && "border-destructive")}
-                {...register("date")}
+              <Controller
+                name="date"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    id="qs-date"
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={isSubmitting}
+                    aria-invalid={!!errors.date}
+                  />
+                )}
               />
               {errors.date && (
                 <p className="text-xs text-destructive">{errors.date.message}</p>
@@ -187,12 +188,18 @@ export function QuickScheduleDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="qs-time">Start time</Label>
-              <Input
-                id="qs-time"
-                type="time"
-                disabled={isSubmitting}
-                className={cn(errors.time && "border-destructive")}
-                {...register("time")}
+              <Controller
+                name="time"
+                control={control}
+                render={({ field }) => (
+                  <TimePicker
+                    id="qs-time"
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={isSubmitting}
+                    aria-invalid={!!errors.time}
+                  />
+                )}
               />
               {errors.time && (
                 <p className="text-xs text-destructive">{errors.time.message}</p>
