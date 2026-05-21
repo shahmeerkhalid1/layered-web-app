@@ -1,11 +1,51 @@
 import { z } from "zod";
 
+const REPS_PATTERN = /^\d+(?:\s*-\s*\d+)?$/;
+const DURATION_PATTERN =
+  /^(\d+\s*(?:-\s*\d+\s*)?(?:s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours)?|\d+\s*-\s*\d+)$/i;
+const DURATION_CHARS = /^[\d\s\-–a-zA-Z]+$/;
+
+function refineReps(val: string, ctx: z.RefinementCtx): void {
+  const t = val.trim();
+  if (t === "") return;
+  if (!REPS_PATTERN.test(t)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Enter a number or range (e.g. 12 or 8-10)",
+    });
+  }
+}
+
+function refineDuration(val: string, ctx: z.RefinementCtx): void {
+  const t = val.trim();
+  if (t === "") return;
+  if (!DURATION_CHARS.test(t)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Duration can only include numbers, -, and time units",
+    });
+    return;
+  }
+  if (!DURATION_PATTERN.test(t)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Enter a time (e.g. 30 sec, 1 min, 2-3 min)",
+    });
+  }
+}
+
+const sectionExerciseRepsField = z.string().superRefine(refineReps);
+
+const sectionExerciseDurationField = z.string().superRefine(refineDuration);
+
+const sectionExerciseNotesField = z.string().max(500);
+
 const planSectionExerciseSchema = z.object({
   exerciseId: z.string().min(1),
   order: z.number().int().nonnegative(),
-  reps: z.string().max(100).optional(),
-  duration: z.string().max(100).optional(),
-  notes: z.string().max(500).optional(),
+  reps: sectionExerciseRepsField.optional(),
+  duration: sectionExerciseDurationField.optional(),
+  notes: sectionExerciseNotesField.optional(),
 });
 
 const planSectionSchema = z.object({
@@ -60,17 +100,17 @@ export type UpdateSectionInput = z.infer<typeof updateSectionSchema>;
 export const addExerciseToSectionSchema = z.object({
   exerciseId: z.string().min(1),
   order: z.number().int().nonnegative().optional(),
-  reps: z.string().max(100).optional(),
-  duration: z.string().max(100).optional(),
-  notes: z.string().max(500).optional(),
+  reps: sectionExerciseRepsField.optional(),
+  duration: sectionExerciseDurationField.optional(),
+  notes: sectionExerciseNotesField.optional(),
 });
 
 export const updateSectionExerciseSchema = z
   .object({
     order: z.number().int().nonnegative().optional(),
-    reps: z.string().max(100).nullable().optional(),
-    duration: z.string().max(100).nullable().optional(),
-    notes: z.string().max(500).nullable().optional(),
+    reps: sectionExerciseRepsField.nullable().optional(),
+    duration: sectionExerciseDurationField.nullable().optional(),
+    notes: sectionExerciseNotesField.nullable().optional(),
   })
   .refine(
     (d) =>

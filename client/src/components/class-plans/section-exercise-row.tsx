@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { PlanSectionExerciseRow } from "@/lib/types";
 import { classPlanApi } from "@/services/class-plan-api";
 import { ClassPlanExerciseProgrammingSummary } from "@/components/class-plans/class-plan-exercise-programming-summary";
 import { ExercisePlanPreview } from "@/components/class-plans/exercise-plan-preview";
+import { SectionExerciseFields } from "@/components/class-plans/section-exercise-fields";
 import { EditClassPlanExerciseDialog } from "@/components/class-plans/edit-class-plan-exercise-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,8 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import type { SectionExerciseField } from "@/lib/validation/section-exercise-fields-schema";
 
 export interface SectionExerciseRowProps {
   templateId: string;
@@ -42,46 +42,15 @@ export function SectionExerciseRow({
   onMoveDown,
   onUpdated,
 }: SectionExerciseRowProps) {
-  const [reps, setReps] = useState(row.reps ?? "");
-  const [duration, setDuration] = useState(row.duration ?? "");
-  const [notes, setNotes] = useState(row.notes ?? "");
   const [removeOpen, setRemoveOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [pending, setPending] = useState(false);
 
-  useEffect(() => {
-    const t = window.setTimeout(() => {
-      setReps(row.reps ?? "");
-      setDuration(row.duration ?? "");
-      setNotes(row.notes ?? "");
-    }, 0);
-    return () => window.clearTimeout(t);
-  }, [row.id, row.reps, row.duration, row.notes]);
-
-  const norm = (s: string) => (s.trim() === "" ? null : s.trim());
-  const serverReps = row.reps ?? null;
-  const serverDuration = row.duration ?? null;
-  const serverNotes = row.notes ?? null;
-
-  const patchField = async (
-    field: "reps" | "duration" | "notes",
-    raw: string
-  ) => {
-    const next = norm(raw);
-    const prev =
-      field === "reps" ? serverReps : field === "duration" ? serverDuration : serverNotes;
-    if (next === prev) return;
-    setPending(true);
-    try {
-      await classPlanApi.updateSectionExercise(templateId, sectionId, row.id, {
-        [field]: next,
-      });
-      await onUpdated();
-    } catch {
-      toast.error("Could not save changes");
-    } finally {
-      setPending(false);
-    }
+  const patchField = async (field: SectionExerciseField, value: string | null) => {
+    await classPlanApi.updateSectionExercise(templateId, sectionId, row.id, {
+      [field]: value,
+    });
+    await onUpdated();
   };
 
   const isDraftExercise = row.exercise.savedToLibrary === false;
@@ -108,7 +77,7 @@ export function SectionExerciseRow({
             <p className="font-medium leading-snug text-foreground">{row.exercise.name}</p>
             <ClassPlanExerciseProgrammingSummary exercise={row.exercise} />
           </div>
-            
+
           <div
             className="flex shrink-0 flex-wrap items-center gap-0.5 self-end sm:self-start"
             role="toolbar"
@@ -163,70 +132,16 @@ export function SectionExerciseRow({
           </div>
         </div>
         <div className="mt-3 max-w-full">
-        <ExercisePlanPreview exercise={row.exercise} previewId={row.id} />
+          <ExercisePlanPreview exercise={row.exercise} previewId={row.id} />
         </div>
 
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1">
-            <Label htmlFor={`reps-${row.id}`} className="text-xs text-muted-foreground">
-              Reps
-            </Label>
-            <Input
-              id={`reps-${row.id}`}
-              value={reps}
-              onChange={(e) => setReps(e.target.value)}
-              onBlur={() => void patchField("reps", reps)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  (e.target as HTMLInputElement).blur();
-                }
-              }}
-              disabled={disabled || pending}
-              className="h-9 rounded-xl text-sm"
-              placeholder="—"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor={`dur-${row.id}`} className="text-xs text-muted-foreground">
-              Duration
-            </Label>
-            <Input
-              id={`dur-${row.id}`}
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              onBlur={() => void patchField("duration", duration)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  (e.target as HTMLInputElement).blur();
-                }
-              }}
-              disabled={disabled || pending}
-              className="h-9 rounded-xl text-sm"
-              placeholder="—"
-            />
-          </div>
-          <div className="space-y-1 sm:col-span-2">
-            <Label htmlFor={`notes-${row.id}`} className="text-xs text-muted-foreground">
-              Notes
-            </Label>
-            <Input
-              id={`notes-${row.id}`}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              onBlur={() => void patchField("notes", notes)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  (e.target as HTMLInputElement).blur();
-                }
-              }}
-              disabled={disabled || pending}
-              className="h-9 rounded-xl text-sm"
-              placeholder="—"
-            />
-          </div>
+        <div className="mt-3">
+          <SectionExerciseFields
+            row={row}
+            disabled={disabled || pending}
+            variant="template"
+            onPatchField={patchField}
+          />
         </div>
       </li>
 
