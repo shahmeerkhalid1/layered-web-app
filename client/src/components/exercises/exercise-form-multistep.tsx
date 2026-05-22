@@ -7,6 +7,7 @@ import {
   useFieldArray,
   Controller,
   useWatch,
+  type FieldErrors,
   type SubmitErrorHandler,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -51,6 +52,7 @@ import {
   Loader2,
   Plus,
   Sparkles,
+  TrendingUp,
   Wrench,
   X,
 } from "lucide-react";
@@ -115,7 +117,7 @@ const STEPS = [
     id: "progression",
     title: "Progression",
     caption: "Scaling notes",
-    icon: Check,
+    icon: TrendingUp,
   },
 ] as const;
 
@@ -132,6 +134,21 @@ const STEP_FIELD_GROUPS: (keyof ExerciseFormValues)[][] = [
   ["spinalMovement", "chainType", "jointLoading", "tags"],
   ["progressionNotes", "regressionNotes", "progressionOfId"],
 ];
+
+function isExerciseFormReady(values: ExerciseFormValues): boolean {
+  return exerciseFormSchema.safeParse(values).success;
+}
+
+function isExerciseFormStepComplete(
+  stepIndex: number,
+  values: ExerciseFormValues,
+  formErrors: FieldErrors<ExerciseFormValues>
+): boolean {
+  if (!isExerciseFormReady(values)) return false;
+
+  const stepFields = STEP_FIELD_GROUPS[stepIndex];
+  return !stepFields.some((field) => formErrors[field] != null);
+}
 
 const selectTriggerClass =
   "box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground";
@@ -199,6 +216,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
   });
 
   const layersWatch = useWatch({ control, name: "layers" }) ?? [];
+  const formValues = useWatch({ control });
 
   const [equipmentCustomInput, setEquipmentCustomInput] = useState("");
   const [tagInput, setTagInput] = useState("");
@@ -1523,7 +1541,11 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
               {STEPS.map((s, i) => {
                 const Icon = s.icon;
                 const active = i === stepIndex;
-                const done = i < stepIndex;
+                const stepComplete =
+                  lastStep &&
+                  formValues != null &&
+                  isExerciseFormStepComplete(i, formValues as ExerciseFormValues, errors);
+                const showComplete = stepComplete && !active;
                 return (
                   <button
                     key={s.id}
@@ -1543,12 +1565,12 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                         "flex  size-8 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold tabular-nums",
                         active
                           ? "border-secondary bg-secondary text-secondary-foreground"
-                          : done
+                          : showComplete
                             ? "border-primary/35 bg-primary/10 text-primary"
                             : "border-border bg-background/90 text-muted-foreground"
                       )}
                     >
-                      {done ? (
+                      {showComplete ? (
                         <Check className="size-4" strokeWidth={2.5} aria-hidden />
                       ) : active ? (
                         <Icon className="size-4" aria-hidden />
