@@ -109,7 +109,7 @@ export function CalendarEventBlock({ instance, onSelect, layout }: CalendarEvent
 
   const label = instance.class.title;
   const isGroup = instance.class.type === "GROUP";
-  const timeStr = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const timeStr = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", hour12: true });
   const typeStyle = [instance.classType, instance.classStyle].filter(Boolean).join(" · ");
   const title = typeStyle
     ? `${label} — ${timeStr}, ${durationMin} min · ${typeStyle}`

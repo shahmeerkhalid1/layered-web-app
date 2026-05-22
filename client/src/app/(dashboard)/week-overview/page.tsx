@@ -141,6 +141,7 @@ export default function WeekOverviewPage() {
                               {new Date(r.time).toLocaleTimeString(undefined, {
                                 hour: "numeric",
                                 minute: "2-digit",
+                                hour12: true,
                               })}{" "}
                               · {r.class.type} · {r.class.durationMinutes ?? 60}m
                               {typeStyle ? ` · ${typeStyle}` : ""}
