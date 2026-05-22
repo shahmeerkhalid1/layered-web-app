@@ -36,7 +36,9 @@ pilates-platform/
 │       │   ├── globals.css              # Tailwind + shadcn theme tokens
 │       │   ├── (dashboard)/             # Route group — URL still at /
 │       │   │   ├── layout.tsx           # AppLayout (sidebar + main, auth gate; no top bar)
-│       │   │   ├── page.tsx             # Dashboard home
+│       │   │   ├── page.tsx             # Dashboard home (InstructorHome | AdminHome)
+│       │   │   ├── calendar/            # Calendar week/month + ClassInstanceDrawer
+│       │   │   ├── week-overview/       # WeekOverviewPanel + drawer
 │       │   │   ├── exercises/           # Library, new + edit (multistep form), detail; /exercises/multistep → redirect to /new
 │       │   │   ├── class-plans/         # Template library + /[id] detail editor
 │       │   │   └── admin/               # Admin (layout guard + sub-routes)
@@ -47,21 +49,24 @@ pilates-platform/
 │       │   ├── login/page.tsx
 │       │   └── register/page.tsx        # Invite token + signup toggle
 │       ├── components/
-│       │   ├── layout/                  # App shell (app-layout, sidebar)
-│       │   ├── ui/                      # shadcn primitives (@/components/ui/*)
-│       │   ├── dashboard/               # Dashboard-specific composites
+│       │   ├── layout/                  # App shell (app-layout, sidebar; TooltipProvider in app-layout)
+│       │   ├── auth/                    # auth-page-shell (login/register layout)
+│       │   ├── ui/                      # shadcn primitives (@/components/ui/*), incl. tooltip
+│       │   ├── dashboard/               # instructor-home, admin-home
+│       │   ├── scheduling/              # calendar-*, week-overview-panel, class dialogs, drawer
 │       │   ├── exercises/               # exercise-form (single-page; class-plan embed),
 │       │   │                            # exercise-form-multistep (library create/edit),
 │       │   │                            # bullet-textarea, exercise-pre-text,
 │       │   │                            # progression-chain-viewer, exercise-list,
 │       │   │                            # exercise-library-header, exercise-library-pagination,
-│       │   │                            # exercise-card, exercise-search, folder-dialog, etc.
+│       │   │                            # chain-type-option-label, exercise-card, exercise-search, folder-dialog, etc.
 │       │   └── class-plans/             # class-plan-library-header, class-plan-list, class-plan-card,
 │       │                                # class-plan-detail-view, exercise-picker-dialog, section rows, etc.
 │       ├── context/                     # e.g. auth-context (AuthProvider)
 │       ├── hooks/                       # Shared + feature hooks (hooks/exercises/, hooks/class-plans/)
 │       ├── lib/                         # api.ts, auth-client.ts, utils.ts, types.ts,
-│       │                                # exercise-layer-labels.ts; validation/ (Zod:
+│       │                                # form-control-styles.ts (shared field classes + empty/filled),
+│       │                                # chain-type-tooltips.ts; exercise-layer-labels.ts; validation/ (Zod:
 │       │                                # auth-schemas.ts (login, register, adminInviteFormSchema),
 │       │                                # exercise-form-schema.ts)
 │       └── services/                    # Typed API modules (admin-api, exercise-api,
@@ -145,9 +150,75 @@ npm run seed --prefix server       # tsx prisma/seed.ts (bootstrap admin + setti
 - **Roles**: `useAuth()` exposes `isAdmin` boolean and `instructor.role`; sidebar conditionally renders admin navigation; admin routes under `(dashboard)/admin/` have a layout guard redirecting non-admins
 - **Path alias**: `@/*` maps to `./src/*`
 - **Forms**: use **React Hook Form** with **`zodResolver`** from `@hookform/resolvers/zod` — `useForm({ resolver: zodResolver(schema), ... })` and Zod schemas under **`@/lib/validation/*`** (`auth-schemas.ts` for **`/login`**, **`/register`**, and **admin invite** via **`adminInviteFormSchema`**; **`exercise-form-schema.ts`** + **`buildExerciseFormDefaults`** for **`ExerciseForm`** and **`ExerciseFormMultistep`**); align with server Zod where practical. **`ExerciseFormMultistep`** (`exercise-form-multistep.tsx`): optional **`exercise?: Exercise`** — create without prop, edit with loaded exercise; same **`exerciseApi`** save path as single-page form; **`useDropdownOptions`**, folders, images; stepped **`trigger(STEP_FIELD_GROUPS)`** on **Continue**; step tabs jump without per-tab validation; **`onFormSubmit`** blocks native submit until final step; **`handleSubmit`** **`onInvalid`** toast + jump to first step with errors. **`ExerciseForm`** (single-page): **`useFieldArray`** for `layers`, **`Controller`** for shadcn **`Select`** and **`BulletTextarea`**, **`register`** / **`useWatch`** / **`setValue`** / **`getValues`**; image list (dropzone, reorder, temp `publicIds`) in **local React state** outside RHF; **`reset`** when `exercise?.id` changes on edit; **`embedInClassPlan`** + callbacks for class-plan dialogs. **Admin invite** (`admin/users/page.tsx` dialog): same stack — **`Controller`** + shadcn **`Select`** for role, **`register`** for email, inline **`errors.*`** + **`aria-invalid`** / **`border-destructive`** like exercise form fields.
-- **UI components**: use **shadcn/ui** for all UI primitives and patterns that shadcn provides; import from `@/components/ui/*`. Build feature-specific composites under `components/<feature>/` (and `components/layout/`) rather than reimplementing primitives inline
-- **Theming / colors**: prefer shadcn **semantic tokens** (`bg-background`, `text-foreground`, `text-muted-foreground`, `text-destructive`, `border-border`, `bg-card`, etc.) over hardcoded Tailwind palette utilities (e.g. `bg-gray-900`, `text-red-500`) so light/dark and theme tweaks stay consistent
-- **Component layout**: shell in `components/layout/`; dashboard composites in `components/dashboard/`; domain UI in `components/<domain>/`; shared hooks in `hooks/`
+- **UI components**: use **shadcn/ui** for all UI primitives and patterns that shadcn provides; import from `@/components/ui/*`. Build feature-specific composites under `components/<feature>/` (and `components/layout/`, `components/auth/`) rather than reimplementing primitives inline
+- **Theming / colors**: prefer shadcn **semantic tokens** (`bg-background`, `text-foreground`, `text-muted-foreground`, `text-destructive`, `border-border`, `bg-card`, `bg-primary/10`, etc.) over hardcoded Tailwind palette utilities (e.g. `bg-gray-900`, `text-red-500`) so light/dark and theme tweaks stay consistent
+- **Component layout**: shell in `components/layout/`; dashboard in `components/dashboard/`; scheduling in `components/scheduling/`; auth in `components/auth/`; domain UI in `components/<domain>/`; shared hooks in `hooks/`
+
+### UI & UX
+
+Product brand in UI copy: **Layered.** (see `app/layout.tsx` metadata). Match existing polished surfaces (week overview, calendar, auth, library headers) when adding pages.
+
+#### Visual language (dashboard & feature pages)
+
+- **Page shells**: major views use `rounded-3xl border border-border bg-card shadow-lg` (or `shadow-sm` for nested panels); section headers often pair a **rounded-2xl icon tile** (`size-11`, `bg-primary/10 text-primary`) with `font-heading` title (`tracking-[-0.02em]`) and `text-sm text-muted-foreground` subtitle
+- **Spacing**: outer page `space-y-6`; card padding `px-4 py-5 md:px-6 md:py-6`; nested lists `space-y-2`
+- **Interactive rows/cards**: `rounded-2xl border`, hover `-translate-y-px` and/or `hover:shadow-md`, `focus-visible:ring-3 focus-visible:ring-ring/50`; use **`cursor-pointer`** on clickable calendar grid cells and event blocks (not default cursor)
+- **Primary actions**: prefer `Button` with `rounded-full` on dialogs and auth; outline/secondary for secondary nav (e.g. week chevrons, filter chips)
+- **Empty states**: dashed border panel (`border-dashed border-border/80 bg-muted/15`), centered icon in `rounded-2xl` tile, short title + helper text + one clear CTA
+- **Loading**: centered spinner (`border-2 border-primary border-t-transparent`) or skeleton blocks inside the same card shell — do not leave a bare white area
+
+#### Form controls (`@/lib/form-control-styles.ts`)
+
+- **Single source of truth** for input, textarea, select trigger, date/time picker trigger, and checkbox indicator classes — import from `form-control-styles.ts`; do not duplicate hover/filled rings on one-off fields
+- **Filled vs empty**: use `data-filled` on **Input** and **Textarea** (components sync on mount/change for RHF uncontrolled fields). **Select** wrapper sets `data-empty` / `data-has-value` via `emptyValues` prop
+- **Do not** rely on `:not(:placeholder-shown)` for filled styling — inputs without `placeholder` mis-fire
+- **Meaningful value**: `inputHasValue()` / `valueHasMeaningfulContent()` trim strings; whitespace-only = empty. Align with Zod `.trim()` on text fields in `lib/validation/*` where user-facing required strings matter
+- **Select sentinels**: `DEFAULT_SELECT_EMPTY_VALUES` (`none`, `""`) for form fields; `FILTER_SELECT_EMPTY_VALUES` (`all`, `""`) for library/filter selects — pass `emptyValues={FILTER_SELECT_EMPTY_VALUES}` so “All types” / “All folders” do not get filled background
+- **Checkbox**: custom indicator; checked = primary fill; **enabled-only** hover hint on unchecked (faint check icon, no primary fill until checked); disabled = default cursor, no hover effect (`peer` disabled overrides)
+- **Errors**: `aria-invalid` + `border-destructive` on control; `text-sm text-destructive` message below; root/auth errors in `rounded-2xl` destructive alert (`AuthFormAlert` pattern)
+- **Select typing**: `Select` is `SelectPrimitive.Root.Props<string>` — `onValueChange` receives `string | null`; type callbacks explicitly when needed
+
+#### Tooltips
+
+- Use shadcn **`Tooltip` / `TooltipTrigger` / `TooltipContent`** from `@/components/ui/tooltip` — not native `title` for rich copy
+- **`TooltipProvider`** lives in `AppLayout` with `delay={300}` — do not nest extra providers unless isolating a subtree
+- **Content style**: dark popover (`bg-foreground` / `text-background`), `max-w-xs`, title `font-semibold`, body `text-xs text-background/85`; optional `side="top"` `sideOffset={6–8}`
+- **Examples**: `CalendarEventBlock` (calendar-week-view); **`ChainTypeOptionLabel`** for chain type checkboxes (copy from `chain-type-tooltips.ts`, dotted underline + `cursor-help`)
+
+#### Auth pages (`/login`, `/register`)
+
+- Use **`AuthPageShell`**, **`AuthFormCard`**, **`AuthField`**, **`AuthFooterLink`** from `components/auth/auth-page-shell.tsx` — split layout (branding column `lg+`, form column); mobile logo above form
+- Register: invitation badge, read-only email with lock icon + muted bg; registration-closed state with dashed empty panel; `Suspense` fallback uses `AuthLoadingCard` inside shell
+
+#### Dashboard
+
+- **Admin**: `AdminHome` — live stats from `adminApi`
+- **Instructor**: `InstructorHome` — placeholder stat cards (`DASHBOARD_STATS`) until APIs exist; stat links to Calendar / Exercises / Class plans; Clients “coming soon” (non-link); quick actions + optional today schedule empty state; note in UI that stats are placeholders when using static data
+
+#### Scheduling UI
+
+- **Calendar**: `CalendarPanel` shell (loading/error/empty); `CalendarHeader` (stats, view toggle, new class); `calendar-week-view` / `calendar-month-view`; `ClassInstanceDrawer` on instance click
+- **Week overview**: `WeekOverviewPanel` — week nav, day strip (`Button` outline), day sections, `WeekClassCard` (GROUP vs PRIVATE color accents)
+- **Dialogs**: `create-class-dialog`, `edit-class-dialog`, `quick-schedule-dialog` — `rounded-3xl` content; prefer **`useWatch`** over `watch()` from RHF for React Compiler compatibility
+
+#### Libraries & pickers (UX patterns)
+
+- **Library headers** (exercises, class plans, admin users): one header card — title, live counts (`listTotalCount ?? totalCount`), primary actions, debounced search, filters; **directory empty** vs **filtered empty** (filters active + zero results but total > 0)
+- **Pagination**: always render `ExerciseLibraryPagination` under grid/list with `ariaLabel`; pass controlled `page` / `totalPages` / `onPageChange` / `loading`
+- **Exercise picker dialog**: **multi-select** — checkbox per row, row click toggles selection, footer “Add N to section” batch add; do not close on single row click; **Create new** tab still creates one exercise and adds immediately
+
+#### React / ESLint patterns (UI-related)
+
+- Avoid **synchronous `setState` in `useEffect`** (`react-hooks/set-state-in-effect`): defer fetches/resets with `setTimeout(0)` and cleanup, or set state in the same async callback that receives data (e.g. `load()` sets detail + reschedule), or **derive** display values instead of syncing props → state (`section-exercise-fields`, template selection via `useMemo`)
+- Prefer **`useWatch({ control, name })`** over `watch()` in forms
+- Avoid reading **`ref.current` during render** in submit handlers — use state when values affect JSX or `handleSubmit` closures
+- **Images in fancybox previews**: native `<img>` allowed with `eslint-disable-next-line @next/next/no-img-element` and a short comment — do not switch to `next/image` without testing gallery behavior
+
+#### When improving UI
+
+- Reuse existing composites before inventing new layouts; extend `form-control-styles`, `AuthPageShell`, `CalendarPanel`, library header patterns
+- Keep diffs focused; do not restyle unrelated pages in a feature PR
+- Session-wide UI changelog (reference): `CHANGELOG_SESSION.md` at repo root
 - **API calls**: use the `api` helper from `@/lib/api` for generic requests; prefer typed modules in `@/services/*` (e.g. `admin-api`, `exercise-api`) for feature endpoints — all use `credentials: "include"` via the shared client; base URL from `NEXT_PUBLIC_API_URL`
 - **`exerciseApi`** (`@/services/exercise-api`): typed helpers for exercises — **`getExercises`** (unpaginated array; use from pickers / full lists without `page`), **`getExerciseListPage`** (paginated **`PaginatedExerciseList`** for the library grid), `getExerciseById`, `createExercise`, `updateExercise`, `deleteExercise`, `setProgression`, `getProgressionChain`, folder CRUD, image add/delete/reorder, temp upload/delete. Shared constants: **`EXERCISE_LIBRARY_PAGE_SIZE`** (default page size for **`getExerciseListPage`**). **`SaveExerciseBody`** includes optional `progressionOfId`, `progressionNotes`, `regressionNotes`, `equipment: string[]`, `chainType: string[]`, and `layers: { content, order?, isFinisher? }[]`. Exercise pages and forms should use this module rather than ad-hoc `api.get`/`patch` for `/exercises/*`. **Mapping**: library listing → **`getExerciseListPage`**; class-plan **`exercise-picker-dialog`** → **`getExercises`** (see Backend **Pagination design note — exercise list dual response**).
 - **`classPlanApi`** (`@/services/class-plan-api`): **`listClassPlans`**, **`getClassPlanById`**, create/update/delete template, duplicate, section CRUD, section-exercise CRUD, **`getFolders`** / folder CRUD under **`/class-plan-folders`**. List params include **`page`**, **`limit`**; response **`ClassPlanListResponse`**. **`CLASS_PLAN_LIBRARY_PAGE_SIZE`** matches the library UI page size.
