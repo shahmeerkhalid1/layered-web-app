@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FILTER_SELECT_EMPTY_VALUES } from "@/lib/form-control-styles";
 import { cn } from "@/lib/utils";
 
 export interface ClassPlanLibraryHeaderProps {
@@ -180,6 +181,7 @@ export function ClassPlanLibraryHeader({
           </Label>
           <Select
             value={selectValue}
+            emptyValues={FILTER_SELECT_EMPTY_VALUES}
             onValueChange={(value) => {
               if (!value || value === "all") onSelectFolder(null);
               else if (value === "none") onSelectFolder("none");

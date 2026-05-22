@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import type { ScheduledClass } from "@/lib/types";
@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TimePicker } from "@/components/ui/time-picker";
@@ -68,15 +69,14 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
   const [daySet, setDaySet] = useState<Set<number>>(new Set());
   const [loadingClass, setLoadingClass] = useState(false);
   const [confirmRegenOpen, setConfirmRegenOpen] = useState(false);
-  const originalRef = useRef<ScheduledClass | null>(null);
-  const pendingValuesRef = useRef<CreateClassFormValues | null>(null);
+  const [originalClass, setOriginalClass] = useState<ScheduledClass | null>(null);
+  const [pendingValues, setPendingValues] = useState<CreateClassFormValues | null>(null);
 
   const {
     register,
     control,
     handleSubmit,
     reset,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<CreateClassFormValues>({
@@ -93,39 +93,44 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
     },
   });
 
-  const isRecurring = watch("isRecurring");
+  const isRecurring = useWatch({ control, name: "isRecurring", defaultValue: false });
+  const classType = useWatch({ control, name: "type", defaultValue: "GROUP" });
 
   useEffect(() => {
     if (!open || !classId) return;
     let cancelled = false;
-    setLoadingClass(true);
-    schedulingApi
-      .getClassById(classId)
-      .then((cls) => {
-        if (cancelled) return;
-        originalRef.current = cls;
-        const rule = cls.recurrenceRule as { daysOfWeek?: number[] } | null | undefined;
-        const days = rule?.daysOfWeek ?? [];
-        setDaySet(new Set(days));
-        reset({
-          title: cls.title,
-          type: cls.type,
-          durationMinutes: cls.durationMinutes,
-          templateId: cls.templateId ?? "",
-          isRecurring: cls.isRecurring,
-          startDate: ymdFromIso(cls.startDate),
-          endDate: cls.endDate ? ymdFromIso(cls.endDate) : "",
-          clockTime: clockFromIso(cls.time),
+    const id = classId;
+    const t = window.setTimeout(() => {
+      setLoadingClass(true);
+      schedulingApi
+        .getClassById(id)
+        .then((cls) => {
+          if (cancelled) return;
+          setOriginalClass(cls);
+          const rule = cls.recurrenceRule as { daysOfWeek?: number[] } | null | undefined;
+          const days = rule?.daysOfWeek ?? [];
+          setDaySet(new Set(days));
+          reset({
+            title: cls.title,
+            type: cls.type,
+            durationMinutes: cls.durationMinutes,
+            templateId: cls.templateId ?? "",
+            isRecurring: cls.isRecurring,
+            startDate: ymdFromIso(cls.startDate),
+            endDate: cls.endDate ? ymdFromIso(cls.endDate) : "",
+            clockTime: clockFromIso(cls.time),
+          });
+        })
+        .catch(() => {
+          if (!cancelled) toast.error("Could not load class series");
+        })
+        .finally(() => {
+          if (!cancelled) setLoadingClass(false);
         });
-      })
-      .catch(() => {
-        if (!cancelled) toast.error("Could not load class series");
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingClass(false);
-      });
+    }, 0);
     return () => {
       cancelled = true;
+      window.clearTimeout(t);
     };
   }, [open, classId, reset]);
 
@@ -179,9 +184,8 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
       durationMinutes: values.durationMinutes,
     };
 
-    const original = originalRef.current;
-    if (original && needsRegeneration(values, original)) {
-      const seriesStart = ymdFromIso(original.startDate);
+    if (originalClass && needsRegeneration(values, originalClass)) {
+      const seriesStart = ymdFromIso(originalClass.startDate);
       const regenFrom = todayYmd() >= seriesStart ? todayYmd() : seriesStart;
       body.regenerateFutureInstancesFrom = regenFrom;
     }
@@ -198,9 +202,8 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
       return;
     }
 
-    const original = originalRef.current;
-    if (original && needsRegeneration(values, original)) {
-      pendingValuesRef.current = values;
+    if (originalClass && needsRegeneration(values, originalClass)) {
+      setPendingValues(values);
       setConfirmRegenOpen(true);
       return;
     }
@@ -214,16 +217,15 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
   };
 
   const confirmRegeneration = async () => {
-    const values = pendingValuesRef.current;
-    if (!values) return;
+    if (!pendingValues) return;
     setConfirmRegenOpen(false);
     try {
-      await submitUpdate(values);
+      await submitUpdate(pendingValues);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Could not update class";
       toast.error(msg);
     } finally {
-      pendingValuesRef.current = null;
+      setPendingValues(null);
     }
   };
 
@@ -256,7 +258,7 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
                 <div className="space-y-2">
                   <Label>Type</Label>
                   <Select
-                    value={watch("type")}
+                    value={classType}
                     onValueChange={(v) => setValue("type", v as "GROUP" | "PRIVATE")}
                   >
                     <SelectTrigger className="w-full min-w-0 justify-between">
@@ -284,10 +286,8 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
               </div>
 
               <div className="flex items-center gap-2">
-                <input
+                <Checkbox
                   id="ec-rec"
-                  type="checkbox"
-                  className="size-4 rounded border-border"
                   checked={isRecurring}
                   onChange={(e) => setValue("isRecurring", e.target.checked)}
                 />
@@ -403,7 +403,7 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
               className="rounded-full"
               onClick={() => {
                 setConfirmRegenOpen(false);
-                pendingValuesRef.current = null;
+                setPendingValues(null);
               }}
             >
               Cancel

@@ -1,14 +1,22 @@
 "use client";
 
+import { Clock } from "lucide-react";
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { CalendarClassInstance } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import {
   CALENDAR_DAY_START_HOUR,
   formatYmdLocal,
   hourSlots,
+  isSameLocalDay,
   minutesFromDayStart,
   totalCalendarMinutes,
 } from "@/lib/calendar-utils";
+import { cn } from "@/lib/utils";
 
 /** Matches day column `minHeight` in this file — used to map % height → px for layout and radius. */
 const CALENDAR_DAY_COLUMN_MIN_HEIGHT_PX = 1200;
@@ -96,6 +104,48 @@ export interface CalendarEventBlockProps {
   layout: CalendarEventLayout;
 }
 
+function CalendarEventTooltipContent({
+  instance,
+  timeStr,
+  durationMin,
+  typeStyle,
+}: {
+  instance: CalendarClassInstance;
+  timeStr: string;
+  durationMin: number;
+  typeStyle: string;
+}) {
+  const isGroup = instance.class.type === "GROUP";
+
+  return (
+    <div className="space-y-2 text-left">
+      <p className="font-semibold leading-snug text-background">{instance.class.title}</p>
+      <div className="flex items-center gap-1.5 text-xs text-background/85">
+        <Clock className="size-3.5 shrink-0" aria-hidden />
+        <span className="tabular-nums">
+          {timeStr}
+          <span className="text-background/50"> · </span>
+          {durationMin} min
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span
+          className={cn(
+            "inline-flex h-5 items-center rounded-full px-2 text-[10px] font-semibold uppercase tracking-wide",
+            isGroup ? "bg-background/20 text-background" : "bg-background/15 text-background/90"
+          )}
+        >
+          {instance.class.type}
+        </span>
+        {typeStyle ? (
+          <span className="text-xs text-background/75">{typeStyle}</span>
+        ) : null}
+      </div>
+      <p className="text-[10px] text-background/60">Click for details</p>
+    </div>
+  );
+}
+
 export function CalendarEventBlock({ instance, onSelect, layout }: CalendarEventBlockProps) {
   const start = new Date(instance.time);
   const durationMin = instance.class.durationMinutes ?? 60;
@@ -111,9 +161,9 @@ export function CalendarEventBlock({ instance, onSelect, layout }: CalendarEvent
   const isGroup = instance.class.type === "GROUP";
   const timeStr = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", hour12: true });
   const typeStyle = [instance.classType, instance.classStyle].filter(Boolean).join(" · ");
-  const title = typeStyle
-    ? `${label} — ${timeStr}, ${durationMin} min · ${typeStyle}`
-    : `${label} — ${timeStr}, ${durationMin} min · ${instance.class.type}`;
+  const ariaLabel = typeStyle
+    ? `${label}, ${timeStr}, ${durationMin} minutes, ${instance.class.type}, ${typeStyle}`
+    : `${label}, ${timeStr}, ${durationMin} minutes, ${instance.class.type}`;
 
   const seg =
     cols > 1
@@ -139,54 +189,75 @@ export function CalendarEventBlock({ instance, onSelect, layout }: CalendarEvent
           borderRadius: `${borderRadiusPx}px`,
         };
 
+  const blockClassName = cn(
+    "absolute z-10 cursor-pointer overflow-hidden border-y border-r text-left font-medium shadow-sm transition-all",
+    "border-l-[3px] hover:z-20 hover:-translate-y-px hover:shadow-md hover:ring-3 hover:ring-ring/40",
+    "focus-visible:z-20 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+    veryTight
+      ? "flex items-center gap-1 px-1.5 py-0.5"
+      : compact
+        ? "flex min-h-0 flex-col justify-start gap-0.5 px-1.5 py-0.5"
+        : "flex min-h-0 flex-col gap-0.5 px-2 py-1 text-[11px]",
+    isGroup
+      ? "border-l-primary border-primary/25 bg-primary/12 text-primary hover:bg-primary/18"
+      : "border-l-secondary border-secondary/30 bg-secondary/15 text-secondary-foreground hover:bg-secondary/22"
+  );
+
+  const blockContent = veryTight ? (
+    <span className="min-w-0 truncate text-[10px] leading-tight font-medium">
+      <span className="tabular-nums opacity-90">{timeStr}</span>
+      <span className="opacity-50"> · </span>
+      {label}
+    </span>
+  ) : compact ? (
+    <>
+      <span className="line-clamp-1 min-w-0 text-[10px] leading-tight font-semibold">{label}</span>
+      {typeStyle ? (
+        <span className="line-clamp-1 min-w-0 text-[9px] leading-tight opacity-75">{typeStyle}</span>
+      ) : null}
+      <span className="line-clamp-1 min-w-0 text-[9px] leading-tight opacity-80 tabular-nums">
+        {timeStr} · {durationMin}m
+      </span>
+    </>
+  ) : (
+    <>
+      <span className="line-clamp-2 min-w-0 font-semibold leading-snug">{label}</span>
+      {typeStyle ? (
+        <span className="line-clamp-1 min-w-0 text-[10px] leading-tight opacity-75">{typeStyle}</span>
+      ) : null}
+      <span className="mt-0.5 block shrink-0 text-[10px] tabular-nums leading-tight opacity-80">
+        {timeStr} · {durationMin}m
+      </span>
+    </>
+  );
+
   return (
-    <button
-      type="button"
-      title={title}
-      aria-label={title}
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelect(instance.id);
-      }}
-      className={cn(
-        "absolute z-10 overflow-hidden border text-left font-medium shadow-sm transition hover:z-20 hover:ring-2 hover:ring-ring",
-        veryTight ? "flex items-center px-1 py-0.5" : compact ? "flex min-h-0 flex-col justify-start gap-0.5 px-1 py-0.5" : "flex min-h-0 flex-col gap-0.5 px-1.5 py-1 text-[11px]",
-        isGroup
-          ? "border-primary/30 bg-primary/15 text-primary"
-          : "border-secondary/40 bg-secondary/20 text-secondary-foreground"
-      )}
-      style={positionStyle}
-    >
-      {veryTight ? (
-        <span className="min-w-0 truncate text-[10px] leading-tight">
-          {timeStr} · {label}
-        </span>
-      ) : compact ? (
-        <>
-          <span className="line-clamp-1 min-w-0 text-[10px] leading-tight font-medium">{label}</span>
-          {typeStyle ? (
-            <span className="line-clamp-1 min-w-0 text-[9px] leading-tight opacity-75">
-              {typeStyle}
-            </span>
-          ) : null}
-          <span className="line-clamp-1 min-w-0 text-[9px] leading-tight opacity-80 tabular-nums">
-            {timeStr} · {durationMin}m
-          </span>
-        </>
-      ) : (
-        <>
-          <span className="line-clamp-2 min-w-0 leading-snug">{label}</span>
-          {typeStyle ? (
-            <span className="line-clamp-1 min-w-0 text-[10px] opacity-75 leading-tight">
-              {typeStyle}
-            </span>
-          ) : null}
-          <span className="mt-0.5 block shrink-0 text-[10px] opacity-80 tabular-nums leading-tight">
-            {timeStr} · {durationMin}m
-          </span>
-        </>
-      )}
-    </button>
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <button
+            type="button"
+            aria-label={ariaLabel}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect(instance.id);
+            }}
+            className={blockClassName}
+            style={positionStyle}
+          >
+            {blockContent}
+          </button>
+        }
+      />
+      <TooltipContent side="top" sideOffset={8} className="max-w-64 px-3 py-2.5">
+        <CalendarEventTooltipContent
+          instance={instance}
+          timeStr={timeStr}
+          durationMin={durationMin}
+          typeStyle={typeStyle}
+        />
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -226,25 +297,43 @@ export function CalendarWeekView({
     instancesByDay.set(key, arr);
   }
 
-  return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-card">
-      <div className="grid min-w-[760px] grid-cols-[3.5rem_repeat(7,minmax(0,1fr))]">
-        <div className="border-b border-border bg-muted/30 p-2" />
-        {days.map((d) => (
-          <div
-            key={formatYmdLocal(d)}
-            className="border-b border-l border-border bg-muted/20 p-2 text-center"
-          >
-            <p className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
-              {d.toLocaleDateString(undefined, { weekday: "short" })}
-            </p>
-            <p className="text-sm font-semibold tabular-nums text-foreground">
-              {d.getMonth() + 1}/{d.getDate()}
-            </p>
-          </div>
-        ))}
+  const today = new Date();
 
-        <div className="relative border-r border-border bg-muted/10">
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-border/80 bg-muted/10 shadow-inner">
+      <div className="grid min-w-[760px] grid-cols-[3.5rem_repeat(7,minmax(0,1fr))]">
+        <div className="border-b border-border/70 bg-muted/25 p-2" />
+        {days.map((d) => {
+          const isToday = isSameLocalDay(d, today);
+          return (
+            <div
+              key={formatYmdLocal(d)}
+              className={cn(
+                "border-b border-l border-border/70 p-2 text-center",
+                isToday ? "bg-primary/10" : "bg-muted/20"
+              )}
+            >
+              <p
+                className={cn(
+                  "text-[10px] font-semibold tracking-wider uppercase",
+                  isToday ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                {d.toLocaleDateString(undefined, { weekday: "short" })}
+              </p>
+              <p
+                className={cn(
+                  "text-sm font-semibold tabular-nums",
+                  isToday ? "text-primary" : "text-foreground"
+                )}
+              >
+                {d.getDate()}
+              </p>
+            </div>
+          );
+        })}
+
+        <div className="relative border-r border-border/70 bg-muted/15">
           {hours.map((h) => {
             const top = ((h - CALENDAR_DAY_START_HOUR) * 60) / total;
             return (
@@ -261,12 +350,16 @@ export function CalendarWeekView({
 
         {days.map((d) => {
           const ymd = formatYmdLocal(d);
+          const isToday = isSameLocalDay(d, today);
           const dayInstances = instancesByDay.get(ymd) ?? [];
           const layout = layoutDayInstances(d, dayInstances, total);
           return (
             <div
               key={ymd}
-              className="relative border-l border-border bg-background/30"
+              className={cn(
+                "relative border-l border-border/70",
+                isToday ? "bg-primary/2" : "bg-background/40"
+              )}
               style={{ minHeight: `${CALENDAR_DAY_COLUMN_MIN_HEIGHT_PX}px` }}
             >
               {hours.map((h) => {
@@ -276,7 +369,11 @@ export function CalendarWeekView({
                     key={h}
                     type="button"
                     aria-label={`Schedule at ${h}:00 on ${ymd}`}
-                    className="absolute right-0 left-0 border-t border-border/40 hover:bg-muted/15"
+                    className={cn(
+                      "absolute right-0 left-0 cursor-pointer border-t border-border/35 transition-colors",
+                      "hover:bg-muted/25 hover:ring-1 hover:ring-inset hover:ring-ring/25",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50"
+                    )}
                     style={{ top: `${top * 100}%`, height: `${(60 / total) * 100}%` }}
                     onClick={() => onSelectSlot(d, h)}
                   />

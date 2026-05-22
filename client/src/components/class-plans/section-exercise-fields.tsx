@@ -46,19 +46,13 @@ export function SectionExerciseFields({
       setFieldDirty({});
     }, 0);
     return () => window.clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reset local editors when row changes only
   }, [row.id]);
 
-  useEffect(() => {
-    if (!fieldDirty.reps && !errors.reps) setReps(row.reps ?? "");
-  }, [row.reps, fieldDirty.reps, errors.reps]);
-
-  useEffect(() => {
-    if (!fieldDirty.duration && !errors.duration) setDuration(row.duration ?? "");
-  }, [row.duration, fieldDirty.duration, errors.duration]);
-
-  useEffect(() => {
-    if (!fieldDirty.notes && !errors.notes) setNotes(row.notes ?? "");
-  }, [row.notes, fieldDirty.notes, errors.notes]);
+  const repsValue = fieldDirty.reps || errors.reps ? reps : (row.reps ?? "");
+  const durationValue =
+    fieldDirty.duration || errors.duration ? duration : (row.duration ?? "");
+  const notesValue = fieldDirty.notes || errors.notes ? notes : (row.notes ?? "");
 
   const markFieldDirty = useCallback((field: SectionExerciseField) => {
     setFieldDirty((prev) => ({ ...prev, [field]: true }));
@@ -115,7 +109,7 @@ export function SectionExerciseFields({
   const repsInput = (
     <Input
       id={`reps-${row.id}`}
-      value={reps}
+      value={repsValue}
       onChange={(e) => {
         setReps(e.target.value);
         markFieldDirty("reps");
@@ -127,7 +121,7 @@ export function SectionExerciseFields({
           });
         }
       }}
-      onBlur={() => void handleBlur("reps", reps)}
+      onBlur={() => void handleBlur("reps", repsValue)}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           e.preventDefault();
@@ -147,7 +141,7 @@ export function SectionExerciseFields({
   const durationInput = (
     <Input
       id={`dur-${row.id}`}
-      value={duration}
+      value={durationValue}
       onChange={(e) => {
         setDuration(e.target.value);
         markFieldDirty("duration");
@@ -179,7 +173,7 @@ export function SectionExerciseFields({
   const notesInput = (
     <Input
       id={`notes-${row.id}`}
-      value={notes}
+      value={notesValue}
       onChange={(e) => {
         setNotes(e.target.value);
         markFieldDirty("notes");
@@ -191,7 +185,7 @@ export function SectionExerciseFields({
           });
         }
       }}
-      onBlur={() => void handleBlur("notes", notes)}
+      onBlur={() => void handleBlur("notes", notesValue)}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           e.preventDefault();

@@ -16,6 +16,7 @@ import { exerciseApi } from "@/services/exercise-api";
 import type { TempUploadedImage } from "@/services/exercise-api";
 import type { DropdownOptionRow, Exercise, ExerciseFolder, ExerciseImage } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BulletTextarea } from "@/components/exercises/bullet-textarea";
@@ -32,7 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { getLayerStepTitle } from "@/lib/exercise-layer-labels";
-import { chainTypeTooltipForValue } from "@/lib/chain-type-tooltips";
+import { ChainTypeOptionLabel } from "@/components/exercises/chain-type-option-label";
 import {
   buildExerciseFormDefaults,
   exerciseFormSchema,
@@ -242,15 +243,18 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
   }, []);
 
   useEffect(() => {
-    if (!exercise?.id) {
-      setImages([]);
-      setBlockedParentIds(new Set());
-      return;
-    }
-    setImages(
-      (exercise.images ?? []).map((img): ImageItem => ({ type: "saved", data: img }))
-    );
-  }, [exercise?.id]);
+    const t = window.setTimeout(() => {
+      if (!exercise?.id) {
+        setImages([]);
+        setBlockedParentIds(new Set());
+        return;
+      }
+      setImages(
+        (exercise.images ?? []).map((img): ImageItem => ({ type: "saved", data: img }))
+      );
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, [exercise?.id, exercise?.images]);
 
   useEffect(() => {
     if (!exercise?.id) return;
@@ -892,6 +896,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                         draggable={false}
                         onDragStart={(e) => e.preventDefault()}
                       >
+                        {/* eslint-disable-next-line @next/next/no-img-element -- sortable preview + fancybox */}
                         <img
                           src={item.data.url}
                           alt=""
@@ -1025,23 +1030,21 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                 disabled={equipmentDd.loading}
                 className="m-0 min-w-0 space-y-2 border-0 p-0"
               >
-                <div className="space-y-2 pl-1.5">
+                <div className="space-y-2 pl-1.5 w-fit">
                   {equipmentDd.options.map((o) => {
                     const disabled = isEquipmentOptionDisabled(o.value);
                     return (
                       <label
                         key={o.id}
                         className={cn(
-                          "flex cursor-pointer items-center gap-2 text-sm text-foreground",
-                          disabled && "cursor-not-allowed opacity-50"
+                          "flex items-center gap-2 text-sm text-foreground",
+                          disabled ? "cursor-default opacity-50" : "cursor-pointer"
                         )}
                       >
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={(wEquipment ?? []).includes(o.value)}
                           disabled={disabled}
                           onChange={() => toggleEquipmentValue(o.value)}
-                          className="size-4 rounded border-input accent-primary disabled:cursor-not-allowed"
                         />
                         {o.label}
                       </label>
@@ -1054,8 +1057,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                         key={val}
                         className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
                       >
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked
                           onChange={() => {
                             const next = getValues("equipment").filter((x) => x !== val);
@@ -1064,7 +1066,6 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                               shouldValidate: true,
                             });
                           }}
-                          className="size-4 rounded border-input accent-primary"
                         />
                         <span title={val}>{val}</span>
                         <span className="text-xs text-muted-foreground">(custom)</span>
@@ -1161,8 +1162,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                               )}
                               {isLast && (
                                 <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                                  <input
-                                    type="checkbox"
+                                  <Checkbox
                                     checked={row.isFinisher}
                                     onChange={(e) => {
                                       const checked = e.target.checked;
@@ -1177,7 +1177,6 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                                         { shouldDirty: true, shouldValidate: true }
                                       );
                                     }}
-                                    className="size-4 rounded border-input accent-primary"
                                   />
                                   Mark as finisher
                                 </label>
@@ -1265,23 +1264,21 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
               <p className="mb-2 pl-1.5 text-xs text-muted-foreground">
                 Select all that apply. &quot;None&quot; clears other selections (same as equipment).
               </p>
-              <div className="space-y-2 pl-1">
+              <div className="space-y-2 pl-1 w-fit">
                 {spinalDd.options.map((o) => {
                   const disabled = isSpinalMovementOptionDisabled(o.value);
                   return (
                     <label
                       key={o.id}
                       className={cn(
-                        "flex cursor-pointer items-center gap-2 text-sm text-foreground",
-                        disabled && "cursor-not-allowed opacity-50"
+                        "flex items-center gap-2 text-sm text-foreground",
+                        disabled ? "cursor-default opacity-50" : "cursor-pointer"
                       )}
                     >
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={(wSpinalMovement ?? []).includes(o.value)}
                         disabled={disabled}
                         onChange={() => toggleSpinalMovementValue(o.value)}
-                        className="size-4 rounded border-input accent-primary disabled:cursor-not-allowed"
                       />
                       {o.label}
                     </label>
@@ -1297,27 +1294,24 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
               <p className="mb-2 pl-1.5 text-xs text-muted-foreground">
                 Up to two options, or &quot;Both&quot; alone. Hover a label for a short description.
               </p>
-              <div className="space-y-2 pl-1">
+              <div className="space-y-2 pl-1 w-fit">
                 {chainDd.options.map((o) => {
                   const checked = (wChainType ?? []).includes(o.value);
                   const disabled = isChainTypeOptionDisabled(o.value);
-                  const tip = chainTypeTooltipForValue(o.value);
                   return (
                     <label
                       key={o.id}
                       className={cn(
-                        "flex cursor-pointer items-center gap-2 text-sm text-foreground",
-                        disabled && "cursor-not-allowed opacity-50"
+                        "flex items-center gap-2 text-sm text-foreground",
+                        disabled ? "cursor-default opacity-50" : "cursor-pointer"
                       )}
                     >
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={checked}
                         disabled={disabled}
                         onChange={() => toggleChainTypeValue(o.value)}
-                        className="size-4 rounded border-input accent-primary disabled:cursor-not-allowed"
                       />
-                      <span title={tip}>{o.label}</span>
+                      <ChainTypeOptionLabel value={o.value} label={o.label} />
                     </label>
                   );
                 })}
@@ -1335,17 +1329,15 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                 Alternating loaded vs unloaded positions reduces cumulative stress and supports client
                 comfort, confidence, and joint resilience.
               </p>
-              <div className="space-y-2 pl-1">
+              <div className="space-y-2 pl-1 w-fit">
                 {jointDd.options.map((o) => (
                   <label
                     key={o.id}
                     className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={(wJointLoading ?? []).includes(o.value)}
                       onChange={() => toggleJointLoading(o.value)}
-                      className="size-4 rounded border-input accent-primary"
                     />
                     {o.label}
                   </label>

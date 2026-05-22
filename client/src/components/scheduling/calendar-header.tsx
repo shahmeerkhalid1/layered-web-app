@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +14,8 @@ export interface CalendarHeaderProps {
   onNext: () => void;
   onToday: () => void;
   onNewClass: () => void;
+  classCount?: number;
+  isCurrentPeriod?: boolean;
 }
 
 export function CalendarHeader({
@@ -24,9 +26,35 @@ export function CalendarHeader({
   onNext,
   onToday,
   onNewClass,
+  classCount = 0,
+  isCurrentPeriod = false,
 }: CalendarHeaderProps) {
+  const statsLabel =
+    classCount === 0
+      ? `No classes in this ${mode === "week" ? "week" : "month"}`
+      : `${classCount} class${classCount === 1 ? "" : "es"} scheduled`;
+
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <Calendar className="size-5" aria-hidden />
+        </div>
+        <div className="min-w-0 space-y-1">
+          <h1 className="font-heading text-xl font-semibold tracking-[-0.02em] text-foreground md:text-2xl">
+            Calendar
+          </h1>
+          <p className="text-sm text-muted-foreground">{title}</p>
+          <p className="text-xs text-muted-foreground">
+            {statsLabel}
+            <span className="text-muted-foreground/50"> · </span>
+            {mode === "week" ? "Week view" : "Month view"}
+            <span className="text-muted-foreground/50"> · </span>
+            Click an empty slot to quick-schedule
+          </p>
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         <Button
           type="button"
@@ -34,9 +62,18 @@ export function CalendarHeader({
           size="icon"
           className="rounded-full"
           onClick={onPrev}
-          aria-label="Previous"
+          aria-label={mode === "week" ? "Previous week" : "Previous month"}
         >
           <ChevronLeft className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant={isCurrentPeriod ? "secondary" : "outline"}
+          className="rounded-full"
+          onClick={onToday}
+          disabled={isCurrentPeriod}
+        >
+          Today
         </Button>
         <Button
           type="button"
@@ -44,46 +81,45 @@ export function CalendarHeader({
           size="icon"
           className="rounded-full"
           onClick={onNext}
-          aria-label="Next"
+          aria-label={mode === "week" ? "Next week" : "Next month"}
         >
           <ChevronRight className="size-4" />
         </Button>
-        <Button type="button" variant="secondary" className="rounded-full" onClick={onToday}>
-          Today
-        </Button>
-        <h1 className="min-w-0 px-2 text-lg font-semibold tracking-[-0.02em] text-foreground md:text-xl">
-          {title}
-        </h1>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
+
+        <div
+          className="mx-0.5 hidden h-6 w-px bg-border sm:block"
+          aria-hidden
+        />
+
         <div className="flex rounded-full border border-border bg-muted/30 p-0.5">
-          <button
+          <Button
             type="button"
+            variant={mode === "week" ? "secondary" : "ghost"}
+            size="sm"
             className={cn(
-              "rounded-full px-3 py-1.5 text-xs font-medium transition",
-              mode === "week"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+              "h-7 rounded-full px-3 text-xs font-medium shadow-none",
+              mode !== "week" && "text-muted-foreground hover:text-foreground"
             )}
             onClick={() => onModeChange("week")}
           >
             Week
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant={mode === "month" ? "secondary" : "ghost"}
+            size="sm"
             className={cn(
-              "rounded-full px-3 py-1.5 text-xs font-medium transition",
-              mode === "month"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+              "h-7 rounded-full px-3 text-xs font-medium shadow-none",
+              mode !== "month" && "text-muted-foreground hover:text-foreground"
             )}
             onClick={() => onModeChange("month")}
           >
             Month
-          </button>
+          </Button>
         </div>
+
         <Button type="button" className="rounded-full" onClick={onNewClass}>
-          <Plus className="mr-1 size-4" aria-hidden />
+          <Plus className="size-4" aria-hidden />
           New class
         </Button>
       </div>

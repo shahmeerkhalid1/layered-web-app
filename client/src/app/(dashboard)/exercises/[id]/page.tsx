@@ -154,6 +154,7 @@ export default function ExerciseDetailPage() {
                     draggable={false}
                     onDragStart={(e) => e.preventDefault()}
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element -- fancybox gallery */}
                     <img
                       src={img.url}
                       alt={exercise.name}

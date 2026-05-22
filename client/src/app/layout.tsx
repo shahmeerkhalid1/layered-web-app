@@ -23,9 +23,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pilates Platform",
+  title: "Layered.",
   description:
-    "Plan classes, manage clients, and grow your Pilates practice in one place.",
+    "Layered. is a platform for managing your Pilates practice. It allows you to plan classes, manage clients, and grow your Pilates practice in one place.",
 };
 
 export default function RootLayout({

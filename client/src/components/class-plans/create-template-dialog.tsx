@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -75,20 +75,21 @@ export function CreateTemplateDialog({
     getValues,
     trigger,
     getFieldState,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<ClassPlanTemplateFormValues>({
     resolver: zodResolver(classPlanTemplateFormSchema),
     defaultValues: buildClassPlanTemplateCreateDefaults(),
   });
 
-  const tags = watch("tags");
+  const tags = useWatch({ control, name: "tags", defaultValue: [] }) ?? [];
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    const t = window.setTimeout(() => {
       reset(buildClassPlanTemplateCreateDefaults());
       setCustomTag("");
-    }
+    }, 0);
+    return () => window.clearTimeout(t);
   }, [open, reset]);
 
   const togglePreset = (preset: string) => {

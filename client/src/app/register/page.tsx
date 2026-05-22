@@ -3,25 +3,27 @@
 import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Lock, Mail, UserPlus } from "lucide-react";
+
+import {
+  AuthField,
+  AuthFooterLink,
+  AuthFormAlert,
+  AuthFormCard,
+  AuthLoadingCard,
+  AuthPageShell,
+} from "@/components/auth/auth-page-shell";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { api } from "@/lib/api";
 import {
   registerFormSchema,
   type RegisterFormValues,
 } from "@/lib/validation/auth-schemas";
+import { cn } from "@/lib/utils";
 
 interface InviteInfo {
   email: string;
@@ -32,9 +34,9 @@ export default function RegisterPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-muted/40">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        </div>
+        <AuthPageShell>
+          <AuthLoadingCard />
+        </AuthPageShell>
       }
     >
       <RegisterPageContent />
@@ -84,7 +86,7 @@ function RegisterPageContent() {
         setChecking(false);
       }
     }
-    checkAccess();
+    void checkAccess();
   }, [token, setValue]);
 
   if (isAuthenticated) {
@@ -94,33 +96,33 @@ function RegisterPageContent() {
 
   if (checking) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/40">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
+      <AuthPageShell>
+        <AuthLoadingCard />
+      </AuthPageShell>
     );
   }
 
   if (!signupAllowed && !invite) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">Registration Closed</CardTitle>
-            <CardDescription>
-              {pageError ||
-                "Public registration is currently disabled. Please contact an administrator for an invitation."}
-            </CardDescription>
-          </CardHeader>
-          <CardFooter className="justify-center">
-            <Link
-              href="/login"
-              className="font-medium text-primary underline-offset-4 hover:underline"
-            >
-              Back to Sign In
-            </Link>
-          </CardFooter>
-        </Card>
-      </div>
+      <AuthPageShell>
+        <AuthFormCard
+          title="Registration closed"
+          description={
+            pageError ||
+            "Public sign-up is disabled. Ask your administrator for an invitation link."
+          }
+          footer={<AuthFooterLink prompt="Already have an account?" linkLabel="Sign in" href="/login" />}
+        >
+          <div className="flex flex-col items-center rounded-2xl border border-dashed border-border/80 bg-muted/15 px-6 py-10 text-center">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+              <Mail className="size-6" aria-hidden />
+            </div>
+            <p className="mt-4 text-sm text-muted-foreground">
+              When you receive an invite, open the link in your email to create your account.
+            </p>
+          </div>
+        </AuthFormCard>
+      </AuthPageShell>
     );
   }
 
@@ -135,40 +137,59 @@ function RegisterPageContent() {
     }
   });
 
+  const inviteBadge = invite ? (
+    <div className="flex flex-wrap items-center gap-2">
+      <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs font-medium">
+        Invitation
+      </Badge>
+      {invite.role ? (
+        <span className="text-xs text-muted-foreground">Role: {invite.role}</span>
+      ) : null}
+    </div>
+  ) : null;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
-          <CardDescription>
-            {invite
-              ? "You've been invited to join Pilates Platform"
-              : "Get started with Pilates Platform"}
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={onSubmit}>
-          <CardContent className="space-y-4">
-            {pageError && (
-              <div className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {pageError}
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Jane Smith"
-                autoComplete="name"
-                aria-invalid={errors.name ? true : undefined}
-                {...register("name")}
-              />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+    <AuthPageShell>
+      <AuthFormCard
+        title="Create your account"
+        description={
+          invite
+            ? "You're joining Layered. via invitation — finish setting up your profile."
+            : "Get started with Layered. and organize your teaching in one place."
+        }
+        badge={inviteBadge}
+        footer={
+          <AuthFooterLink prompt="Already have an account?" linkLabel="Sign in" href="/login" />
+        }
+      >
+        <form onSubmit={onSubmit} className="space-y-5">
+          {pageError ? <AuthFormAlert>{pageError}</AuthFormAlert> : null}
+
+          <AuthField id="name" label="Full name" error={errors.name?.message}>
+            <Input
+              id="name"
+              type="text"
+              placeholder="Jane Smith"
+              autoComplete="name"
+              aria-invalid={errors.name ? true : undefined}
+              className={cn(errors.name && "border-destructive")}
+              {...register("name")}
+            />
+          </AuthField>
+
+          <AuthField
+            id="email"
+            label="Email"
+            hint={invite ? "From your invitation" : undefined}
+            error={errors.email?.message}
+          >
+            <div className="relative">
+              {invite ? (
+                <Lock
+                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden
+                />
+              ) : null}
               <Input
                 id="email"
                 type="email"
@@ -176,43 +197,42 @@ function RegisterPageContent() {
                 autoComplete="email"
                 readOnly={!!invite}
                 aria-invalid={errors.email ? true : undefined}
+                className={cn(
+                  invite && "bg-muted/40 pl-9",
+                  errors.email && "border-destructive"
+                )}
                 {...register("email")}
               />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Min. 8 characters"
-                autoComplete="new-password"
-                aria-invalid={errors.password ? true : undefined}
-                {...register("password")}
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
-            </div>
-          </CardContent>
-          <CardFooter className="mt-6 flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Creating account..." : "Create Account"}
-            </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                className="font-medium text-primary underline-offset-4 hover:underline"
-              >
-                Sign in
-              </Link>
-            </p>
-          </CardFooter>
+          </AuthField>
+
+          <AuthField
+            id="password"
+            label="Password"
+            hint="Min. 8 characters"
+            error={errors.password?.message}
+          >
+            <Input
+              id="password"
+              type="password"
+              placeholder="Create a secure password"
+              autoComplete="new-password"
+              aria-invalid={errors.password ? true : undefined}
+              className={cn(errors.password && "border-destructive")}
+              {...register("password")}
+            />
+          </AuthField>
+
+          <Button
+            type="submit"
+            className="h-10 w-full gap-2 rounded-full"
+            disabled={isSubmitting}
+          >
+            <UserPlus className="size-4" aria-hidden />
+            {isSubmitting ? "Creating account…" : "Create account"}
+          </Button>
         </form>
-      </Card>
-    </div>
+      </AuthFormCard>
+    </AuthPageShell>
   );
 }

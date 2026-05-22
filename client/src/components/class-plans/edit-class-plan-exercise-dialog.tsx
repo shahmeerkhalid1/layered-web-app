@@ -59,8 +59,14 @@ export function EditClassPlanExerciseDialog({
   useEffect(() => {
     if (!open || !exerciseId) return;
     const ac = new AbortController();
-    void load(exerciseId, ac.signal);
-    return () => ac.abort();
+    const id = exerciseId;
+    const t = window.setTimeout(() => {
+      void load(id, ac.signal);
+    }, 0);
+    return () => {
+      window.clearTimeout(t);
+      ac.abort();
+    };
   }, [open, exerciseId, load]);
 
   useEffect(() => {

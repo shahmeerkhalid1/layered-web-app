@@ -81,6 +81,8 @@
   --sidebar-accent-foreground: oklch(0.27 0.022 64);
   --sidebar-border: oklch(0.858 0.028 78);
   --sidebar-ring: oklch(0.694 0.038 77);
+  --field-empty: oklch(0.988 0.01 86);
+  --field-filled: oklch(0.948 0.023 83);
 }
 
 .dark {
@@ -115,6 +117,8 @@
   --sidebar-accent-foreground: oklch(0.955 0.014 86);
   --sidebar-border: oklch(0.35 0.018 64 / 70%);
   --sidebar-ring: oklch(0.63 0.032 78);
+  --field-empty: oklch(0.22 0.016 64 / 55%);
+  --field-filled: oklch(0.29 0.02 70 / 90%);
 }
 
 /* react-day-picker — theme tokens (see https://daypicker.dev/docs/styling) */
@@ -194,6 +198,36 @@
   * {
     @apply border-border outline-ring/50;
   }
+
+  /* Native checkboxes without the Checkbox component wrapper */
+  input[type="checkbox"]:not([data-slot="checkbox-input"]) {
+    @apply size-4.5 shrink-0 appearance-none rounded-[6px] border-2 border-input bg-(--field-empty) transition-[box-shadow,background-color,border-color] duration-150;
+    @apply cursor-default enabled:cursor-pointer disabled:cursor-default;
+    @apply focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none;
+    @apply enabled:hover:border-ring/70 enabled:hover:ring-3 enabled:hover:ring-ring/30;
+    @apply disabled:opacity-50 disabled:pointer-events-none;
+    background-image: none;
+  }
+
+  input[type="checkbox"]:not([data-slot="checkbox-input"]):checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23faf9f6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+    background-size: 0.7rem;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  input[type="checkbox"]:not([data-slot="checkbox-input"]):checked:enabled:hover {
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 30%, transparent);
+  }
+
+  .dark input[type="checkbox"]:not([data-slot="checkbox-input"]):checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23262626' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  }
+
   body {
     @apply bg-background text-foreground font-sans;
     font-feature-settings:

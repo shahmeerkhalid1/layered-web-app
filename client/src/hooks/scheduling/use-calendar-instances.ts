@@ -26,8 +26,13 @@ export function useCalendarInstances(start: string, end: string) {
 
   useEffect(() => {
     const ac = new AbortController();
-    void load(ac.signal);
-    return () => ac.abort();
+    const t = window.setTimeout(() => {
+      void load(ac.signal);
+    }, 0);
+    return () => {
+      window.clearTimeout(t);
+      ac.abort();
+    };
   }, [load]);
 
   return { data, loading, error, refresh: load };

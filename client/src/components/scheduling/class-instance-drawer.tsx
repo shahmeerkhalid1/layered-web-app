@@ -112,23 +112,19 @@ export function ClassInstanceDrawer({
   const pendingRef = useRef<{ anchorYmd: string; newIso: string; newDateStr: string } | null>(null);
   const [reschedule, setReschedule] = useState({ date: "", time: "" });
 
-  useEffect(() => {
-    if (!detail) return;
-    const t = new Date(detail.time);
-    const hh = String(t.getHours()).padStart(2, "0");
-    const mm = String(t.getMinutes()).padStart(2, "0");
-    setReschedule({
-      date: detail.date.slice(0, 10),
-      time: `${hh}:${mm}`,
-    });
-  }, [detail?.id, detail?.time, detail?.date]);
-
   const load = useCallback(async () => {
     if (!instanceId) return;
     setLoading(true);
     try {
       const d = await schedulingApi.getClassInstanceById(instanceId);
       setDetail(d);
+      const t = new Date(d.time);
+      const hh = String(t.getHours()).padStart(2, "0");
+      const mm = String(t.getMinutes()).padStart(2, "0");
+      setReschedule({
+        date: d.date.slice(0, 10),
+        time: `${hh}:${mm}`,
+      });
     } catch {
       toast.error("Could not load class");
       setDetail(null);
@@ -139,7 +135,10 @@ export function ClassInstanceDrawer({
 
   useEffect(() => {
     if (!open || !instanceId) return;
-    void load();
+    const t = window.setTimeout(() => {
+      void load();
+    }, 0);
+    return () => window.clearTimeout(t);
   }, [open, instanceId, load]);
 
   const refresh = async () => {
@@ -183,12 +182,12 @@ export function ClassInstanceDrawer({
     [templates, templateSearch]
   );
 
-  useEffect(() => {
-    if (!assignOpen || !selectedTemplateId) return;
-    if (!filteredTemplates.some((t) => t.id === selectedTemplateId)) {
-      setSelectedTemplateId(null);
-    }
-  }, [assignOpen, selectedTemplateId, filteredTemplates]);
+  const activeSelectedTemplateId = useMemo(() => {
+    if (!selectedTemplateId) return null;
+    return filteredTemplates.some((t) => t.id === selectedTemplateId)
+      ? selectedTemplateId
+      : null;
+  }, [selectedTemplateId, filteredTemplates]);
 
   const start = detail ? new Date(detail.time) : null;
 
@@ -480,7 +479,7 @@ export function ClassInstanceDrawer({
             />
           </div>
           <div
-            className="max-h-72 overflow-y-auto pr-1"
+            className="max-h-72  pr-1"
             role="radiogroup"
             aria-label="Class plan templates"
           >
@@ -493,7 +492,7 @@ export function ClassInstanceDrawer({
             ) : (
               <ul className="space-y-2">
                 {filteredTemplates.map((t) => {
-                  const selected = selectedTemplateId === t.id;
+                  const selected = activeSelectedTemplateId === t.id;
                   const meta = [t.classType, t.classStyle].filter(Boolean).join(" · ");
                   const sectionCount = t._count?.sections;
                   return (
@@ -501,7 +500,6 @@ export function ClassInstanceDrawer({
                       <label
                         className={cn(
                           "flex cursor-pointer gap-3 rounded-xl border p-3 transition-colors",
-                          "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
                           selected
                             ? "border-primary bg-primary/5"
                             : "border-border hover:bg-muted/40",
@@ -559,9 +557,9 @@ export function ClassInstanceDrawer({
             <Button
               type="button"
               className="rounded-full"
-              disabled={!selectedTemplateId || assigningId !== null}
+              disabled={!activeSelectedTemplateId || assigningId !== null}
               onClick={() => {
-                if (selectedTemplateId) void assign(selectedTemplateId);
+                if (activeSelectedTemplateId) void assign(activeSelectedTemplateId);
               }}
             >
               {assigningId ? "Attaching…" : "Attach template"}

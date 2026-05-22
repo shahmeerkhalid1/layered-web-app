@@ -14,6 +14,7 @@ import type {
   ExerciseImage,
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BulletTextarea } from "@/components/exercises/bullet-textarea";
@@ -33,7 +34,7 @@ import { useDropdownOptions } from "@/hooks/use-dropdown-options";
 import { useFancybox } from "@/hooks/use-fancybox";
 import { Separator } from "@/components/ui/separator";
 import { getLayerStepTitle } from "@/lib/exercise-layer-labels";
-import { chainTypeTooltipForValue } from "@/lib/chain-type-tooltips";
+import { ChainTypeOptionLabel } from "@/components/exercises/chain-type-option-label";
 import {
   buildExerciseFormDefaults,
   exerciseFormSchema,
@@ -921,21 +922,22 @@ export function ExerciseForm({
                   disabled={equipmentDd.loading}
                   className="m-0 min-w-0 space-y-2 border-0 p-0"
                 >
-                  <div className="space-y-2 pl-1.5">
+                  <div className="space-y-2 pl-1.5 w-fit">
                     {equipmentDd.options.map((o) => {
                       const disabled = isEquipmentOptionDisabled(o.value);
                       return (
                         <label
                           key={o.id}
-                          className={`flex cursor-pointer items-center gap-2 text-sm text-foreground ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+                          className={cn(
+                            "flex items-center gap-2 text-sm text-foreground",
+                            disabled ? "cursor-default opacity-50" : "cursor-pointer"
+                          )}
                         >
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             name={`equipment-${o.value}`}
                             checked={(wEquipment ?? []).includes(o.value)}
                             disabled={disabled}
                             onChange={() => toggleEquipmentValue(o.value)}
-                            className="size-4 rounded border-input accent-primary disabled:cursor-not-allowed"
                           />
                           {o.label}
                         </label>
@@ -948,8 +950,7 @@ export function ExerciseForm({
                           key={val}
                           className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
                         >
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             name={`equipment-custom-${val}`}
                             checked
                             onChange={() => {
@@ -959,7 +960,6 @@ export function ExerciseForm({
                                 shouldValidate: true,
                               });
                             }}
-                            className="size-4 rounded border-input accent-primary"
                           />
                           <span title={val}>{val}</span>
                           <span className="text-xs text-muted-foreground">(custom)</span>
@@ -1108,8 +1108,7 @@ export function ExerciseForm({
                             )}
                             {isLast && (
                               <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                                <input
-                                  type="checkbox"
+                                <Checkbox
                                   checked={row.isFinisher}
                                   onChange={(e) => {
                                     const checked = e.target.checked;
@@ -1124,7 +1123,6 @@ export function ExerciseForm({
                                       { shouldDirty: true, shouldValidate: true }
                                     );
                                   }}
-                                  className="size-4 rounded border-input accent-primary"
                                 />
                                 Mark as finisher
                               </label>
@@ -1212,21 +1210,22 @@ export function ExerciseForm({
               <p className="mb-2 pl-1.5 text-xs text-muted-foreground">
                 Select all that apply. &quot;None&quot; clears other selections (same as Equipment).
               </p>
-              <div className="space-y-2 pl-1">
+              <div className="space-y-2 pl-1 w-fit">
                 {spinalDd.options.map((o) => {
                   const disabled = isSpinalMovementOptionDisabled(o.value);
                   return (
                     <label
                       key={o.id}
-                      className={`flex cursor-pointer items-center gap-2 text-sm text-foreground ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+                      className={cn(
+                            "flex items-center gap-2 text-sm text-foreground",
+                            disabled ? "cursor-default opacity-50" : "cursor-pointer"
+                          )}
                     >
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         name={`spinalMovement-${o.value}`}
                         checked={(wSpinalMovement ?? []).includes(o.value)}
                         disabled={disabled}
                         onChange={() => toggleSpinalMovementValue(o.value)}
-                        className="size-4 rounded border-input accent-primary disabled:cursor-not-allowed"
                       />
                       {o.label}
                     </label>
@@ -1242,25 +1241,25 @@ export function ExerciseForm({
               <p className="mb-2 pl-1.5 text-xs text-muted-foreground">
                 Up to two options, or &quot;Both&quot; alone. Hover a label for a short description.
               </p>
-              <div className="space-y-2 pl-1">
+              <div className="space-y-2 pl-1 w-fit">
                 {chainDd.options.map((o) => {
                   const checked = (wChainType ?? []).includes(o.value);
                   const disabled = isChainTypeOptionDisabled(o.value);
-                  const tip = chainTypeTooltipForValue(o.value);
                   return (
                     <label
                       key={o.id}
-                      className={`flex cursor-pointer items-center gap-2 text-sm text-foreground ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+                      className={cn(
+                            "flex items-center gap-2 text-sm text-foreground",
+                            disabled ? "cursor-default opacity-50" : "cursor-pointer"
+                          )}
                     >
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         name={`chainType-${o.value}`}
                         checked={checked}
                         disabled={disabled}
                         onChange={() => toggleChainTypeValue(o.value)}
-                        className="size-4 rounded border-input accent-primary disabled:cursor-not-allowed"
                       />
-                      <span title={tip}>{o.label}</span>
+                      <ChainTypeOptionLabel value={o.value} label={o.label} />
                     </label>
                   );
                 })}
@@ -1278,18 +1277,16 @@ export function ExerciseForm({
                 Alternating loaded vs unloaded positions reduces cumulative stress and
                 supports client comfort, confidence, and joint resilience.
               </p>
-              <div className="space-y-2 pl-1">
+              <div className="space-y-2 pl-1 w-fit">
                 {jointDd.options.map((o) => (
                   <label
                     key={o.id}
                     className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       name={`jointLoading-${o.value}`}
                       checked={(wJointLoading ?? []).includes(o.value)}
                       onChange={() => toggleJointLoading(o.value)}
-                      className="size-4 rounded border-input accent-primary"
                     />
                     {o.label}
                   </label>
@@ -1502,12 +1499,11 @@ export function ExerciseForm({
           {showEmbedSaveToLibrary && (
             <div className="rounded-2xl border border-border bg-muted/20 p-4">
               <div className="flex items-start gap-3">
-                <input
+                <Checkbox
                   id="exercise-save-to-library-embed"
-                  type="checkbox"
                   checked={saveToLibrary}
                   onChange={(e) => setSaveToLibrary(e.target.checked)}
-                  className="mt-1 size-4 shrink-0 rounded border-input accent-primary"
+                  className="mt-1 shrink-0"
                 />
                 <div className="min-w-0 space-y-1">
                   <Label
@@ -1574,6 +1570,7 @@ export function ExerciseForm({
                       draggable={false}
                       onDragStart={(e) => e.preventDefault()}
                     >
+                      {/* eslint-disable-next-line @next/next/no-img-element -- sortable preview + fancybox */}
                       <img
                         src={item.data.url}
                         alt=""

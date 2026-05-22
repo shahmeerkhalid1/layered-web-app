@@ -7,7 +7,7 @@ export const exerciseLayerRowSchema = z.object({
 });
 
 export const exerciseFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().trim().min(1, "Name is required"),
   description: z.string(),
   startingPosition: z.string(),
   orientation: z.string(),

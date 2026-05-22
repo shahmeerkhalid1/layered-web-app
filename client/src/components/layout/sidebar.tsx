@@ -13,7 +13,6 @@ import {
   CalendarDays,
   Dumbbell,
   FileText,
-  Users,
   LogOut,
   User,
   ChevronsUpDown,
@@ -31,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import Image from "next/image";
 
 type MainNavItem = {
   href: string;
@@ -46,7 +46,7 @@ const navItems: MainNavItem[] = [
   { href: "/week-overview", label: "Week Overview", icon: CalendarDays },
   { href: "/exercises", label: "Exercises", icon: Dumbbell },
   { href: "/class-plans", label: "Class Plans", icon: FileText },
-  { href: "/clients", label: "Clients", icon: Users },
+  // { href: "/clients", label: "Clients", icon: Users },
 ];
 
 const adminNavItems = [
@@ -78,16 +78,17 @@ export function Sidebar() {
 
   const navContent = (
     <nav className="flex h-full min-h-0 flex-col gap-1 px-3 py-4">
-      <div className="mb-6 shrink-0 rounded-3xl border border-sidebar-border bg-card p-4 shadow-lg">
+      <div className="mb-6 shrink-0  border-b border-sidebar-border p-2 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground">
+          {/* <div className="flex size-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground">
             <Dumbbell className="size-5" />
-          </div>
-          <div>
-            <h1 className="text-base font-semibold tracking-[-0.03em] text-card-foreground">
-              Pilates Platform
+          </div> */}
+          {/* <div>
+            <h1 className="text-base font-semibold tracking-[-0.03em] text-card-foreground uppercase text-center">
+              Layered.
             </h1>
-          </div>
+          </div> */}
+          <Image src="/layered-logo.png" alt="Layered. Logo" className="p-0" width={120} height={100} />
         </div>
       </div>
       <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">

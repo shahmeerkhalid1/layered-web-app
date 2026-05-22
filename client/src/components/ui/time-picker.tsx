@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TimePickerPanel } from "@/components/ui/time-picker-panel";
 import { formatHmLabel12 } from "@/lib/datetime-local";
+import { formControlPickerTriggerClasses } from "@/lib/form-control-styles";
 import { cn } from "@/lib/utils";
 
 export interface TimePickerProps {
@@ -53,8 +54,9 @@ export function TimePicker({
             variant="outline"
             disabled={disabled}
             aria-invalid={ariaInvalid}
+            data-filled={hasValue ? "" : undefined}
             className={cn(
-              "h-8 w-full justify-between gap-1 rounded-lg px-2.5 font-normal",
+              formControlPickerTriggerClasses,
               !hasValue && "text-muted-foreground",
               ariaInvalid && "border-destructive",
               className

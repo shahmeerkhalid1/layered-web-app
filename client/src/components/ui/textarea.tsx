@@ -1,21 +1,56 @@
 import * as React from "react"
 
+import {
+  formControlTextareaClasses,
+  inputHasValue,
+} from "@/lib/form-control-styles"
 import { cn } from "@/lib/utils"
+
+function syncTextareaFilled(
+  el: HTMLTextAreaElement,
+  value?: string | number | readonly string[] | null
+) {
+  const has =
+    value !== undefined ? inputHasValue(value) : inputHasValue(el.value)
+  if (has) el.setAttribute("data-filled", "")
+  else el.removeAttribute("data-filled")
+}
 
 const Textarea = React.forwardRef<
   HTMLTextAreaElement,
   React.ComponentProps<"textarea">
->(({ className, ...props }, ref) => (
-  <textarea
-    ref={ref}
-    data-slot="textarea"
-    className={cn(
-      "flex field-sizing-content min-h-16 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
-      className
-    )}
-    {...props}
-  />
-));
-Textarea.displayName = "Textarea";
+>(({ className, value, defaultValue, onChange, ...props }, forwardedRef) => {
+  const innerRef = React.useRef<HTMLTextAreaElement | null>(null)
+
+  const setRef = React.useCallback(
+    (node: HTMLTextAreaElement | null) => {
+      innerRef.current = node
+      if (typeof forwardedRef === "function") forwardedRef(node)
+      else if (forwardedRef) forwardedRef.current = node
+      if (node) syncTextareaFilled(node, value)
+    },
+    [forwardedRef, value]
+  )
+
+  React.useEffect(() => {
+    if (innerRef.current) syncTextareaFilled(innerRef.current, value)
+  }, [value, defaultValue])
+
+  return (
+    <textarea
+      ref={setRef}
+      data-slot="textarea"
+      value={value}
+      defaultValue={defaultValue}
+      onChange={(e) => {
+        syncTextareaFilled(e.currentTarget, value)
+        onChange?.(e)
+      }}
+      className={cn(formControlTextareaClasses, className)}
+      {...props}
+    />
+  )
+})
+Textarea.displayName = "Textarea"
 
 export { Textarea }

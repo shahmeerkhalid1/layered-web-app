@@ -3,10 +3,58 @@
 import * as React from "react"
 import { Select as SelectPrimitive } from "@base-ui/react/select"
 
+import {
+  DEFAULT_SELECT_EMPTY_VALUES,
+  formControlSelectTriggerClasses,
+  isSelectEmptyValue,
+} from "@/lib/form-control-styles"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+type SelectChromeState = {
+  isEmpty: boolean
+  hasValue: boolean
+}
+
+const SelectChromeContext = React.createContext<SelectChromeState>({
+  isEmpty: true,
+  hasValue: false,
+})
+
+type SelectProps = SelectPrimitive.Root.Props<string> & {
+  /** Values that mean "no selection" for empty trigger styling (default: `none`, ``). */
+  emptyValues?: readonly string[]
+}
+
+function Select({
+  value,
+  defaultValue,
+  emptyValues = DEFAULT_SELECT_EMPTY_VALUES,
+  ...props
+}: SelectProps) {
+  const resolved =
+    value !== undefined
+      ? value
+      : defaultValue !== undefined
+        ? defaultValue
+        : undefined
+
+  const isEmpty = isSelectEmptyValue(
+    resolved == null ? "" : String(resolved),
+    emptyValues
+  )
+  const hasValue = resolved != null && !isEmpty
+
+  return (
+    <SelectChromeContext.Provider value={{ isEmpty, hasValue }}>
+      <SelectPrimitive.Root
+        value={value}
+        defaultValue={defaultValue}
+        {...props}
+      />
+    </SelectChromeContext.Provider>
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
@@ -36,12 +84,16 @@ function SelectTrigger({
 }: SelectPrimitive.Trigger.Props & {
   size?: "sm" | "default"
 }) {
+  const { isEmpty, hasValue } = React.useContext(SelectChromeContext)
+
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-size={size}
+      data-empty={isEmpty ? "" : undefined}
+      data-has-value={hasValue ? "" : undefined}
       className={cn(
-        "flex w-fit items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 pr-2 pl-2.5 text-sm whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground h-8 *:data-[slot=select-value]:min-w-0 *:data-[slot=select-value]:truncate *:data-[slot=select-value]:leading-snug *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        formControlSelectTriggerClasses,
         size === "sm" && "h-7 rounded-[min(var(--radius-md),10px)]",
         className
       )}

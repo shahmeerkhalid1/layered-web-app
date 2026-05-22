@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { classPlanApi } from "@/services/class-plan-api";
@@ -76,20 +76,21 @@ export function EditClassPlanDialog({
     getValues,
     trigger,
     getFieldState,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<ClassPlanTemplateFormValues>({
     resolver: zodResolver(classPlanTemplateFormSchema),
     defaultValues: buildClassPlanTemplateCreateDefaults(),
   });
 
-  const tags = watch("tags");
+  const tags = useWatch({ control, name: "tags", defaultValue: [] }) ?? [];
 
   useEffect(() => {
-    if (open && plan) {
+    if (!open || !plan) return;
+    const t = window.setTimeout(() => {
       reset(buildClassPlanTemplateEditDefaults(plan));
       setCustomTag("");
-    }
+    }, 0);
+    return () => window.clearTimeout(t);
   }, [open, plan, reset]);
 
   const togglePreset = (preset: string) => {

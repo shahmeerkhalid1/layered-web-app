@@ -28,13 +28,7 @@ export default function ClassPlansPage() {
     library.setClassTypeFilter("");
     library.setClassStyleFilter("");
     library.setTagFilter(null);
-  }, [
-    library.setSearch,
-    library.setSelectedFolder,
-    library.setClassTypeFilter,
-    library.setClassStyleFilter,
-    library.setTagFilter,
-  ]);
+  }, [library]);
 
   const hasActiveFilters =
     library.selectedFolder !== null ||

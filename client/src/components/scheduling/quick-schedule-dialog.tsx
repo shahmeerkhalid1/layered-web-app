@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -83,7 +83,6 @@ export function QuickScheduleDialog({
     handleSubmit,
     reset,
     setValue,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<QuickScheduleFormValues>({
     resolver: zodResolver(quickScheduleFormSchema),
@@ -101,7 +100,7 @@ export function QuickScheduleDialog({
     });
   }, [open, templatePrefill, slotPrefill, reset]);
 
-  const typeVal = watch("type");
+  const typeVal = useWatch({ control, name: "type", defaultValue: "GROUP" });
 
   const onSubmit = async (values: QuickScheduleFormValues) => {
     try {

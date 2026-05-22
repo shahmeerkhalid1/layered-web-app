@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { schedulingApi } from "@/services/scheduling-api";
@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TimePicker } from "@/components/ui/time-picker";
@@ -67,7 +68,6 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
     control,
     handleSubmit,
     reset,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<CreateClassFormValues>({
@@ -75,13 +75,16 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
     defaultValues: EMPTY_CREATE_CLASS_VALUES,
   });
 
-  const isRecurring = watch("isRecurring");
+  const isRecurring = useWatch({ control, name: "isRecurring", defaultValue: false });
+  const classType = useWatch({ control, name: "type", defaultValue: "GROUP" });
 
   useEffect(() => {
     if (!open) return;
-    const ds = new Set([1, 3, 5]);
-    setDaySet(ds);
-    reset(EMPTY_CREATE_CLASS_VALUES);
+    const t = window.setTimeout(() => {
+      setDaySet(new Set([1, 3, 5]));
+      reset(EMPTY_CREATE_CLASS_VALUES);
+    }, 0);
+    return () => window.clearTimeout(t);
   }, [open, reset]);
 
   const toggleDay = (v: number) => {
@@ -141,7 +144,12 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="cc-title">Title</Label>
-            <Input id="cc-title" {...register("title")} className={cn(errors.title && "border-destructive")} />
+            <Input
+              id="cc-title"
+              placeholder="e.g. Morning Reformer"
+              {...register("title")}
+              className={cn(errors.title && "border-destructive")}
+            />
             {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
           </div>
 
@@ -149,7 +157,7 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
             <div className="space-y-2">
               <Label>Type</Label>
               <Select
-                value={watch("type")}
+                value={classType}
                 onValueChange={(v) => setValue("type", v as "GROUP" | "PRIVATE")}
               >
                 <SelectTrigger className="w-full min-w-0 justify-between">
@@ -181,10 +189,8 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
           </div> */}
 
           <div className="flex items-center gap-2">
-            <input
+            <Checkbox
               id="cc-rec"
-              type="checkbox"
-              className="size-4 rounded border-border"
               checked={isRecurring}
               onChange={(e) => setValue("isRecurring", e.target.checked)}
             />

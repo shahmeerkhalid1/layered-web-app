@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { useDropdownOptions } from "@/hooks/use-dropdown-options";
 import type { DropdownOptionRow } from "@/lib/types";
+import { FILTER_SELECT_EMPTY_VALUES } from "@/lib/form-control-styles";
 import { cn } from "@/lib/utils";
 
 const TAG_PRESETS = ["Easy Teach", "Moderate", "Challenging"] as const;
@@ -67,6 +68,7 @@ export function ClassPlanFilterBar({
         </Label>
         <Select
           value={classTypeFilter || "all"}
+          emptyValues={FILTER_SELECT_EMPTY_VALUES}
           onValueChange={(v) => onClassTypeFilterChange(v === "all" ? "" : (v ?? ""))}
           disabled={classTypeDd.loading && classTypeDd.options.length === 0}
         >
@@ -107,6 +109,7 @@ export function ClassPlanFilterBar({
         </Label>
         <Select
           value={classStyleFilter || "all"}
+          emptyValues={FILTER_SELECT_EMPTY_VALUES}
           onValueChange={(v) => onClassStyleFilterChange(v === "all" ? "" : (v ?? ""))}
           disabled={classStyleDd.loading && classStyleDd.options.length === 0}
         >

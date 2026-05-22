@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const quickScheduleFormSchema = z.object({
-  title: z.string().max(200).optional(),
+  title: z.string().trim().max(200).optional(),
   type: z.enum(["GROUP", "PRIVATE"]),
   durationMinutes: z
     .number({ message: "Duration is required" })
@@ -48,8 +48,8 @@ export function toQuickScheduleApiBody(
     ...(title && title.length > 0 ? { title } : {}),
     type: values.type,
     durationMinutes: values.durationMinutes,
-    date: values.date,
-    time: values.time,
+    date: values.date.trim(),
+    time: values.time.trim(),
     ...(templateId ? { templateId } : {}),
   };
 }
