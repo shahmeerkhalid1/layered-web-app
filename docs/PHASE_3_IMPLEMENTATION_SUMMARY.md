@@ -195,12 +195,29 @@ Suggested checks before demo or release:
 
 ## 8. Known gaps / follow-ups (optional)
 
-- **Edit class dialog (recommended):** Add an **`EditClassDialog`** mirroring **`create-class-dialog.tsx`** (`startDate`, `endDate`, `daysOfWeek`, time, duration, title) wired to **`GET/PATCH /api/classes/:id`**. Intended for **series-level** changes (e.g. change series start date or recurring weekdays **without** day-offset shift). Keep the instance drawer for **session** actions and quick “this / following” reschedules. Entry point: **“Edit series…”** from the instance drawer; show recurrence summary in drawer (“Repeats: Sat · until …”).
-- **Drawer copy polish:** Clarify **All future classes** as “move this and following sessions to the new date/time” vs series edit; optionally nudge users to **Edit series** when changing `daysOfWeek` / start date intent.
-- **New class dialog:** replace “paste template ID” with the same **searchable template picker + confirm** pattern as the instance drawer (or a compact combobox); drawer attach flow already uses that pattern.
-- **Regenerate modes:** Today, weekday shift applies whenever drawer sends `rescheduleToDate` ≠ anchor. Series edit dialog should regenerate with **explicit** `daysOfWeek` / `startDate` and **no** automatic day-offset shift.
+- **Drag-and-drop reorder:** Arrow up/down reorder is shipped for instance drawer + template planner; true DnD (e.g. shared `@dnd-kit`) deferred post-MVP.
 - **Hooks:** plan mentioned `useQuickSchedule` / `useClassInstanceDetail`; current code inlines fetch in components or uses `useCalendarInstances` only — add dedicated hooks if you want stricter reuse.
 - **Timezone edge cases:** calendar uses local dates for range queries vs server `DATE` storage; document instructor timezone assumptions if you expand globally.
+
+### Phase 3 completion pass (May 2026)
+
+**Backend (A1–A4):**
+
+- `GET /api/classes` — optional `type`, `startDate`, `endDate` filters
+- `GET /api/class-instances` — optional `status`, `classId` filters (calendar still uses `start`/`end`)
+- `DELETE /api/classes/:id` — soft-deletes future instances only (`date >= today`); past records preserved
+- `POST /api/quick-schedule` — returns full `instanceDetailInclude` shape (UI unchanged)
+- Instance detail includes `template: { id, name }` for badge copy
+
+**Frontend:**
+
+- `ExercisePickerDialog` — discriminated `mode: "template" | "instance"`
+- Instance drawer — section/exercise arrow reorder, rename, add exercise, template badges, reset to template, **Edit series…**
+- `edit-class-dialog.tsx` — series PATCH with regeneration confirm (no `rescheduleToDate`)
+- Calendar week view + week overview — show `classType · classStyle` when set
+- Create-class dialog — recurrence form only (template picker reverted; attach plan per instance or quick-schedule instead)
+
+**New files:** `client/src/components/scheduling/edit-class-dialog.tsx`
 
 ---
 
@@ -229,6 +246,8 @@ Suggested checks before demo or release:
 - `client/src/hooks/scheduling/use-calendar-instances.ts`
 - `client/src/components/scheduling/quick-schedule-dialog.tsx`
 - `client/src/components/scheduling/create-class-dialog.tsx`
+- `client/src/components/scheduling/edit-class-dialog.tsx`
+- `client/src/components/class-plans/exercise-picker-dialog.tsx` (template + instance modes)
 - `client/src/components/scheduling/edit-scope-dialog.tsx`
 - `client/src/components/scheduling/calendar-header.tsx`
 - `client/src/components/scheduling/calendar-week-view.tsx`
@@ -246,4 +265,4 @@ Suggested checks before demo or release:
 
 ---
 
-*Last updated: May 2026 — Phase 3 scope plus post-delivery validation fix, scheduling UI/UX polish (drawer width, attach-template dialog, session actions copy, button cursor), recurring reschedule fixes (`rescheduleToDate`, weekday shift on “all future”, drawer `onInstanceIdChange` after regeneration), and documented follow-up for **Edit class dialog** (series-level vs instance-level UX split).*
+*Last updated: May 2026 — Phase 3 completion pass (API filters, future-only series delete, full quick-schedule response, template name on detail, instance plan editor parity, Edit class series dialog, calendar classType/classStyle labels). Create-class template picker (Part F) reverted. Drag-and-drop reorder deferred post-MVP.*

@@ -110,7 +110,10 @@ export function CalendarEventBlock({ instance, onSelect, layout }: CalendarEvent
   const label = instance.class.title;
   const isGroup = instance.class.type === "GROUP";
   const timeStr = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  const title = `${label} — ${timeStr}, ${durationMin} min · ${instance.class.type}`;
+  const typeStyle = [instance.classType, instance.classStyle].filter(Boolean).join(" · ");
+  const title = typeStyle
+    ? `${label} — ${timeStr}, ${durationMin} min · ${typeStyle}`
+    : `${label} — ${timeStr}, ${durationMin} min · ${instance.class.type}`;
 
   const seg =
     cols > 1
@@ -161,6 +164,11 @@ export function CalendarEventBlock({ instance, onSelect, layout }: CalendarEvent
       ) : compact ? (
         <>
           <span className="line-clamp-1 min-w-0 text-[10px] leading-tight font-medium">{label}</span>
+          {typeStyle ? (
+            <span className="line-clamp-1 min-w-0 text-[9px] leading-tight opacity-75">
+              {typeStyle}
+            </span>
+          ) : null}
           <span className="line-clamp-1 min-w-0 text-[9px] leading-tight opacity-80 tabular-nums">
             {timeStr} · {durationMin}m
           </span>
@@ -168,6 +176,11 @@ export function CalendarEventBlock({ instance, onSelect, layout }: CalendarEvent
       ) : (
         <>
           <span className="line-clamp-2 min-w-0 leading-snug">{label}</span>
+          {typeStyle ? (
+            <span className="line-clamp-1 min-w-0 text-[10px] opacity-75 leading-tight">
+              {typeStyle}
+            </span>
+          ) : null}
           <span className="mt-0.5 block shrink-0 text-[10px] opacity-80 tabular-nums leading-tight">
             {timeStr} · {durationMin}m
           </span>

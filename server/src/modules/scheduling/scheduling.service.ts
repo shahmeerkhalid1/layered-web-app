@@ -49,6 +49,7 @@ const sectionExerciseInclude = {
 
 const instanceDetailInclude = {
   class: true,
+  template: { select: { id: true, name: true } },
   sections: {
     orderBy: { order: "asc" as const },
     include: {
@@ -319,7 +320,7 @@ export async function quickSchedule(instructorId: string, body: QuickScheduleInp
 
     const fullInstance = await tx.classInstance.findFirst({
       where: { id: instance.id },
-      include: { class: true },
+      include: instanceDetailInclude,
     });
 
     return { class: cls, instance: fullInstance! };
@@ -394,9 +395,16 @@ export async function createClass(instructorId: string, data: CreateClassInput) 
 }
 
 export async function listClasses(instructorId: string, query: ListClassesQuery) {
-  const { page, limit } = query;
+  const { page, limit, type, startDate, endDate } = query;
   const skip = (page - 1) * limit;
-  const where = { instructorId, ...active };
+  const where: Prisma.ClassWhereInput = { instructorId, ...active };
+
+  if (type) where.type = type;
+  if (startDate || endDate) {
+    where.startDate = {};
+    if (startDate) where.startDate.gte = utcCalendarDate(parseYmd(startDate));
+    if (endDate) where.startDate.lte = utcCalendarDate(parseYmd(endDate));
+  }
 
   const [data, total] = await Promise.all([
     prisma.class.findMany({
@@ -545,9 +553,14 @@ export async function updateClass(classId: string, instructorId: string, data: U
 export async function deleteClass(classId: string, instructorId: string) {
   await assertClassOwned(classId, instructorId);
   const now = new Date();
+  const today = toDateOnlyUTC(now);
   await prisma.$transaction(async (tx) => {
     await tx.classInstance.updateMany({
-      where: { classId, ...active },
+      where: {
+        classId,
+        ...active,
+        date: { gte: today },
+      },
       data: { deletedAt: now },
     });
     await tx.class.update({
@@ -566,13 +579,17 @@ export async function listClassInstancesForCalendar(
   const end = parseYmd(query.end);
   if (start > end) throw new ValidationError("start must be on or before end");
 
+  const where: Prisma.ClassInstanceWhereInput = {
+    instructorId,
+    ...active,
+    date: { gte: toDateOnlyUTC(start), lte: toDateOnlyUTC(end) },
+    class: { ...active },
+  };
+  if (query.status) where.status = query.status;
+  if (query.classId) where.classId = query.classId;
+
   return prisma.classInstance.findMany({
-    where: {
-      instructorId,
-      ...active,
-      date: { gte: toDateOnlyUTC(start), lte: toDateOnlyUTC(end) },
-      class: { ...active },
-    },
+    where,
     orderBy: [{ date: "asc" }, { time: "asc" }],
     include: {
       class: {

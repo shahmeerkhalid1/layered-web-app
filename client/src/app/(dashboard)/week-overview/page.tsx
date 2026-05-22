@@ -119,7 +119,9 @@ export default function WeekOverviewPage() {
                     <p className="mt-2 text-sm text-muted-foreground">No classes scheduled.</p>
                   ) : (
                     <ul className="mt-2 space-y-2">
-                      {rows.map((r) => (
+                      {rows.map((r) => {
+                        const typeStyle = [r.classType, r.classStyle].filter(Boolean).join(" · ");
+                        return (
                         <li key={r.id}>
                           <button
                             type="button"
@@ -128,7 +130,7 @@ export default function WeekOverviewPage() {
                               setDrawerOpen(true);
                             }}
                             className={cn(
-                              "flex w-full max-w-xl items-center justify-between rounded-2xl border border-border px-4 py-3 text-left text-sm transition hover:bg-muted/40",
+                              "flex w-full max-w-xl flex-col gap-0.5 rounded-2xl border border-border px-4 py-3 text-left text-sm transition hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between",
                               r.class.type === "GROUP"
                                 ? "border-primary/25 bg-primary/5"
                                 : "border-secondary/30 bg-secondary/10"
@@ -141,10 +143,12 @@ export default function WeekOverviewPage() {
                                 minute: "2-digit",
                               })}{" "}
                               · {r.class.type} · {r.class.durationMinutes ?? 60}m
+                              {typeStyle ? ` · ${typeStyle}` : ""}
                             </span>
                           </button>
                         </li>
-                      ))}
+                        );
+                      })}
                     </ul>
                   )}
                 </li>

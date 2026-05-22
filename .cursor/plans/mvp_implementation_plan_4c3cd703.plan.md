@@ -12,8 +12,8 @@ todos:
     content: "Phase 2: Class Plan Templates -- ClassPlanFolder + ClassPlanTemplate fields (classType, classStyle, durationMinutes, folderId, tags) + PlanSection + PlanSectionExercise schema, Exercise.savedToLibrary, seed classType/classStyle dropdowns, template CRUD + paginated list API + nested sections/exercises + duplicate + save-to-library, **/class-plans** library UI (filters, useClassPlanList, ExerciseLibraryPagination) + **/class-plans/[id]** planner + exercise picker (library + create-new); **remaining**: drag-and-drop reorder, quick-schedule / Flow 2 from template cards (tasks 2.1 -- 2.3)"
     status: in_progress
   - id: phase-3-calendar
-    content: "Phase 3: Calendar and Scheduling -- Class + ClassInstance schema (templateId, isCustomised, denormalized classType/classStyle, rating scaffold), scheduling API (one-off + recurring), copy-on-use template assignment, quick-schedule endpoint (Flow 2), calendar UI, week overview, recurring class management (tasks 3.1 -- 3.5)"
-    status: pending
+    content: "Phase 3: Calendar and Scheduling — COMPLETE (May 2026). DnD reorder post-MVP; Phase 4 clients deferred."
+    status: completed
   - id: phase-4-clients
     content: "Phase 4: Client Management -- Client/Enrollment/Attendance schema, CRUD API, enrollment and attendance APIs, client profile and attendance UI (tasks 4.1 -- 4.4)"
     status: pending
@@ -42,7 +42,7 @@ The repo is a monorepo with two fully functional apps:
 - **Exercise Library** (Phase 1 — fully complete): Exercise CRUD with soft-delete (also cleans Cloudinary assets and `ExerciseImage` records), folder management, **paginated library listing** (**`GET /api/exercises`** returns `{ exercises, total, page, limit }` when **`page`** is set; returns a JSON **array** when omitted — used by class-plan pickers), Cloudinary image uploads (hybrid temp flow: `POST /api/uploads/temp` with multer → promote on save via `extractImagePublicIds` middleware + two-phase compensation → `DELETE /api/uploads/temp/:publicId` → hourly `node-cron` cleanup of temp images older than 6 hours), image reordering (`PATCH /api/exercises/:id/images/reorder`), progression linking (chain viewer + `progressionNotes`/`regressionNotes` text fields), ExerciseLayer system (dynamic layers with explicit `isFinisher` boolean toggle on last layer — no automatic finisher assignment, instructors opt-in intentionally), DropdownCategory/DropdownOption system (seeded categories: exercise metadata keys **plus** `class_type` / `class_style` for upcoming class plans; instructor-scoped custom options), extended exercise fields: orientation, directionFaced, movementType, springs, machineSetup, transitionCues, cueing (all `String?`); equipment (`String[]` multiselect checkboxes + custom "Add" input; "None" clears others and **disables** all other equipment checkboxes plus custom add while selected), spinalMovement (`String[]` multiselect checkboxes; "None" clears others and **disables** all other options while selected), chainType (`String[]` multiselect checkboxes, max 2, "Both" mutual exclusivity + tooltips from `chain-type-tooltips.ts`), jointLoading (`String[]` multiselect checkboxes); progressionNotes, regressionNotes (`String?`); Fancybox lightbox for full-size image preview on detail page, react-dropzone with drag-to-sort in exercise form. **Forms**: [`exercise-form-multistep`](client/src/components/exercises/exercise-form-multistep.tsx) is the **primary** library create/edit form (5-step wizard); [`exercise-form`](client/src/components/exercises/exercise-form.tsx) is the single-page fallback for class-plan embed. Both use **React Hook Form** + **`zodResolver`** with [`exercise-form-schema.ts`](client/src/lib/validation/exercise-form-schema.ts) (`useFieldArray` for layers, `useWatch` for multiselects and labels, `Controller` for selects and bullet fields). Layer **remove** control: shown only when `index > 0 && layerFields.length > 1` — Layer 1 never has a remove button; schema requires at least one layer. Progression `Select` is **commented out** in both forms (change via `exerciseApi.setProgression` or re-enable the documented `Controller` block). **Long-text authoring**: [`bullet-textarea`](client/src/components/exercises/bullet-textarea.tsx) — **Enter** inserts `\n• `, **Shift+Enter** soft newline, **Add •** only at line start when the line does not already start with `• `; optional `label` + `toolbarEndSlot` keep label and actions on one row; `toolbarEndSlot` renders in **both** `bulletsEnabled` and plain (`bulletsEnabled={false}`) modes so layer remove buttons always appear; **every** layer row uses bullets (not only Layer 1). **Detail display**: [`exercise-pre-text`](client/src/components/exercises/exercise-pre-text.tsx) on [`/exercises/[id]`](client/src/app/(dashboard)/exercises/[id]/page.tsx) for description, starting position, layers, cueing, notes, etc. shadcn [`Textarea`](client/src/components/ui/textarea.tsx) uses `forwardRef` for caret sync.
 - **Seed**: [server/prisma/seed.ts](server/prisma/seed.ts) seeds default platform settings, promotes first user to ADMIN, and initializes **dropdown categories** with global default options: exercise-oriented keys (`orientation`, `direction_faced`, `movement_type`, `equipment`, `machine_setup`, `spinal_movement`, `chain_type`, `joint_loading`) **plus** `class_type` and `class_style` (for Phase 2 class plans). Run via `npm run seed --prefix server`.
 - **Key dependencies**: Server — `express`, `better-auth`, `prisma`, `cloudinary`, `multer`, `node-cron`, `zod`, `nodemailer`. Client — `next`, `react`, `better-auth`, `react-hook-form`, `@hookform/resolvers`, `zod` (client-side form validation, aligned with server Zod 4), `react-dropzone`, `@fancyapps/ui`, `sonner`, `shadcn`, `lucide-react`.
-- **Partial schema / not built yet**: **`Class`** exists in Prisma with `ClassType` / scheduling-related enums, but **calendar, `ClassInstance`, scheduling APIs, and quick-schedule (Flow 2)** are not implemented. **Roster & notes (Phases 4–5)**: `Client`, `Enrollment`, `Attendance`, `SessionNote`, `SessionNoteExercise` models are **not yet** in schema. **Class planning (Phase 2) — implemented**: `ClassPlanFolder`, `ClassPlanTemplate` (metadata fields + `folderId` + `tags`), `PlanSection`, `PlanSectionExercise`, `Exercise.savedToLibrary`, matching **`/api/class-plans`** + **`/api/class-plan-folders`** modules and Next.js **`/class-plans`** UI (filters + paginated list + detail builder + exercise picker); **`PATCH /api/exercises/:id/save-to-library`** for promoting embedded exercises.
+- **Partial schema / not built yet**: **Roster & notes (Phases 4–5)**: `Client`, `Enrollment`, `Attendance`, `SessionNote`, `SessionNoteExercise` models are **not yet** in schema — `ClassInstance` → `Attendance[]` / `SessionNote[]` relations deferred until those phases. **Class planning (Phase 2) — implemented**: `ClassPlanFolder`, `ClassPlanTemplate` (metadata fields + `folderId` + `tags`), `PlanSection`, `PlanSectionExercise`, `Exercise.savedToLibrary`, matching **`/api/class-plans`** + **`/api/class-plan-folders`** modules and Next.js **`/class-plans`** UI (filters + paginated list + detail builder + exercise picker); **`PATCH /api/exercises/:id/save-to-library`** for promoting embedded exercises. **Scheduling (Phase 3 — in progress, May 2026)**: **`Class`** + **`ClassInstance`** models migrated; **`server/src/modules/scheduling/`** (`/api/classes`, `/api/class-instances`, `/api/quick-schedule`); calendar **`/calendar`**, **`/week-overview`**, quick-schedule dialog (class plans + calendar), create-class dialog, instance drawer with partial plan editing. **Outstanding vs plan**: instance plan UI parity with template planner (3.3b — drag-and-drop, add-exercise two-tab dialog, template badge copy, reset-to-template), **Edit class dialog** for series-level edits, enrolled-clients UI (Phase 4).
 - **Docs**: [project-scop.md](project-scop.md) defines the full MVP scope. [HYBRID_IMAGE_UPLOAD.md](HYBRID_IMAGE_UPLOAD.md) documents the image upload architecture.
 
 ---
@@ -430,52 +430,28 @@ Reusable plan structures with folders, sections, and exercise sequencing — con
 
 ## Phase 3 -- Calendar and Class Scheduling
 
-*(PENDING)*
+*(COMPLETE — May 2026; drag-and-drop reorder deferred post-MVP)*
 
 Scheduling engine for one-off and recurring classes, plus the calendar UI. Two confirmed flows from client.
 
-> **Status**: `Class` model with `ClassType` and `InstanceStatus` enums exist in schema but relations are incomplete. `ClassInstance` model (with confirmed new fields), API routes, services, and UI are **not yet built**.
+> **Legend:** ✓ = implemented · *(blank)* = not yet built / post-MVP  
+> **Handoff log:** [`docs/PHASE_3_IMPLEMENTATION_SUMMARY.md`](docs/PHASE_3_IMPLEMENTATION_SUMMARY.md)
 
-- **3.1 -- Prisma schema: ClassInstance + update Class**
-  - `ClassInstance`: id, classId, date, time (`DateTime @db.Timestamptz()`), status (SCHEDULED/COMPLETED/CANCELLED), instructorId, templateId (`String?` — reference only, not live sync), isCustomised (`Boolean @default(false)`), classType (`String?` — denormalized from template), classStyle (`String?` — denormalized from template), rating (`Int?` — NOT MVP scaffold), reflectionNotes (`String?` — NOT MVP scaffold), reviewedAt (`DateTime?` — NOT MVP scaffold), createdAt, deletedAt
-  - Wire all relations: `Class` → `ClassInstance[]`, `ClassInstance` → `PlanSection[]`, `ClassInstance` → `Attendance[]`, `ClassInstance` → `SessionNote[]`
-  - Add `ClassInstance[]` back-relation to `Instructor`
-  - Migrate
-- **3.2 -- Class scheduling API**
-  - `POST /api/classes` — create one-off or recurring; if recurring, auto-generate `ClassInstance` rows from recurrenceRule
-  - `GET /api/classes`, `GET /api/classes/:id`
-  - `PATCH /api/classes/:id` — update series
-  - `PATCH /api/class-instances/:id` — update single instance; set `isCustomised: true` when plan is edited
-  - `DELETE /api/classes/:id` — soft-delete series
-  - `DELETE /api/class-instances/:id` — soft-delete single instance
-  - `POST /api/class-instances/:id/assign-template` — copy template into instance (copy-on-use):
-    1. Fetch PlanSections where templateId = given id
-    2. For each: create new PlanSection with classInstanceId = instance, templateId = null
-    3. For each PlanSectionExercise: create new row pointing to new section
-    4. Set ClassInstance.isCustomised = false (fresh copy, not yet customised)
-    5. All in single Prisma transaction
-  - `POST /api/quick-schedule` — Flow 2: create + schedule in one step:
-    - Body: `{ title, date, time, type, durationMinutes, templateId? }`
-    - Single transaction: create Class → create ClassInstance → copy sections if templateId
-- **3.3 -- Template copy-on-use logic**
-  - `syncWithTemplate: false` always for MVP — copy-on-use is the only mode
-  - Editing a ClassInstance's plan sections → set `isCustomised: true`
-  - Original template always stays untouched
-  - `templateId` on ClassInstance = audit reference only
-- **3.4 -- Calendar UI**
-  - `/calendar` page: weekly view (primary, per prototype) + monthly toggle
-  - Calendar is a **visual overview** — instructors see what they are teaching across the week at a glance
-  - Color-coded by class type (GROUP vs PRIVATE)
-  - Click time slot → quick-schedule dialog (Flow 2 — secondary entry point from Calendar):
-    - Instructor picks: title, type, duration, optional template
-    - Submit → `POST /api/quick-schedule` (same endpoint as Class Plans "Schedule" button)
-  - Click existing class instance → detail drawer (view plan, edit plan, mark complete, view enrolled clients)
-  - Attach / swap plan on an existing instance: template picker inside instance detail drawer → `POST /api/class-instances/:id/assign-template`
-  - `/week-overview` — simpler week list view (per prototype sidebar item)
-    > **Note**: Flow 2 (quick-schedule) is available from BOTH the Class Plans page (primary — "Schedule" button on template card) AND the Calendar (secondary — click a time slot). Both call the same `POST /api/quick-schedule` endpoint. The Class Plans page is Alexa's primary entry point for quick scheduling — confirmed in client reply.
-- **3.5 -- Recurring class management UI**
-  - Recurrence form: day selector (Mon/Tue/Wed etc), start date, end date
-  - On edit: "Just this class" vs "All future classes" choice dialog
+- **3.1 -- Prisma schema: ClassInstance + update Class** ✓
+- **3.2 -- Class scheduling API** ✓
+  - List filters: `GET /api/classes` (**type**, **startDate**, **endDate**); `GET /api/class-instances` (**status**, **classId**)
+  - `DELETE /api/classes/:id` soft-deletes **future** instances only; past COMPLETED/CANCELLED preserved
+  - `GET /api/class-instances/:id` includes `template: { id, name }`
+  - `POST /api/quick-schedule` returns full instance detail (UI unchanged — toast + close + refresh)
+- **3.3 / 3.3a -- Copy-on-use logic + instance plan API** ✓
+- **3.3b -- Instance plan editor UI** ✓ *(arrow up/down reorder; DnD post-MVP)*
+  - Section/exercise reorder, rename, add exercise (Library / Create New), remove, reset to template
+  - Badges: **Using [template]** / **Modified — based on [template]**
+- **3.4 -- Calendar UI** ✓ *(enrolled clients placeholder — Phase 4)*
+  - Week/month views, GROUP/PRIVATE colors, **classType · classStyle** on week + week-overview rows
+- **3.5 -- Recurring class management UI** ✓
+  - Create-class recurrence form (template picker on create — not shipped; optional `templateId` via API only)
+  - Edit-scope dialog (this vs all future) + **Edit class series dialog** (`edit-class-dialog.tsx`)
 
 ---
 
@@ -596,7 +572,7 @@ Final quality pass and starter content.
 flowchart TD
     P0["✅ Phase 0: Foundation"] --> P1["✅ Phase 1: Exercise Library"]
     P1 --> P2["🔄 Phase 2: Class Plan Templates (NOW)"]
-    P2 --> P3["Phase 3: Calendar + Scheduling"]
+    P2 --> P3["🔄 Phase 3: Calendar + Scheduling (NOW)"]
     P2 --> P4["Phase 4: Client Management"]
     P4 --> P3
     P3 --> P5["Phase 5: Session Notes"]

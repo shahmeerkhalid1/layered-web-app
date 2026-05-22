@@ -1,12 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowDown, ArrowUp, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
-import type { ClassInstanceDetail, ClassPlanTemplate, PlanSectionDetail } from "@/lib/types";
+import type { ClassInstanceDetail, ClassPlanTemplate, PlanSectionDetail, PlanSectionExerciseRow } from "@/lib/types";
 import { classPlanApi } from "@/services/class-plan-api";
 import { schedulingApi } from "@/services/scheduling-api";
+import { ExercisePickerDialog } from "@/components/class-plans/exercise-picker-dialog";
 import { InstanceExerciseRow } from "@/components/scheduling/instance-exercise-row";
 import { EditScopeDialog, type EditScope } from "@/components/scheduling/edit-scope-dialog";
+import { EditClassDialog } from "@/components/scheduling/edit-class-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +41,41 @@ function sortSections(sections: PlanSectionDetail[]): PlanSectionDetail[] {
   });
 }
 
+function sortSectionExercises(rows: PlanSectionExerciseRow[]): PlanSectionExerciseRow[] {
+  return [...rows].sort((a, b) => {
+    if (a.order !== b.order) return a.order - b.order;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+const WEEKDAY_LABELS: Record<number, string> = {
+  1: "Mon",
+  2: "Tue",
+  3: "Wed",
+  4: "Thu",
+  5: "Fri",
+  6: "Sat",
+  7: "Sun",
+};
+
+function formatRecurrenceSummary(cls: ClassInstanceDetail["class"]): string | null {
+  if (!cls.isRecurring) return null;
+  const rule = cls.recurrenceRule as { daysOfWeek?: number[] } | null | undefined;
+  const days = (rule?.daysOfWeek ?? [])
+    .slice()
+    .sort((a, b) => a - b)
+    .map((d) => WEEKDAY_LABELS[d] ?? String(d))
+    .join(", ");
+  const until = cls.endDate
+    ? new Date(cls.endDate).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "—";
+  return `Repeats: ${days || "—"} · until ${until}`;
+}
+
 export interface ClassInstanceDrawerProps {
   instanceId: string | null;
   open: boolean;
@@ -63,6 +101,12 @@ export function ClassInstanceDrawer({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [addSectionOpen, setAddSectionOpen] = useState(false);
   const [newSectionName, setNewSectionName] = useState("");
+  const [editSectionOpen, setEditSectionOpen] = useState(false);
+  const [editingSection, setEditingSection] = useState<PlanSectionDetail | null>(null);
+  const [editSectionName, setEditSectionName] = useState("");
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [pickerSectionId, setPickerSectionId] = useState<string | null>(null);
+  const [editClassOpen, setEditClassOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [scopeOpen, setScopeOpen] = useState(false);
   const pendingRef = useRef<{ anchorYmd: string; newIso: string; newDateStr: string } | null>(null);
@@ -169,6 +213,103 @@ export function ClassInstanceDrawer({
     }
   };
 
+  const submitEditSection = async () => {
+    if (!instanceId || !editingSection) return;
+    const name = editSectionName.trim();
+    if (!name) {
+      toast.error("Section name is required");
+      return;
+    }
+    setPending(true);
+    try {
+      await schedulingApi.updateInstanceSection(instanceId, editingSection.id, { name });
+      toast.success("Section renamed");
+      setEditSectionOpen(false);
+      setEditingSection(null);
+      await refresh();
+    } catch {
+      toast.error("Failed to rename section");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const moveSection = async (sectionId: string, direction: "up" | "down") => {
+    if (!detail || !instanceId) return;
+    const sorted = sortSections(detail.sections ?? []);
+    const idx = sorted.findIndex((s) => s.id === sectionId);
+    if (idx < 0) return;
+    const swapWith = direction === "up" ? idx - 1 : idx + 1;
+    if (swapWith < 0 || swapWith >= sorted.length) return;
+    const curr = sorted[idx];
+    const other = sorted[swapWith];
+    setPending(true);
+    try {
+      await schedulingApi.updateInstanceSection(instanceId, curr.id, { order: other.order });
+      await schedulingApi.updateInstanceSection(instanceId, other.id, { order: curr.order });
+      await refresh();
+    } catch {
+      toast.error("Could not reorder sections");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const moveExerciseInSection = async (
+    sectionId: string,
+    exerciseRowId: string,
+    direction: "up" | "down"
+  ) => {
+    if (!detail || !instanceId) return;
+    const section = (detail.sections ?? []).find((s) => s.id === sectionId);
+    if (!section) return;
+    const sorted = sortSectionExercises(section.exercises ?? []);
+    const idx = sorted.findIndex((r) => r.id === exerciseRowId);
+    if (idx < 0) return;
+    const swapWith = direction === "up" ? idx - 1 : idx + 1;
+    if (swapWith < 0 || swapWith >= sorted.length) return;
+    const curr = sorted[idx];
+    const other = sorted[swapWith];
+    setPending(true);
+    try {
+      await schedulingApi.updateInstanceSectionExercise(instanceId, sectionId, curr.id, {
+        order: other.order,
+      });
+      await schedulingApi.updateInstanceSectionExercise(instanceId, sectionId, other.id, {
+        order: curr.order,
+      });
+      await refresh();
+    } catch {
+      toast.error("Could not reorder exercises");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const resetToTemplate = async () => {
+    if (!instanceId || !detail?.templateId) return;
+    setPending(true);
+    try {
+      await schedulingApi.assignTemplate(instanceId, detail.templateId);
+      toast.success("Plan reset to template");
+      setResetConfirmOpen(false);
+      await refresh();
+    } catch {
+      toast.error("Could not reset to template");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const templateBadge = useMemo(() => {
+    if (!detail?.template) return null;
+    if (detail.isCustomised) {
+      return `Modified`;
+      // return `Modified — based on ${detail.template.name}`;
+    }
+    return `Using ${detail.template.name}`;
+  }, [detail?.template, detail?.isCustomised]);
+
   const saveReschedule = async () => {
     if (!detail || !instanceId) return;
     const newIso = localDateAndTimeToUtcIso(reschedule.date, reschedule.time);
@@ -247,6 +388,78 @@ export function ClassInstanceDrawer({
 
   return (
     <>
+      <EditClassDialog
+        classId={detail?.class.id ?? null}
+        open={editClassOpen}
+        onOpenChange={setEditClassOpen}
+        onSuccess={() => void refresh()}
+      />
+
+      <Dialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Reset to template?</DialogTitle>
+            <DialogDescription>
+              This replaces the current plan with a fresh copy from the template. Your custom edits
+              will be lost.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-full"
+              onClick={() => setResetConfirmOpen(false)}
+              disabled={pending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="rounded-full"
+              disabled={pending}
+              onClick={() => void resetToTemplate()}
+            >
+              {pending ? "Resetting…" : "Reset plan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editSectionOpen} onOpenChange={setEditSectionOpen}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Rename section</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={editSectionName}
+            onChange={(e) => setEditSectionName(e.target.value)}
+            placeholder="Section name"
+          />
+          <DialogFooter>
+            <Button variant="outline" className="rounded-full" onClick={() => setEditSectionOpen(false)}>
+              Cancel
+            </Button>
+            <Button className="rounded-full" disabled={pending} onClick={() => void submitEditSection()}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {instanceId && (
+        <ExercisePickerDialog
+          open={pickerSectionId !== null}
+          onOpenChange={(open) => {
+            if (!open) setPickerSectionId(null);
+          }}
+          mode="instance"
+          instanceId={instanceId}
+          sectionId={pickerSectionId ?? ""}
+          onExerciseAdded={() => void refresh()}
+        />
+      )}
+
       <EditScopeDialog open={scopeOpen} onOpenChange={setScopeOpen} onChoose={(s) => void applyScope(s)} />
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
         <DialogContent className="max-w-[calc(100%-2rem)] rounded-3xl sm:max-w-3xl">
@@ -381,7 +594,7 @@ export function ClassInstanceDrawer({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="right"
-          className="gap-0 overflow-y-auto p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-3xl"
+          className="gap-0 overflow-y-auto p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-4xl"
         >
           <SheetHeader className="border-b border-border p-4 text-left">
             <SheetTitle className="text-lg">
@@ -404,15 +617,27 @@ export function ClassInstanceDrawer({
                   {detail.class.type}
                 </Badge>
                 <Badge variant="outline">{detail.status}</Badge>
-                {detail.isCustomised && (
-                  <Badge variant="outline" className="border-amber-500/50 text-amber-700 dark:text-amber-400">
-                    Customised
+                {templateBadge && (
+                  <Badge
+                    variant="outline"
+                    className={
+                      detail.isCustomised
+                        ? "border-amber-500/50 text-amber-700 dark:text-amber-400"
+                        : undefined
+                    }
+                  >
+                    {templateBadge}
                   </Badge>
                 )}
                 <Badge variant="outline" className="tabular-nums">
                   {detail.sections?.length ?? 0} sections
                 </Badge>
               </div>
+            )}
+            {detail?.class.isRecurring && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {formatRecurrenceSummary(detail.class)}
+              </p>
             )}
           </SheetHeader>
 
@@ -470,6 +695,30 @@ export function ClassInstanceDrawer({
                     >
                       Add section
                     </Button>
+                    {detail.class.isRecurring && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full"
+                        disabled={pending}
+                        onClick={() => setEditClassOpen(true)}
+                      >
+                        Edit series…
+                      </Button>
+                    )}
+                    {detail.templateId && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full"
+                        disabled={pending}
+                        onClick={() => setResetConfirmOpen(true)}
+                      >
+                        Reset to template
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       size="sm"
@@ -553,48 +802,118 @@ export function ClassInstanceDrawer({
                     </p>
                   ) : (
                     <ul className="mt-3 space-y-4">
-                      {sortSections(detail.sections ?? []).map((section, idx) => (
-                        <li key={section.id} className="rounded-2xl border border-border bg-card p-3 shadow-sm">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-xs font-medium text-muted-foreground">Section {idx + 1}</p>
+                      {sortSections(detail.sections ?? []).map((section, idx) => {
+                        const exSorted = sortSectionExercises(section.exercises ?? []);
+                        const sortedAll = sortSections(detail.sections ?? []);
+                        return (
+                          <li key={section.id} className="rounded-2xl border border-border bg-card p-3 shadow-sm">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-medium text-muted-foreground">
+                                  Section {idx + 1}
+                                </p>
+                                <p className="mt-1 font-semibold text-foreground">{section.name}</p>
+                              </div>
+                              <div
+                                className="flex shrink-0 flex-wrap items-center gap-0.5"
+                                role="toolbar"
+                                aria-label={`Actions for ${section.name}`}
+                              >
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  className="text-muted-foreground hover:text-foreground"
+                                  disabled={pending || idx === 0}
+                                  aria-label="Move section up"
+                                  onClick={() => void moveSection(section.id, "up")}
+                                >
+                                  <ArrowUp className="size-4" aria-hidden />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  className="text-muted-foreground hover:text-foreground"
+                                  disabled={pending || idx === sortedAll.length - 1}
+                                  aria-label="Move section down"
+                                  onClick={() => void moveSection(section.id, "down")}
+                                >
+                                  <ArrowDown className="size-4" aria-hidden />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  className="text-muted-foreground hover:text-foreground"
+                                  disabled={pending}
+                                  aria-label="Rename section"
+                                  onClick={() => {
+                                    setEditingSection(section);
+                                    setEditSectionName(section.name);
+                                    setEditSectionOpen(true);
+                                  }}
+                                >
+                                  <Pencil className="size-4" aria-hidden />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 text-destructive hover:text-destructive"
+                                  disabled={pending}
+                                  onClick={async () => {
+                                    if (!instanceId) return;
+                                    setPending(true);
+                                    try {
+                                      await schedulingApi.deleteInstanceSection(instanceId, section.id);
+                                      toast.success("Section removed");
+                                      await refresh();
+                                    } catch {
+                                      toast.error("Failed to remove section");
+                                    } finally {
+                                      setPending(false);
+                                    }
+                                  }}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            </div>
+                            <ul className="mt-3 space-y-2">
+                              {exSorted.map((row, exIndex) => (
+                                <InstanceExerciseRow
+                                  key={row.id}
+                                  instanceId={instanceId!}
+                                  sectionId={section.id}
+                                  row={row}
+                                  disabled={pending}
+                                  canMoveUp={exIndex > 0}
+                                  canMoveDown={exIndex < exSorted.length - 1}
+                                  onMoveUp={() =>
+                                    void moveExerciseInSection(section.id, row.id, "up")
+                                  }
+                                  onMoveDown={() =>
+                                    void moveExerciseInSection(section.id, row.id, "down")
+                                  }
+                                  onUpdated={refresh}
+                                />
+                              ))}
+                            </ul>
                             <Button
                               type="button"
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
-                              className="h-7 text-destructive hover:text-destructive"
+                              className="mt-3 rounded-full border-dashed border-border"
                               disabled={pending}
-                              onClick={async () => {
-                                if (!instanceId) return;
-                                setPending(true);
-                                try {
-                                  await schedulingApi.deleteInstanceSection(instanceId, section.id);
-                                  toast.success("Section removed");
-                                  await refresh();
-                                } catch {
-                                  toast.error("Failed to remove section");
-                                } finally {
-                                  setPending(false);
-                                }
-                              }}
+                              onClick={() => setPickerSectionId(section.id)}
                             >
-                              Remove
+                              <Plus className="mr-1 size-4" aria-hidden />
+                              Add exercise
                             </Button>
-                          </div>
-                          <p className="mt-1 font-semibold text-foreground">{section.name}</p>
-                          <ul className="mt-3 space-y-2">
-                            {(section.exercises ?? []).map((row) => (
-                              <InstanceExerciseRow
-                                key={row.id}
-                                instanceId={instanceId!}
-                                sectionId={section.id}
-                                row={row}
-                                disabled={pending}
-                                onUpdated={refresh}
-                              />
-                            ))}
-                          </ul>
-                        </li>
-                      ))}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>

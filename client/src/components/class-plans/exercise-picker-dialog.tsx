@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import type { Exercise } from "@/lib/types";
 import { classPlanApi } from "@/services/class-plan-api";
 import { exerciseApi } from "@/services/exercise-api";
+import { schedulingApi } from "@/services/scheduling-api";
 import { ExerciseForm } from "@/components/exercises/exercise-form";
 import { ExerciseSearch } from "@/components/exercises/exercise-search";
 import { ClassPlanExerciseProgrammingSummary } from "@/components/class-plans/class-plan-exercise-programming-summary";
@@ -19,21 +20,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 
-export interface ExercisePickerDialogProps {
+type ExercisePickerDialogBaseProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  templateId: string;
   sectionId: string;
   onExerciseAdded: () => void | Promise<void>;
-}
+};
 
-export function ExercisePickerDialog({
-  open,
-  onOpenChange,
-  templateId,
-  sectionId,
-  onExerciseAdded,
-}: ExercisePickerDialogProps) {
+export type ExercisePickerDialogProps = ExercisePickerDialogBaseProps &
+  (
+    | { mode: "template"; templateId: string }
+    | { mode: "instance"; instanceId: string }
+  );
+
+export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
+  const { open, onOpenChange, sectionId, onExerciseAdded } = props;
   const [tab, setTab] = useState("library");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -41,6 +42,14 @@ export function ExercisePickerDialog({
   const [loadingLibrary, setLoadingLibrary] = useState(false);
   const [addingId, setAddingId] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
+
+  const addExerciseToSection = async (exerciseId: string) => {
+    if (props.mode === "template") {
+      await classPlanApi.addExerciseToSection(props.templateId, sectionId, { exerciseId });
+    } else {
+      await schedulingApi.addInstanceSectionExercise(props.instanceId, sectionId, { exerciseId });
+    }
+  };
 
   const loadLibrary = useCallback(
     async (signal?: AbortSignal) => {
@@ -88,7 +97,7 @@ export function ExercisePickerDialog({
   const addFromLibrary = async (exerciseId: string) => {
     setAddingId(exerciseId);
     try {
-      await classPlanApi.addExerciseToSection(templateId, sectionId, { exerciseId });
+      await addExerciseToSection(exerciseId);
       toast.success("Exercise added to section");
       onOpenChange(false);
       await onExerciseAdded();
@@ -187,9 +196,7 @@ export function ExercisePickerDialog({
                 onEmbedCancel={() => onOpenChange(false)}
                 onEmbedCreateSuccess={async (created: Exercise) => {
                   try {
-                    await classPlanApi.addExerciseToSection(templateId, sectionId, {
-                      exerciseId: created.id,
-                    });
+                    await addExerciseToSection(created.id);
                     toast.success("Exercise added to section");
                     onOpenChange(false);
                     await onExerciseAdded();

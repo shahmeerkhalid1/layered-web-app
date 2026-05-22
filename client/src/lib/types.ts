@@ -231,6 +231,7 @@ export interface ClassInstanceDetail {
   createdAt: string;
   deletedAt?: string | null;
   class: ScheduledClass;
+  template?: { id: string; name: string } | null;
   sections: PlanSectionDetail[];
 }
 
@@ -243,7 +244,7 @@ export interface ClassListResponse {
 
 export interface QuickScheduleResponse {
   class: ScheduledClass;
-  instance: ClassInstanceSummary & { class: ScheduledClass };
+  instance: ClassInstanceDetail;
 }
 
 export interface RecurrenceRuleInput {

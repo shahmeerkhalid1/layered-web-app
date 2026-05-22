@@ -244,7 +244,7 @@ export function SectionExerciseFields({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
       <div>
         <Label htmlFor={`reps-${row.id}`} className="mb-1 text-[10px] font-medium text-muted-foreground">
           Reps
@@ -263,7 +263,7 @@ export function SectionExerciseFields({
           <p className="mt-1 text-xs text-destructive">{errors.duration}</p>
         )}
       </div>
-      <div className="sm:col-span-1">
+      <div className="sm:col-span-2">
         <Label htmlFor={`notes-${row.id}`} className="mb-1 text-[10px] font-medium text-muted-foreground">
           Notes
         </Label>

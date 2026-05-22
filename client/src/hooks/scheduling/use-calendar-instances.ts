@@ -13,7 +13,7 @@ export function useCalendarInstances(start: string, end: string) {
     setLoading(true);
     setError(null);
     try {
-      const rows = await schedulingApi.listClassInstances(start, end, signal);
+      const rows = await schedulingApi.listClassInstances(start, end, undefined, signal);
       setData(rows);
     } catch {
       if (signal?.aborted) return;

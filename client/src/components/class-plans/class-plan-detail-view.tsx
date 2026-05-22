@@ -671,6 +671,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
         onOpenChange={(open) => {
           if (!open) setPickerSectionId(null);
         }}
+        mode="template"
         templateId={planId}
         sectionId={pickerSectionId ?? ""}
         onExerciseAdded={() => void refreshAfterMutation()}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { toast } from "sonner";
 import type { PlanSectionExerciseRow } from "@/lib/types";
 import { schedulingApi } from "@/services/scheduling-api";
@@ -15,6 +16,10 @@ interface InstanceExerciseRowProps {
   sectionId: string;
   row: PlanSectionExerciseRow;
   disabled?: boolean;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  onMoveUp: () => void | Promise<void>;
+  onMoveDown: () => void | Promise<void>;
   onUpdated: () => void | Promise<void>;
 }
 
@@ -23,6 +28,10 @@ export function InstanceExerciseRow({
   sectionId,
   row,
   disabled = false,
+  canMoveUp,
+  canMoveDown,
+  onMoveUp,
+  onMoveDown,
   onUpdated,
 }: InstanceExerciseRowProps) {
   const [pending, setPending] = useState(false);
@@ -42,27 +51,55 @@ export function InstanceExerciseRow({
             <p className="font-medium leading-snug text-foreground">{row.exercise.name}</p>
             <ClassPlanExerciseProgrammingSummary exercise={row.exercise} />
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="shrink-0 rounded-full text-destructive hover:text-destructive"
-            disabled={disabled || pending}
-            onClick={async () => {
-              setPending(true);
-              try {
-                await schedulingApi.removeInstanceSectionExercise(instanceId, sectionId, row.id);
-                toast.success("Removed from plan");
-                await onUpdated();
-              } catch {
-                toast.error("Failed to remove");
-              } finally {
-                setPending(false);
-              }
-            }}
+          <div
+            className="flex shrink-0 flex-wrap items-center gap-0.5 self-end sm:self-start"
+            role="toolbar"
+            aria-label={`Actions for ${row.exercise.name}`}
           >
-            Remove
-          </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground hover:text-foreground"
+              disabled={disabled || pending || !canMoveUp}
+              aria-label="Move exercise up"
+              onClick={() => void onMoveUp()}
+            >
+              <ArrowUp className="size-4" aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground hover:text-foreground"
+              disabled={disabled || pending || !canMoveDown}
+              aria-label="Move exercise down"
+              onClick={() => void onMoveDown()}
+            >
+              <ArrowDown className="size-4" aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0 rounded-full text-destructive hover:text-destructive"
+              disabled={disabled || pending}
+              onClick={async () => {
+                setPending(true);
+                try {
+                  await schedulingApi.removeInstanceSectionExercise(instanceId, sectionId, row.id);
+                  toast.success("Removed from plan");
+                  await onUpdated();
+                } catch {
+                  toast.error("Failed to remove");
+                } finally {
+                  setPending(false);
+                }
+              }}
+            >
+              Remove
+            </Button>
+          </div>
         </div>
         <div className="max-w-full">
           <ExercisePlanPreview exercise={row.exercise} previewId={row.id} />

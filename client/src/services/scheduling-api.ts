@@ -22,9 +22,19 @@ export const schedulingApi = {
   quickSchedule: (body: QuickScheduleBody) =>
     api.post<QuickScheduleResponse>("/quick-schedule", body),
 
-  listClassInstances: (start: string, end: string, signal?: AbortSignal) =>
+  listClassInstances: (
+    start: string,
+    end: string,
+    params?: { status?: "SCHEDULED" | "COMPLETED" | "CANCELLED"; classId?: string },
+    signal?: AbortSignal
+  ) =>
     api.get<CalendarClassInstance[]>("/class-instances", {
-      params: { start, end },
+      params: {
+        start,
+        end,
+        ...(params?.status && { status: params.status }),
+        ...(params?.classId && { classId: params.classId }),
+      },
       signal,
     }),
 
@@ -100,12 +110,24 @@ export const schedulingApi = {
       `/class-instances/${encodeURIComponent(instanceId)}/sections/${encodeURIComponent(sectionId)}/exercises/${encodeURIComponent(pseId)}`
     ),
 
-  listClasses: (params?: { page?: number; limit?: number }, signal?: AbortSignal) =>
+  listClasses: (
+    params?: {
+      page?: number;
+      limit?: number;
+      type?: "GROUP" | "PRIVATE";
+      startDate?: string;
+      endDate?: string;
+    },
+    signal?: AbortSignal
+  ) =>
     api.get<ClassListResponse>("/classes", {
       params: params
         ? {
             ...(params.page !== undefined && { page: String(params.page) }),
             ...(params.limit !== undefined && { limit: String(params.limit) }),
+            ...(params.type && { type: params.type }),
+            ...(params.startDate && { startDate: params.startDate }),
+            ...(params.endDate && { endDate: params.endDate }),
           }
         : undefined,
       signal,

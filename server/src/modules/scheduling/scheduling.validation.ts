@@ -7,6 +7,15 @@ export const recurrenceRuleSchema = z.object({
 export const listClassesQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
+  type: z.enum(["GROUP", "PRIVATE"]).optional(),
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  endDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
 });
 
 export const createClassSchema = z
@@ -87,6 +96,8 @@ export const updateClassSchema = z
 export const listClassInstancesQuerySchema = z.object({
   start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  status: z.enum(["SCHEDULED", "COMPLETED", "CANCELLED"]).optional(),
+  classId: z.string().optional(),
 });
 
 export const updateClassInstanceSchema = z
