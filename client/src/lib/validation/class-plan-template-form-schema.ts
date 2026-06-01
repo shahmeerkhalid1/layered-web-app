@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { classPlanDurationMinutesStrSchema, parseDurationMinutesStr } from "@/lib/validation/duration-minutes-form-schema";
 import type { ClassPlanTemplateDetail } from "@/lib/types";
 import type { CreateClassPlanBody, UpdateClassPlanBody } from "@/services/class-plan-api";
 
@@ -15,13 +16,7 @@ export const classPlanTemplateFormSchema = z.object({
     .refine((s) => s.trim().length > 0, "Title is required"),
   classType: z.string(),
   classStyle: z.string(),
-  durationMinutesStr: z
-    .string()
-    .trim()
-    .min(1, "Duration is required")
-    .regex(/^\d+$/, "Enter a whole number of minutes")
-    .refine((s) => parseInt(s, 10) >= 1, "Duration must be at least 1 minute")
-    .refine((s) => parseInt(s, 10) <= 999, "Duration must be at most 999 minutes"),
+  durationMinutesStr: classPlanDurationMinutesStrSchema,
   folderId: z.string(),
   tags: z
     .array(z.string().max(MAX_TAG_LEN, `Each tag must be at most ${MAX_TAG_LEN} characters`))
@@ -65,7 +60,7 @@ export function buildClassPlanTemplateEditDefaults(
 
 export function toCreateClassPlanBody(values: ClassPlanTemplateFormValues): CreateClassPlanBody {
   const name = values.name.trim();
-  const durationMinutes = parseInt(values.durationMinutesStr, 10);
+  const durationMinutes = parseDurationMinutesStr(values.durationMinutesStr);
   return {
     name,
     durationMinutes,
@@ -78,7 +73,7 @@ export function toCreateClassPlanBody(values: ClassPlanTemplateFormValues): Crea
 
 export function toUpdateClassPlanBody(values: ClassPlanTemplateFormValues): UpdateClassPlanBody {
   const name = values.name.trim();
-  const durationMinutes = parseInt(values.durationMinutesStr, 10);
+  const durationMinutes = parseDurationMinutesStr(values.durationMinutesStr);
   return {
     name,
     durationMinutes,

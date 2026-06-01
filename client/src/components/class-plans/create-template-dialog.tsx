@@ -301,7 +301,6 @@ export function CreateTemplateDialog({
                 id="plan-duration"
                 type="number"
                 min={1}
-                max={999}
                 step={1}
                 className={cn(
                   "h-11 rounded-2xl border-input bg-background/70 shadow-none focus-visible:ring-ring/35",

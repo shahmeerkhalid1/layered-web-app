@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_DURATION_MINUTES } from "../../lib/duration-limits";
 
 export const recurrenceRuleSchema = z.object({
   daysOfWeek: z.array(z.number().int().min(1).max(7)).min(1),
@@ -27,7 +28,7 @@ export const createClassSchema = z
     startDate: z.coerce.date(),
     endDate: z.coerce.date().optional().nullable(),
     time: z.coerce.date(),
-    durationMinutes: z.number().int().positive().max(24 * 60).default(60),
+    durationMinutes: z.number().int().positive().max(MAX_DURATION_MINUTES).default(60),
     templateId: z.string().optional().nullable(),
   })
   .superRefine((data, ctx) => {
@@ -65,7 +66,7 @@ export const updateClassSchema = z
     startDate: z.coerce.date().optional(),
     endDate: z.coerce.date().optional().nullable(),
     time: z.coerce.date().optional(),
-    durationMinutes: z.number().int().positive().max(24 * 60).optional(),
+    durationMinutes: z.number().int().positive().max(MAX_DURATION_MINUTES).optional(),
     templateId: z.string().optional().nullable(),
     regenerateFutureInstancesFrom: z
       .string()
@@ -119,7 +120,7 @@ export const quickScheduleSchema = z
   .object({
     title: z.string().max(200).optional(),
     type: z.enum(["GROUP", "PRIVATE"]).default("GROUP"),
-    durationMinutes: z.number().int().positive().max(24 * 60).default(60),
+    durationMinutes: z.number().int().positive().max(MAX_DURATION_MINUTES).default(60),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     time: z.string().min(1),
     templateId: z.string().optional(),

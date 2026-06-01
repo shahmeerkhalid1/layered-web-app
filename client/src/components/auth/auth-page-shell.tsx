@@ -44,9 +44,9 @@ export function AuthPageShell({ children, className }: AuthPageShellProps) {
               <Image
                 src="/layered-logo.png"
                 alt="Layered."
-                width={140}
-                height={48}
-                className="h-auto w-[140px]"
+                width={607}
+                height={115}
+                style={{ width: 140, height: "auto" }}
                 priority
               />
               <p className="mt-6 max-w-md text-lg leading-relaxed text-muted-foreground">
@@ -87,9 +87,9 @@ export function AuthPageShell({ children, className }: AuthPageShellProps) {
             <Image
               src="/layered-logo.png"
               alt="Layered."
-              width={120}
-              height={40}
-              className="h-auto w-[120px]"
+              width={607}
+              height={115}
+              style={{ width: 120, height: "auto" }}
               priority
             />
           </div>

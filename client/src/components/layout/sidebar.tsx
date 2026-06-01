@@ -42,10 +42,10 @@ type MainNavItem = {
 
 const navItems: MainNavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/week-overview", label: "Week Overview", icon: CalendarDays },
-  { href: "/exercises", label: "Exercises", icon: Dumbbell },
+  { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/class-plans", label: "Class Plans", icon: FileText },
+  { href: "/exercises", label: "Exercises Library", icon: Dumbbell },
   // { href: "/clients", label: "Clients", icon: Users },
 ];
 
@@ -88,14 +88,23 @@ export function Sidebar() {
               Layered.
             </h1>
           </div> */}
-          <Image src="/layered-logo.png" alt="Layered. Logo" className="p-0" width={120} height={100} />
+          {/* <Image src="/layered-logo.png" alt="Layered. Logo" className="p-0" width={120} height={100} /> */}
+          <Image
+            src="/layered-logo.png"
+            alt="Layered. Logo"
+            width={607}
+            height={115}
+            style={{ width: 120, height: "auto" }}
+          />
         </div>
       </div>
       <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
         {!isAdmin &&
           navItems.map((item) => {
             const Icon = item.icon;
-            const active = item.isActive ? item.isActive(pathname) : defaultIsActive(item.href);
+            const active = item.isActive
+              ? item.isActive(pathname)
+              : defaultIsActive(item.href);
             return (
               <Link
                 key={`main-${item.label}`}
@@ -105,7 +114,7 @@ export function Sidebar() {
                   "group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all",
                   active
                     ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-inner"
-                    : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 )}
               >
                 <Icon
@@ -113,7 +122,7 @@ export function Sidebar() {
                     "size-4 transition-colors",
                     active
                       ? "text-sidebar-primary-foreground"
-                      : "text-muted-foreground group-hover:text-sidebar-accent-foreground"
+                      : "text-muted-foreground group-hover:text-sidebar-accent-foreground",
                   )}
                 />
                 {item.label}
@@ -139,7 +148,7 @@ export function Sidebar() {
                     "group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all",
                     active
                       ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
-                      : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                   )}
                 >
                   <Icon
@@ -147,7 +156,7 @@ export function Sidebar() {
                       "size-4 transition-colors",
                       active
                         ? "text-sidebar-primary-foreground"
-                        : "text-muted-foreground group-hover:text-sidebar-accent-foreground"
+                        : "text-muted-foreground group-hover:text-sidebar-accent-foreground",
                     )}
                   />
                   {item.label}
@@ -163,7 +172,7 @@ export function Sidebar() {
           <DropdownMenuTrigger
             className={cn(
               buttonVariants({ variant: "ghost" }),
-              "h-auto w-full justify-start gap-3 rounded-2xl px-3 py-2.5 text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              "h-auto w-full justify-start gap-3 rounded-2xl px-3 py-2.5 text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
             )}
           >
             <Avatar className="size-9 shrink-0">
@@ -172,8 +181,12 @@ export function Sidebar() {
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1 text-left">
-              <p className="truncate text-sm font-medium">{instructor?.name ?? "Account"}</p>
-              <p className="truncate text-xs text-muted-foreground">{instructor?.email}</p>
+              <p className="truncate text-sm font-medium">
+                {instructor?.name ?? "Account"}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {instructor?.email}
+              </p>
             </div>
             <ChevronsUpDown className="size-4 shrink-0 opacity-60" />
           </DropdownMenuTrigger>
@@ -190,7 +203,9 @@ export function Sidebar() {
                 <span className="truncate text-sm font-semibold text-popover-foreground">
                   {instructor?.name}
                 </span>
-                <span className="truncate text-xs text-muted-foreground">{instructor?.email}</span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {instructor?.email}
+                </span>
               </div>
             </div>
             <DropdownMenuSeparator />
@@ -235,7 +250,7 @@ export function Sidebar() {
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-40 w-72 border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-2xl transition-transform md:hidden",
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         {navContent}

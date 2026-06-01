@@ -8,8 +8,14 @@ import type { ScheduledClass } from "@/lib/types";
 import { schedulingApi } from "@/services/scheduling-api";
 import {
   createClassFormSchema,
+  RECURRING_DAYS_OF_WEEK_MESSAGE,
+  RECURRING_END_DATE_MESSAGE,
   type CreateClassFormValues,
 } from "@/lib/validation/create-class-form-schema";
+import {
+  parseDurationMinutesStr,
+  SCHEDULING_MAX_DURATION_MINUTES,
+} from "@/lib/validation/duration-minutes-form-schema";
 import { localDateAndTimeToUtcIso, localYmdToUtcIsoMidday } from "@/lib/datetime-local";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,6 +73,7 @@ interface EditClassDialogProps {
 
 export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: EditClassDialogProps) {
   const [daySet, setDaySet] = useState<Set<number>>(new Set());
+  const [daysOfWeekError, setDaysOfWeekError] = useState<string | null>(null);
   const [loadingClass, setLoadingClass] = useState(false);
   const [confirmRegenOpen, setConfirmRegenOpen] = useState(false);
   const [originalClass, setOriginalClass] = useState<ScheduledClass | null>(null);
@@ -78,20 +85,27 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
     handleSubmit,
     reset,
     setValue,
+    getValues,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<CreateClassFormValues>({
     resolver: zodResolver(createClassFormSchema),
     defaultValues: {
       title: "",
       type: "GROUP",
-      durationMinutes: 60,
+      durationMinutesStr: "60",
       templateId: "",
       isRecurring: false,
       startDate: "",
       endDate: "",
       clockTime: "",
     },
+    shouldUnregister: false,
+    criteriaMode: "all",
   });
+
+  const isRecurringField = register("isRecurring");
 
   const isRecurring = useWatch({ control, name: "isRecurring", defaultValue: false });
   const classType = useWatch({ control, name: "type", defaultValue: "GROUP" });
@@ -110,10 +124,11 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
           const rule = cls.recurrenceRule as { daysOfWeek?: number[] } | null | undefined;
           const days = rule?.daysOfWeek ?? [];
           setDaySet(new Set(days));
+          setDaysOfWeekError(null);
           reset({
             title: cls.title,
             type: cls.type,
-            durationMinutes: cls.durationMinutes,
+            durationMinutesStr: String(cls.durationMinutes ?? 60),
             templateId: cls.templateId ?? "",
             isRecurring: cls.isRecurring,
             startDate: ymdFromIso(cls.startDate),
@@ -132,13 +147,41 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
       cancelled = true;
       window.clearTimeout(t);
     };
-  }, [open, classId, reset]);
+  }, [open, classId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const validateRecurringExtras = (): boolean => {
+    const values = getValues();
+    if (!values.isRecurring) {
+      setDaysOfWeekError(null);
+      return true;
+    }
+
+    let valid = true;
+
+    if (!values.endDate.trim()) {
+      setError("endDate", {
+        type: "manual",
+        message: RECURRING_END_DATE_MESSAGE,
+      });
+      valid = false;
+    }
+
+    if (daySet.size === 0) {
+      setDaysOfWeekError(RECURRING_DAYS_OF_WEEK_MESSAGE);
+      valid = false;
+    } else {
+      setDaysOfWeekError(null);
+    }
+
+    return valid;
+  };
 
   const toggleDay = (v: number) => {
     setDaySet((prev) => {
       const next = new Set(prev);
       if (next.has(v)) next.delete(v);
       else next.add(v);
+      if (next.size > 0) setDaysOfWeekError(null);
       return next;
     });
   };
@@ -181,7 +224,7 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
       startDate: startIso,
       endDate: endIso,
       time: timeIso,
-      durationMinutes: values.durationMinutes,
+      durationMinutes: parseDurationMinutesStr(values.durationMinutesStr),
     };
 
     if (originalClass && needsRegeneration(values, originalClass)) {
@@ -197,8 +240,7 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
   };
 
   const onSubmit = async (values: CreateClassFormValues) => {
-    if (values.isRecurring && daySet.size === 0) {
-      toast.error("Select at least one weekday for recurring classes");
+    if (values.isRecurring && !validateRecurringExtras()) {
       return;
     }
 
@@ -243,11 +285,17 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
           {loadingClass ? (
             <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
           ) : (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form
+              onSubmit={handleSubmit(onSubmit, validateRecurringExtras)}
+              className="space-y-4"
+            >
               <div className="space-y-2">
-                <Label htmlFor="ec-title">Title</Label>
+                <Label htmlFor="ec-title">
+                  Title <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="ec-title"
+                  aria-invalid={errors.title ? true : undefined}
                   {...register("title")}
                   className={cn(errors.title && "border-destructive")}
                 />
@@ -256,7 +304,9 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>Type</Label>
+                  <Label>
+                    Type <span className="text-destructive">*</span>
+                  </Label>
                   <Select
                     value={classType}
                     onValueChange={(v) => setValue("type", v as "GROUP" | "PRIVATE")}
@@ -275,21 +325,35 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="ec-dur">Duration (min)</Label>
+                  <Label htmlFor="ec-dur">
+                    Duration (min) <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="ec-dur"
                     type="number"
-                    {...register("durationMinutes", { valueAsNumber: true })}
-                    className={cn(errors.durationMinutes && "border-destructive")}
+                    min={1}
+                    step={1}
+                    aria-invalid={errors.durationMinutesStr ? true : undefined}
+                    {...register("durationMinutesStr")}
+                    className={cn(errors.durationMinutesStr && "border-destructive")}
                   />
+                  {errors.durationMinutesStr && (
+                    <p className="text-xs text-destructive">{errors.durationMinutesStr.message}</p>
+                  )}
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <Checkbox
                   id="ec-rec"
-                  checked={isRecurring}
-                  onChange={(e) => setValue("isRecurring", e.target.checked)}
+                  {...isRecurringField}
+                  onChange={(e) => {
+                    isRecurringField.onChange(e);
+                    if (!e.target.checked) {
+                      clearErrors("endDate");
+                      setDaysOfWeekError(null);
+                    }
+                  }}
                 />
                 <Label htmlFor="ec-rec" className="font-medium">
                   Recurring class
@@ -298,7 +362,9 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="ec-start">Start date</Label>
+                  <Label htmlFor="ec-start">
+                    Start date <span className="text-destructive">*</span>
+                  </Label>
                   <Controller
                     name="startDate"
                     control={control}
@@ -311,9 +377,14 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
                       />
                     )}
                   />
+                  {errors.startDate && (
+                    <p className="text-xs text-destructive">{errors.startDate.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="ec-clock">Time</Label>
+                  <Label htmlFor="ec-clock">
+                    Time <span className="text-destructive">*</span>
+                  </Label>
                   <Controller
                     name="clockTime"
                     control={control}
@@ -326,13 +397,18 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
                       />
                     )}
                   />
+                  {errors.clockTime && (
+                    <p className="text-xs text-destructive">{errors.clockTime.message}</p>
+                  )}
                 </div>
               </div>
 
               {isRecurring && (
                 <>
                   <div className="space-y-2">
-                    <Label>Days of week</Label>
+                    <Label>
+                      Days of week <span className="text-destructive">*</span>
+                    </Label>
                     <div className="flex flex-wrap gap-2">
                       {WEEKDAY_OPTS.map((d) => (
                         <Button
@@ -347,9 +423,14 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
                         </Button>
                       ))}
                     </div>
+                    {daysOfWeekError && (
+                      <p className="text-xs text-destructive">{daysOfWeekError}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="ec-end">End date</Label>
+                    <Label htmlFor="ec-end">
+                      End date <span className="text-destructive">*</span>
+                    </Label>
                     <Controller
                       name="endDate"
                       control={control}

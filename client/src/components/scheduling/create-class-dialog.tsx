@@ -7,8 +7,14 @@ import { toast } from "sonner";
 import { schedulingApi } from "@/services/scheduling-api";
 import {
   createClassFormSchema,
+  RECURRING_DAYS_OF_WEEK_MESSAGE,
+  RECURRING_END_DATE_MESSAGE,
   type CreateClassFormValues,
 } from "@/lib/validation/create-class-form-schema";
+import {
+  parseDurationMinutesStr,
+  SCHEDULING_MAX_DURATION_MINUTES,
+} from "@/lib/validation/duration-minutes-form-schema";
 import { localDateAndTimeToUtcIso, localYmdToUtcIsoMidday } from "@/lib/datetime-local";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,7 +52,7 @@ const WEEKDAY_OPTS: { label: string; value: number }[] = [
 const EMPTY_CREATE_CLASS_VALUES: CreateClassFormValues = {
   title: "",
   type: "GROUP",
-  durationMinutes: 60,
+  durationMinutesStr: "60",
   templateId: "",
   isRecurring: false,
   startDate: "",
@@ -62,6 +68,7 @@ interface CreateClassDialogProps {
 
 export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClassDialogProps) {
   const [daySet, setDaySet] = useState<Set<number>>(new Set([1, 3, 5]));
+  const [daysOfWeekError, setDaysOfWeekError] = useState<string | null>(null);
 
   const {
     register,
@@ -69,11 +76,18 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
     handleSubmit,
     reset,
     setValue,
+    getValues,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<CreateClassFormValues>({
     resolver: zodResolver(createClassFormSchema),
     defaultValues: EMPTY_CREATE_CLASS_VALUES,
+    shouldUnregister: false,
+    criteriaMode: "all",
   });
+
+  const isRecurringField = register("isRecurring");
 
   const isRecurring = useWatch({ control, name: "isRecurring", defaultValue: false });
   const classType = useWatch({ control, name: "type", defaultValue: "GROUP" });
@@ -82,23 +96,51 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
     if (!open) return;
     const t = window.setTimeout(() => {
       setDaySet(new Set([1, 3, 5]));
+      setDaysOfWeekError(null);
       reset(EMPTY_CREATE_CLASS_VALUES);
     }, 0);
     return () => window.clearTimeout(t);
-  }, [open, reset]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const validateRecurringExtras = (): boolean => {
+    const values = getValues();
+    if (!values.isRecurring) {
+      setDaysOfWeekError(null);
+      return true;
+    }
+
+    let valid = true;
+
+    if (!values.endDate.trim()) {
+      setError("endDate", {
+        type: "manual",
+        message: RECURRING_END_DATE_MESSAGE,
+      });
+      valid = false;
+    }
+
+    if (daySet.size === 0) {
+      setDaysOfWeekError(RECURRING_DAYS_OF_WEEK_MESSAGE);
+      valid = false;
+    } else {
+      setDaysOfWeekError(null);
+    }
+
+    return valid;
+  };
 
   const toggleDay = (v: number) => {
     setDaySet((prev) => {
       const next = new Set(prev);
       if (next.has(v)) next.delete(v);
       else next.add(v);
+      if (next.size > 0) setDaysOfWeekError(null);
       return next;
     });
   };
 
   const onSubmit = async (values: CreateClassFormValues) => {
-    if (values.isRecurring && daySet.size === 0) {
-      toast.error("Select at least one weekday for recurring classes");
+    if (values.isRecurring && !validateRecurringExtras()) {
       return;
     }
     try {
@@ -119,7 +161,7 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
         startDate: startIso,
         endDate: endIso ?? null,
         time: timeIso,
-        durationMinutes: values.durationMinutes,
+        durationMinutes: parseDurationMinutesStr(values.durationMinutesStr),
         templateId: values.templateId?.trim() || undefined,
       });
       toast.success(values.isRecurring ? "Recurring class created" : "Class created");
@@ -133,7 +175,7 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto rounded-3xl sm:max-w-lg">
+      <DialogContent className="max-h-[95vh] overflow-y-auto rounded-3xl sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>New class</DialogTitle>
           <DialogDescription>
@@ -141,12 +183,18 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={handleSubmit(onSubmit, validateRecurringExtras)}
+          className="space-y-4"
+        >
           <div className="space-y-2">
-            <Label htmlFor="cc-title">Title</Label>
+            <Label htmlFor="cc-title">
+              Title <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="cc-title"
               placeholder="e.g. Morning Reformer"
+              aria-invalid={errors.title ? true : undefined}
               {...register("title")}
               className={cn(errors.title && "border-destructive")}
             />
@@ -155,7 +203,9 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Type</Label>
+              <Label>
+                Type <span className="text-destructive">*</span>
+              </Label>
               <Select
                 value={classType}
                 onValueChange={(v) => setValue("type", v as "GROUP" | "PRIVATE")}
@@ -170,13 +220,21 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cc-dur">Duration (min)</Label>
+              <Label htmlFor="cc-dur">
+                Duration (min) <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="cc-dur"
                 type="number"
-                {...register("durationMinutes", { valueAsNumber: true })}
-                className={cn(errors.durationMinutes && "border-destructive")}
+                min={1}
+                step={1}
+                aria-invalid={errors.durationMinutesStr ? true : undefined}
+                {...register("durationMinutesStr")}
+                className={cn(errors.durationMinutesStr && "border-destructive")}
               />
+              {errors.durationMinutesStr && (
+                <p className="text-xs text-destructive">{errors.durationMinutesStr.message}</p>
+              )}
             </div>
           </div>
 
@@ -188,20 +246,13 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
             </p>
           </div> */}
 
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="cc-rec"
-              checked={isRecurring}
-              onChange={(e) => setValue("isRecurring", e.target.checked)}
-            />
-            <Label htmlFor="cc-rec" className="font-medium">
-              Recurring class
-            </Label>
-          </div>
+         
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="cc-start">Start date</Label>
+              <Label htmlFor="cc-start">
+                Start date <span className="text-destructive">*</span>
+              </Label>
               <Controller
                 name="startDate"
                 control={control}
@@ -214,9 +265,14 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
                   />
                 )}
               />
+              {errors.startDate && (
+                <p className="text-xs text-destructive">{errors.startDate.message}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cc-clock">Time</Label>
+              <Label htmlFor="cc-clock">
+                Time <span className="text-destructive">*</span>
+              </Label>
               <Controller
                 name="clockTime"
                 control={control}
@@ -229,13 +285,35 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
                   />
                 )}
               />
+              {errors.clockTime && (
+                <p className="text-xs text-destructive">{errors.clockTime.message}</p>
+              )}
             </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="cc-rec"
+              {...isRecurringField}
+              onChange={(e) => {
+                isRecurringField.onChange(e);
+                if (!e.target.checked) {
+                  clearErrors("endDate");
+                  setDaysOfWeekError(null);
+                }
+              }}
+            />
+            <Label htmlFor="cc-rec" className="font-medium">
+              Recurring class
+            </Label>
           </div>
 
           {isRecurring && (
             <>
               <div className="space-y-2">
-                <Label>Days of week</Label>
+                <Label>
+                  Days of week <span className="text-destructive">*</span>
+                </Label>
                 <div className="flex flex-wrap gap-2">
                   {WEEKDAY_OPTS.map((d) => (
                     <Button
@@ -250,9 +328,14 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
                     </Button>
                   ))}
                 </div>
+                {daysOfWeekError && (
+                  <p className="text-xs text-destructive">{daysOfWeekError}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cc-end">End date</Label>
+                <Label htmlFor="cc-end">
+                  End date <span className="text-destructive">*</span>
+                </Label>
                 <Controller
                   name="endDate"
                   control={control}

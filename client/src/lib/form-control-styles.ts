@@ -7,13 +7,19 @@ const formControlInteraction = [
   "hover:border-ring/70 hover:ring-3 hover:ring-ring/30",
   "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
   "disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50",
-  "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
-  "dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+  "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/30",
+  "aria-invalid:hover:border-destructive aria-invalid:hover:ring-3 aria-invalid:hover:ring-destructive/40",
+  "aria-invalid:focus-visible:border-destructive aria-invalid:focus-visible:ring-3 aria-invalid:focus-visible:ring-destructive/50",
+  "dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/45",
+  "dark:aria-invalid:hover:ring-destructive/50 dark:aria-invalid:focus-visible:ring-destructive/55",
 ] as const;
 
 /** Filled state when the control has a value (Input/Textarea set `data-filled`). */
 const formControlFilled = [
   "data-filled:bg-(--field-filled) data-filled:border-input/90",
+  "data-filled:aria-invalid:border-destructive",
+  "data-filled:aria-invalid:hover:border-destructive",
+  "data-filled:aria-invalid:focus-visible:border-destructive",
 ] as const;
 
 export const formControlInputClasses = cn(
@@ -64,6 +70,9 @@ export const formControlPickerTriggerClasses = cn(
   "h-8 w-full justify-between gap-1 rounded-lg px-2.5 font-normal",
   "border-border bg-(--field-empty) shadow-none",
   "data-filled:bg-(--field-filled) data-filled:border-input/90",
+  "data-filled:aria-invalid:border-destructive",
+  "data-filled:aria-invalid:hover:border-destructive",
+  "data-filled:aria-invalid:focus-visible:border-destructive",
   "hover:bg-(--field-filled)/60",
   ...formControlInteraction
 );
