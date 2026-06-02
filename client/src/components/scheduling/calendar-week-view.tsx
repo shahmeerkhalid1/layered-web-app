@@ -12,6 +12,7 @@ import {
   CALENDAR_DAY_START_HOUR,
   formatYmdLocal,
   hourSlots,
+  isBeforeToday,
   isSameLocalDay,
   minutesFromDayStart,
   totalCalendarMinutes,
@@ -351,6 +352,7 @@ export function CalendarWeekView({
         {days.map((d) => {
           const ymd = formatYmdLocal(d);
           const isToday = isSameLocalDay(d, today);
+          const isPastDay = isBeforeToday(d);
           const dayInstances = instancesByDay.get(ymd) ?? [];
           const layout = layoutDayInstances(d, dayInstances, total);
           return (
@@ -368,14 +370,20 @@ export function CalendarWeekView({
                   <button
                     key={h}
                     type="button"
-                    aria-label={`Schedule at ${h}:00 on ${ymd}`}
+                    disabled={isPastDay}
+                    aria-label={
+                      isPastDay
+                        ? `Cannot schedule in the past (${ymd} ${h}:00)`
+                        : `Schedule at ${h}:00 on ${ymd}`
+                    }
                     className={cn(
-                      "absolute right-0 left-0 cursor-pointer border-t border-border/35 transition-colors",
-                      "hover:bg-muted/25 hover:ring-1 hover:ring-inset hover:ring-ring/25",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50"
+                      "absolute right-0 left-0 border-t border-border/35 transition-colors",
+                      isPastDay
+                        ? "cursor-default opacity-40"
+                        : "cursor-pointer hover:bg-muted/25 hover:ring-1 hover:ring-inset hover:ring-ring/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50"
                     )}
                     style={{ top: `${top * 100}%`, height: `${(60 / total) * 100}%` }}
-                    onClick={() => onSelectSlot(d, h)}
+                    onClick={isPastDay ? undefined : () => onSelectSlot(d, h)}
                   />
                 );
               })}

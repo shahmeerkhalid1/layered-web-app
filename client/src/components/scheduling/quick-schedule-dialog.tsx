@@ -19,6 +19,7 @@ import {
   SCHEDULING_MAX_DURATION_MINUTES,
 } from "@/lib/validation/duration-minutes-form-schema";
 import { localDateAndTimeToUtcIso, localYmdToUtcIsoMidday } from "@/lib/datetime-local";
+import { todayYmd } from "@/lib/calendar-utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -120,6 +121,9 @@ export function QuickScheduleDialog({
 
   useEffect(() => {
     if (!open) return;
+    const prefillDate = slotPrefill?.date ?? "";
+    const scheduleDate =
+      prefillDate && prefillDate >= todayYmd() ? prefillDate : prefillDate ? todayYmd() : "";
     reset({
       title: templatePrefill?.name ?? "",
       type: "GROUP",
@@ -127,7 +131,7 @@ export function QuickScheduleDialog({
         templatePrefill?.durationMinutes != null && templatePrefill.durationMinutes > 0
           ? String(templatePrefill.durationMinutes)
           : "60",
-      date: slotPrefill?.date ?? "",
+      date: scheduleDate,
       time: slotPrefill?.time ?? "",
       isRecurring: false,
       endDate: "",
@@ -351,6 +355,7 @@ export function QuickScheduleDialog({
                     id="qs-date"
                     value={field.value}
                     onChange={field.onChange}
+                    minDate={todayYmd()}
                     disabled={isSubmitting}
                     aria-invalid={!!errors.date}
                   />

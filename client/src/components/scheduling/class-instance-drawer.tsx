@@ -33,6 +33,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { localDateAndTimeToUtcIso } from "@/lib/datetime-local";
+import { todayYmd } from "@/lib/calendar-utils";
 import { cn } from "@/lib/utils";
 
 function sortSections(sections: PlanSectionDetail[]): PlanSectionDetail[] {
@@ -312,6 +313,10 @@ export function ClassInstanceDrawer({
 
   const saveReschedule = async () => {
     if (!detail || !instanceId) return;
+    if (reschedule.date < todayYmd()) {
+      toast.error("Cannot reschedule to a past date");
+      return;
+    }
     const newIso = localDateAndTimeToUtcIso(reschedule.date, reschedule.time);
     if (!detail.class.isRecurring) {
       setPending(true);
@@ -758,6 +763,7 @@ export function ClassInstanceDrawer({
                         id="rs-date"
                         value={reschedule.date}
                         onChange={(date) => setReschedule((r) => ({ ...r, date }))}
+                        minDate={todayYmd()}
                         disabled={pending}
                         className="mt-1"
                       />

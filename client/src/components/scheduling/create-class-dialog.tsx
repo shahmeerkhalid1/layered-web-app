@@ -16,6 +16,7 @@ import {
   SCHEDULING_MAX_DURATION_MINUTES,
 } from "@/lib/validation/duration-minutes-form-schema";
 import { localDateAndTimeToUtcIso, localYmdToUtcIsoMidday } from "@/lib/datetime-local";
+import { todayYmd } from "@/lib/calendar-utils";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -261,6 +262,7 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
                     id="cc-start"
                     value={field.value}
                     onChange={field.onChange}
+                    minDate={todayYmd()}
                     aria-invalid={!!errors.startDate}
                   />
                 )}

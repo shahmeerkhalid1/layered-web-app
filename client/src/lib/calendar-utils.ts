@@ -69,3 +69,15 @@ export function isSameLocalDay(a: Date, b: Date): boolean {
     a.getDate() === b.getDate()
   );
 }
+
+/** True when `d` is strictly before today's local calendar day. */
+export function isBeforeToday(d: Date): boolean {
+  const day = startOfLocalDay(d);
+  const today = startOfLocalDay(new Date());
+  return day.getTime() < today.getTime();
+}
+
+/** Today's local calendar date as `YYYY-MM-DD`. */
+export function todayYmd(): string {
+  return formatYmdLocal(new Date());
+}

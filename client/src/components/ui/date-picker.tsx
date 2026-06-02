@@ -15,6 +15,8 @@ export interface DatePickerProps {
   onChange: (value: string) => void;
   id?: string;
   disabled?: boolean;
+  /** Earliest selectable date (`YYYY-MM-DD`, local calendar day). */
+  minDate?: string;
   placeholder?: string;
   className?: string;
   "aria-invalid"?: boolean;
@@ -25,6 +27,7 @@ export function DatePicker({
   onChange,
   id,
   disabled,
+  minDate,
   placeholder = "Pick a date",
   className,
   "aria-invalid": ariaInvalid,
@@ -32,6 +35,7 @@ export function DatePicker({
   const [open, setOpen] = useState(false);
   const hasValue = Boolean(value?.trim());
   const selected = ymdToDate(value);
+  const minSelectable = minDate ? ymdToDate(minDate) : undefined;
 
   const handleClear = (e: MouseEvent) => {
     e.preventDefault();
@@ -96,6 +100,7 @@ export function DatePicker({
           captionLayout="dropdown"
           navLayout="around"
           selected={selected}
+          disabled={minSelectable ? { before: minSelectable } : undefined}
           onSelect={(date) => {
             if (!date) {
               onChange("");

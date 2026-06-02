@@ -1,6 +1,28 @@
 import { z } from "zod";
 import { MAX_DURATION_MINUTES } from "../../lib/duration-limits";
 
+function todayUtcCalendarDate(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
+
+function utcCalendarDateFromDate(d: Date): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
+function parseYmdUtc(ymd: string): Date {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+
+function isBeforeTodayUtc(d: Date): boolean {
+  return utcCalendarDateFromDate(d) < todayUtcCalendarDate();
+}
+
+function isYmdBeforeTodayUtc(ymd: string): boolean {
+  return parseYmdUtc(ymd) < todayUtcCalendarDate();
+}
+
 export const recurrenceRuleSchema = z.object({
   daysOfWeek: z.array(z.number().int().min(1).max(7)).min(1),
 });
@@ -53,6 +75,13 @@ export const createClassSchema = z
         code: "custom",
         message: "endDate must be on or after startDate",
         path: ["endDate"],
+      });
+    }
+    if (isBeforeTodayUtc(data.startDate)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Start date cannot be in the past",
+        path: ["startDate"],
       });
     }
   });
@@ -110,7 +139,16 @@ export const updateClassInstanceSchema = z
   .refine(
     (d) => d.date !== undefined || d.time !== undefined || d.status !== undefined,
     { message: "At least one of date, time, or status is required" }
-  );
+  )
+  .superRefine((data, ctx) => {
+    if (data.date !== undefined && isYmdBeforeTodayUtc(data.date)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Cannot reschedule to a past date",
+        path: ["date"],
+      });
+    }
+  });
 
 export const assignTemplateSchema = z.object({
   templateId: z.string().min(1),
@@ -130,7 +168,16 @@ export const quickScheduleSchema = z
       (d.title !== undefined && d.title.trim().length > 0) ||
       (d.templateId !== undefined && d.templateId.length > 0),
     { message: "Provide title or templateId", path: ["title"] }
-  );
+  )
+  .superRefine((data, ctx) => {
+    if (isYmdBeforeTodayUtc(data.date)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Date cannot be in the past",
+        path: ["date"],
+      });
+    }
+  });
 
 export type CreateClassInput = z.infer<typeof createClassSchema>;
 export type UpdateClassInput = z.infer<typeof updateClassSchema>;
