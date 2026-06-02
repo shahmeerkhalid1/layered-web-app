@@ -7,14 +7,15 @@ import {
   LayoutDashboard,
   Menu,
   X,
-  Settings,
   UserPlus,
   Calendar,
   CalendarDays,
   Dumbbell,
   FileText,
+  KeyRound,
   LogOut,
   User,
+  UserCog,
   Users,
   ChevronsUpDown,
 } from "lucide-react";
@@ -30,7 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AccountAvatar } from "@/components/account/account-avatar";
 import Image from "next/image";
 
 type MainNavItem = {
@@ -53,7 +54,6 @@ const navItems: MainNavItem[] = [
 const adminNavItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/users", label: "User Management", icon: UserPlus },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -62,15 +62,8 @@ export function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isAdmin, instructor, logout } = useAuth();
 
-  const initials = instructor?.name
-    ? instructor.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : "??";
-  // const isAdminRoute = pathname.startsWith("/admin");
+  const isAccountActive = pathname === "/account";
+  const isChangePasswordActive = pathname === "/account/password";
 
   const defaultIsActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -126,7 +119,7 @@ export function Sidebar() {
 
         {isAdmin && (
           <>
-            <Separator className="my-4 bg-sidebar-border" />
+
             <span className="mb-1 px-3 text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">
               Admin
             </span>
@@ -169,11 +162,11 @@ export function Sidebar() {
               "h-auto w-full justify-start gap-3 rounded-2xl px-3 py-2.5 text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
             )}
           >
-            <Avatar className="size-9 shrink-0">
-              <AvatarFallback className="bg-secondary text-xs font-semibold text-secondary-foreground">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            <AccountAvatar
+              name={instructor?.name ?? "Account"}
+              image={instructor?.image}
+              className="size-9 shrink-0"
+            />
             <div className="min-w-0 flex-1 text-left">
               <p className="truncate text-sm font-medium">
                 {instructor?.name ?? "Account"}
@@ -203,6 +196,32 @@ export function Sidebar() {
               </div>
             </div>
             <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                setMobileOpen(false);
+                router.push("/account");
+              }}
+              className={cn(
+                "rounded-xl my-1.5",
+                isAccountActive && "bg-accent text-accent-foreground",
+              )}
+            >
+              <UserCog className="mr-2 size-4" />
+              Account settings
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setMobileOpen(false);
+                router.push("/account/password");
+              }}
+              className={cn(
+                "rounded-xl my-1.5",
+                isChangePasswordActive && "bg-accent text-accent-foreground",
+              )}
+            >
+              <KeyRound className="mr-2 size-4" />
+              Change password
+            </DropdownMenuItem>
             <DropdownMenuItem
               onClick={async () => {
                 await logout();

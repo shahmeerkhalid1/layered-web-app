@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -11,6 +12,7 @@ import {
   AuthFooterLink,
   AuthFormAlert,
   AuthFormCard,
+  AuthLoadingCard,
   AuthPageShell,
 } from "@/components/auth/auth-page-shell";
 import { Button } from "@/components/ui/button";
@@ -22,7 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const {
     register,
@@ -34,9 +36,18 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "" },
   });
 
-  if (isAuthenticated) {
-    router.replace("/");
-    return null;
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace("/");
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  if (isLoading || isAuthenticated) {
+    return (
+      <AuthPageShell>
+        <AuthLoadingCard />
+      </AuthPageShell>
+    );
   }
 
   const onSubmit = handleSubmit(async (values) => {

@@ -42,6 +42,30 @@ export async function deleteTempImage(publicId: string): Promise<void> {
   await cloudinary.uploader.destroy(publicId);
 }
 
+// ─── Profile avatar ──────────────────────────────────────────────────────────
+
+export function avatarPublicId(instructorId: string): string {
+  return `avatars/${instructorId}/profile`;
+}
+
+export async function uploadAvatarImage(
+  instructorId: string,
+  filePath: string
+): Promise<{ url: string; publicId: string }> {
+  const publicId = avatarPublicId(instructorId);
+  const result = await cloudinary.uploader.upload(filePath, {
+    public_id: publicId,
+    overwrite: true,
+    invalidate: true,
+    transformation: [{ width: 400, height: 400, crop: "fill", gravity: "auto" }],
+  });
+  return { url: result.secure_url, publicId: result.public_id };
+}
+
+export async function deleteAvatarImage(instructorId: string): Promise<void> {
+  await cloudinary.uploader.destroy(avatarPublicId(instructorId)).catch(() => {});
+}
+
 // ─── Image promotion (temp → exercises) ──────────────────────────────────────
 
 export async function promoteImage(

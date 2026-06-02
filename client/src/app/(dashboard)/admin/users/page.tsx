@@ -4,16 +4,21 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { Copy, Loader2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { adminApi } from "@/services/admin-api";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  AdminUserList,
+  type AdminListUser,
+} from "@/components/admin/admin-user-list";
+import { AdminUserLibraryHeader } from "@/components/admin/admin-user-library-header";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -21,14 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -45,23 +42,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  MoreHorizontal,
-  UserPlus,
-  Copy,
-  Loader2,
-  Search,
-  SearchX,
-  X,
-} from "lucide-react";
-import { ExerciseLibraryPagination } from "@/components/exercises/exercise-library-pagination";
-import {
   adminInviteFormSchema,
   type AdminInviteFormValues,
 } from "@/lib/validation/auth-schemas";
@@ -69,18 +49,6 @@ import {
 const PAGE_SIZE = 10;
 
 type Role = "ADMIN" | "INSTRUCTOR";
-
-type AdminListUser = {
-  id: string;
-  name: string;
-  email: string;
-  role?: string;
-  banned?: boolean | null;
-  banReason?: string | null;
-  banExpires?: string | null;
-  createdAt?: string;
-  emailVerified?: boolean;
-};
 
 function parseListUsersResult(res: unknown): {
   users: AdminListUser[];
@@ -295,275 +263,42 @@ export default function AdminUsersPage() {
   };
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const isSelf = (u: AdminListUser) => u.id === selfId;
   const searchTrim = debouncedSearch.trim();
   const hasActiveFilters = searchTrim.length > 0;
   const showFilteredEmpty =
-    !loading && users.length === 0 && hasActiveFilters;
-  const showDirectoryEmpty =
-    !loading && users.length === 0 && !hasActiveFilters;
+    !loading && users.length === 0 && hasActiveFilters && total === 0;
 
   return (
-    <div className="space-y-6 rounded-[2rem] bg-background px-2 pb-6 pt-2 sm:px-4">
-      <div className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
-          <div className="min-w-0 max-w-2xl space-y-2">
-            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-card-foreground sm:text-3xl">
-              User management
-            </h2>
-            <p
-              className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground"
-              aria-live="polite"
-            >
-              {loading && <span>Loading directory…</span>}
-              {!loading && (
-                <>
-                  <span className="font-medium text-foreground">
-                    {hasActiveFilters
-                      ? `Showing ${users.length} on this page · ${total} match${total === 1 ? "" : "es"}`
-                      : `${total} user${total === 1 ? "" : "s"}`}
-                  </span>
-                </>
-              )}
-            </p>
-            
-          </div>
-          <Button
-            type="button"
-            size="sm"
-            onClick={openInvite}
-            className="h-10 shrink-0 rounded-full bg-primary px-5 text-primary-foreground shadow-md hover:bg-primary/90"
-          >
-            <UserPlus className="mr-2 size-4" />
-            Invite user
-          </Button>
-        </div>
+    <div className="space-y-6 rounded-[2rem] bg-background px-2 pb-6 sm:px-4">
+      <AdminUserLibraryHeader
+        totalUsers={loading ? undefined : total}
+        visibleUserCount={users.length}
+        loading={loading}
+        hasActiveFilters={hasActiveFilters}
+        search={searchInput}
+        onSearchChange={setSearchInput}
+        onInvite={openInvite}
+      />
 
-        <div className="flex flex-wrap items-start gap-3 border-t border-border pt-5">
-          <div className="min-w-0 flex-1 basis-52 space-y-2 sm:basis-72">
-            <Label htmlFor="user-search" className="text-muted-foreground">
-              Search
-            </Label>
-            <div className="relative rounded-2xl border border-border bg-card shadow-none">
-              <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="user-search"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search by email…"
-                autoComplete="off"
-                className="h-12 rounded-2xl border-0 bg-transparent pr-11 pl-11 text-sm shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
-              />
-              {searchInput ? (
-                <button
-                  type="button"
-                  onClick={() => setSearchInput("")}
-                  className="absolute top-1/2 right-4 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                  aria-label="Clear search"
-                >
-                  <X className="size-4" />
-                </button>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-lg">
-        {loading ? (
-          <div className="flex justify-center py-16">
-            <div className="flex items-center gap-3 rounded-full border border-border bg-background/75 px-4 py-2 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin text-muted-foreground" />
-              Loading instructors
-            </div>
-          </div>
-        ) : showFilteredEmpty ? (
-          <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-            <div className="flex size-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
-              <SearchX className="size-6" />
-            </div>
-            <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-card-foreground">
-              No users match
-            </h3>
-            <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-              Try another email fragment or clear your search to see everyone in the directory again.
-            </p>
-            <Button
-              type="button"
-              variant="secondary"
-              className="mt-4 rounded-full px-4"
-              onClick={() => setSearchInput("")}
-            >
-              Clear search
-            </Button>
-          </div>
-        ) : showDirectoryEmpty ? (
-          <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-            <div className="flex size-14 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
-              <UserPlus className="size-6" />
-            </div>
-            <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-card-foreground">
-              No instructors yet
-            </h3>
-            <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-              Send the first invitation so someone can register and appear here.
-            </p>
-            <Button
-              type="button"
-              size="sm"
-              className="mt-4 rounded-full bg-primary px-4 text-primary-foreground hover:bg-primary/90"
-              onClick={openInvite}
-            >
-              <UserPlus className="mr-2 size-4" />
-              Invite user
-            </Button>
-          </div>
-        ) : (
-          <>
-            <Table>
-              <TableHeader className="bg-accent">
-                <TableRow className="border-border hover:bg-transparent">
-                  <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                    Name
-                  </TableHead>
-                  <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                    Email
-                  </TableHead>
-                  <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                    Role
-                  </TableHead>
-                  <TableHead className="px-4 py-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                    Status
-                  </TableHead>
-                  <TableHead className="w-12 px-4 py-3 text-right text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((u) => {
-                  const banned = Boolean(u.banned);
-                  const self = isSelf(u);
-                  return (
-                    <TableRow
-                      key={u.id}
-                      className="border-border hover:bg-accent/70"
-                    >
-                      <TableCell className="px-4 py-3 font-semibold text-card-foreground">
-                        {u.name}
-                      </TableCell>
-                      <TableCell className="px-4 py-3 text-muted-foreground">
-                        {u.email}
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "border-border bg-accent text-[11px] font-semibold text-accent-foreground",
-                            u.role === "ADMIN" &&
-                              "border-primary bg-primary text-primary-foreground",
-                          )}
-                        >
-                          {u.role ?? "INSTRUCTOR"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        {banned ? (
-                          <Badge variant="destructive" className="rounded-full">
-                            Inactive
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="outline"
-                            className="rounded-full border-border bg-secondary text-secondary-foreground"
-                          >
-                            Active
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="px-4 py-3 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger
-                            className={cn(
-                              buttonVariants({ variant: "ghost", size: "icon-sm" }),
-                              "shrink-0 rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground data-popup-open:bg-accent",
-                            )}
-                            aria-label="Open row menu"
-                          >
-                            <MoreHorizontal className="size-4" />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            align="end"
-                            className="rounded-2xl border-border bg-popover p-1 shadow-xl"
-                          >
-                            <DropdownMenuItem
-                              className="rounded-xl"
-                              onClick={() => setDetailsUser(u)}
-                            >
-                              View details
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="rounded-xl"
-                              disabled={self || u.role === "ADMIN"}
-                              onClick={() =>
-                                setConfirmRole({ user: u, nextRole: "ADMIN" })
-                              }
-                            >
-                              Make admin
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="rounded-xl"
-                              disabled={self || u.role !== "ADMIN"}
-                              onClick={() =>
-                                setConfirmRole({
-                                  user: u,
-                                  nextRole: "INSTRUCTOR",
-                                })
-                              }
-                            >
-                              Make instructor
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {!banned ? (
-                              <DropdownMenuItem
-                                variant="destructive"
-                                className="rounded-xl"
-                                disabled={self}
-                                onClick={() => setConfirmBan(u)}
-                              >
-                                Deactivate
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem
-                                className="rounded-xl"
-                                disabled={self}
-                                onClick={() => setConfirmUnban(u)}
-                              >
-                                Activate
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-
-            <div className="px-4 pb-4 sm:px-5 sm:pb-5">
-              <ExerciseLibraryPagination
-                page={page}
-                totalPages={totalPages}
-                loading={loading}
-                onPageChange={setPage}
-                ariaLabel="User list pagination"
-              />
-            </div>
-          </>
-        )}
-      </div>
+      <AdminUserList
+        users={users}
+        loading={loading}
+        showFilteredEmpty={showFilteredEmpty}
+        onClearFilters={() => setSearchInput("")}
+        onInvite={openInvite}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        onRefresh={() => loadUsers(page)}
+        selfId={selfId}
+        onViewDetails={setDetailsUser}
+        onMakeAdmin={(user) => setConfirmRole({ user, nextRole: "ADMIN" })}
+        onMakeInstructor={(user) =>
+          setConfirmRole({ user, nextRole: "INSTRUCTOR" })
+        }
+        onDeactivate={setConfirmBan}
+        onActivate={setConfirmUnban}
+      />
 
       <Dialog
         open={inviteOpen}
@@ -625,10 +360,7 @@ export default function AdminUsersPage() {
                 control={control}
                 name="role"
                 render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
+                  <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger
                       id="invite-role"
                       aria-invalid={errors.role ? true : undefined}

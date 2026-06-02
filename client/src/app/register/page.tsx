@@ -45,7 +45,7 @@ export default function RegisterPage() {
 }
 
 function RegisterPageContent() {
-  const { register: signUp, isAuthenticated } = useAuth();
+  const { register: signUp, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -89,9 +89,18 @@ function RegisterPageContent() {
     void checkAccess();
   }, [token, setValue]);
 
-  if (isAuthenticated) {
-    router.replace("/");
-    return null;
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace("/");
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  if (isLoading || isAuthenticated) {
+    return (
+      <AuthPageShell>
+        <AuthLoadingCard />
+      </AuthPageShell>
+    );
   }
 
   if (checking) {

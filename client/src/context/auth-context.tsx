@@ -13,6 +13,7 @@ interface Instructor {
   email: string;
   name: string;
   role: string;
+  image: string | null;
 }
 
 interface AuthContextType {
@@ -31,11 +32,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, isPending } = authClient.useSession();
 
   const user = session?.user as
-    | { id: string; email: string; name: string; role?: string }
+    | {
+        id: string;
+        email: string;
+        name: string;
+        role?: string;
+        image?: string | null;
+      }
     | undefined;
 
   const instructor: Instructor | null = user
-    ? { id: user.id, email: user.email, name: user.name, role: user.role ?? "INSTRUCTOR" }
+    ? {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role ?? "INSTRUCTOR",
+        image: user.image?.trim() || null,
+      }
     : null;
 
   const isAdmin = instructor?.role === "ADMIN";
