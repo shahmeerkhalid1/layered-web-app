@@ -70,8 +70,12 @@ export const api = {
       body: body instanceof FormData ? body : JSON.stringify(body),
     }),
 
-  delete: <T>(endpoint: string, options?: FetchOptions) =>
-    request<T>(endpoint, { ...options, method: "DELETE" }),
+  delete: <T>(endpoint: string, body?: unknown, options?: FetchOptions) =>
+    request<T>(endpoint, {
+      ...options,
+      method: "DELETE",
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    }),
 };
 
 export { ApiError };

@@ -5,6 +5,7 @@ import * as schedulingService from "./scheduling.service";
 import {
   assignTemplateSchema,
   listClassInstancesQuerySchema,
+  markAttendanceSchema,
   updateClassInstanceSchema,
   type ListClassInstancesQuery,
 } from "./scheduling.validation";
@@ -147,6 +148,27 @@ router.delete(
       req.user!.instructorId
     );
     res.json(result);
+  }
+);
+
+router.get("/:id/attendance", async (req: Request, res: Response) => {
+  const rows = await schedulingService.getAttendance(
+    req.params.id as string,
+    req.user!.instructorId
+  );
+  res.json(rows);
+});
+
+router.patch(
+  "/:id/attendance",
+  validate(markAttendanceSchema),
+  async (req: Request, res: Response) => {
+    const rows = await schedulingService.markAttendance(
+      req.params.id as string,
+      req.user!.instructorId,
+      req.body.attendance
+    );
+    res.json(rows);
   }
 );
 

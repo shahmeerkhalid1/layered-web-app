@@ -138,3 +138,34 @@ export type ListClassesQuery = z.infer<typeof listClassesQuerySchema>;
 export type ListClassInstancesQuery = z.infer<typeof listClassInstancesQuerySchema>;
 export type UpdateClassInstanceInput = z.infer<typeof updateClassInstanceSchema>;
 export type QuickScheduleInput = z.infer<typeof quickScheduleSchema>;
+
+export const enrollClientsSchema = z.object({
+  clientIds: z
+    .array(z.string().min(1))
+    .min(1, "At least one client is required")
+    .max(100, "You can enroll up to 100 clients at a time"),
+});
+
+export const unenrollClientsSchema = z.object({
+  enrollmentIds: z
+    .array(z.string().min(1))
+    .min(1, "At least one enrollment is required")
+    .max(100, "You can remove up to 100 enrollments at a time"),
+});
+
+/** @deprecated Use enrollClientsSchema — kept as alias for route imports */
+export const enrollClientSchema = enrollClientsSchema;
+
+export const markAttendanceSchema = z.object({
+  attendance: z.array(
+    z.object({
+      clientId: z.string().min(1),
+      present: z.boolean(),
+    })
+  ),
+});
+
+export type EnrollClientsInput = z.infer<typeof enrollClientsSchema>;
+export type EnrollClientInput = EnrollClientsInput;
+export type UnenrollClientsInput = z.infer<typeof unenrollClientsSchema>;
+export type MarkAttendanceInput = z.infer<typeof markAttendanceSchema>;

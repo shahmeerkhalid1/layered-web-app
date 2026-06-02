@@ -276,3 +276,78 @@ export interface UpdateClassBody {
   regenerateFutureInstancesFrom?: string;
   rescheduleToDate?: string;
 }
+
+// ─── Clients / Roster ────────────────────────────────────────────────────────
+
+export interface Client {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string | null;
+  injuries?: string | null;
+  focusAreas?: string | null;
+  goals?: string | null;
+  instructorId: string;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { enrollments: number; attendances: number };
+}
+
+export interface ClientDetail extends Client {
+  enrollments: {
+    id: string;
+    classId: string;
+    enrolledAt: string;
+    class: {
+      id: string;
+      title: string;
+      type: ScheduledClassType;
+      durationMinutes: number;
+    };
+  }[];
+}
+
+export interface ClientListResponse {
+  data: Client[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface EnrollmentRow {
+  id: string;
+  clientId: string;
+  classId: string;
+  enrolledAt: string;
+  client: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string | null;
+  };
+}
+
+export interface EnrollClientsResponse {
+  enrollments: EnrollmentRow[];
+  created: number;
+  skipped: number;
+}
+
+export interface UnenrollClientsResponse {
+  removed: number;
+  message: string;
+}
+
+export interface DeleteClientsResponse {
+  removed: number;
+  message: string;
+}
+
+export interface AttendanceRow {
+  clientId: string;
+  firstName: string;
+  lastName: string;
+  present: boolean | null;
+}

@@ -4,7 +4,9 @@ import { validate, validateQuery } from "../../middleware/validate.middleware";
 import * as schedulingService from "./scheduling.service";
 import {
   createClassSchema,
+  enrollClientsSchema,
   listClassesQuerySchema,
+  unenrollClientsSchema,
   updateClassSchema,
   type ListClassesQuery,
 } from "./scheduling.validation";
@@ -61,5 +63,51 @@ router.delete("/:id", async (req: Request, res: Response) => {
   );
   res.json(result);
 });
+
+router.get("/:id/enrollments", async (req: Request, res: Response) => {
+  const enrollments = await schedulingService.getEnrollments(
+    req.params.id as string,
+    req.user!.instructorId
+  );
+  res.json(enrollments);
+});
+
+router.post(
+  "/:id/enrollments",
+  validate(enrollClientsSchema),
+  async (req: Request, res: Response) => {
+    const result = await schedulingService.enrollClients(
+      req.params.id as string,
+      req.body.clientIds as string[],
+      req.user!.instructorId
+    );
+    res.status(201).json(result);
+  }
+);
+
+router.delete(
+  "/:id/enrollments",
+  validate(unenrollClientsSchema),
+  async (req: Request, res: Response) => {
+    const result = await schedulingService.unenrollClients(
+      req.params.id as string,
+      req.body.enrollmentIds as string[],
+      req.user!.instructorId
+    );
+    res.json(result);
+  }
+);
+
+router.delete(
+  "/:id/enrollments/:enrollmentId",
+  async (req: Request, res: Response) => {
+    const result = await schedulingService.unenrollClient(
+      req.params.id as string,
+      req.params.enrollmentId as string,
+      req.user!.instructorId
+    );
+    res.json(result);
+  }
+);
 
 export default router;

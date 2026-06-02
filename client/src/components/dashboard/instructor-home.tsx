@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -14,11 +14,11 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { clientApi } from "@/services/client-api";
 
 /** Placeholder metrics until dashboard APIs are wired. */
 const DASHBOARD_STATS = {
   todayClasses: 0,
-  totalClients: 0,
   exercises: 0,
   planTemplates: 0,
 } as const;
@@ -124,6 +124,26 @@ export interface InstructorHomeProps {
 }
 
 export function InstructorHome({ firstName }: InstructorHomeProps) {
+  const [totalClients, setTotalClients] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          const result = await clientApi.listClients({ page: 1, limit: 1 });
+          if (!cancelled) setTotalClients(result.total);
+        } catch {
+          if (!cancelled) setTotalClients(0);
+        }
+      })();
+    }, 0);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, []);
+
   const today = new Date();
   const dateLabel = today.toLocaleDateString(undefined, {
     weekday: "long",
@@ -174,10 +194,17 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
             />
             <StatCard
               title="Clients"
-              value={DASHBOARD_STATS.totalClients}
-              hint="Roster & attendance — coming soon"
+              value={totalClients ?? 0}
+              hint={
+                totalClients === undefined
+                  ? "Loading roster…"
+                  : totalClients === 0
+                    ? "Add clients to your roster"
+                    : "Active clients in your roster"
+              }
+              href="/clients"
               icon={Users}
-              accent="muted"
+              accent="secondary"
             />
             <StatCard
               title="Exercise library"

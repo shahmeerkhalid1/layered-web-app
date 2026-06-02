@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/prisma";
-import { NotFoundError, ValidationError } from "../../lib/errors";
+import { NotFoundError, ValidationError, ConflictError } from "../../lib/errors";
 import { Prisma } from "../../generated/prisma/client";
 import type {
   CreateClassInput,
@@ -844,4 +844,231 @@ export async function removeExerciseFromInstanceSection(
     data: { isCustomised: true },
   });
   return { message: "Exercise removed from section" };
+}
+
+// ─── Enrollments ─────────────────────────────────────────────────────────────
+
+export async function getEnrollments(classId: string, instructorId: string) {
+  await assertClassOwned(classId, instructorId);
+
+  const enrollments = await prisma.enrollment.findMany({
+    where: {
+      classId,
+      client: { instructorId, ...active },
+    },
+    orderBy: { enrolledAt: "asc" },
+    include: {
+      client: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+        },
+      },
+    },
+  });
+
+  return enrollments;
+}
+
+export async function enrollClients(
+  classId: string,
+  clientIds: string[],
+  instructorId: string
+) {
+  await assertClassOwned(classId, instructorId);
+
+  const uniqueIds = [...new Set(clientIds)];
+  if (uniqueIds.length === 0) {
+    throw new ValidationError("At least one client is required");
+  }
+
+  const clients = await prisma.client.findMany({
+    where: { id: { in: uniqueIds }, instructorId, ...active },
+    select: { id: true },
+  });
+  const foundIds = new Set(clients.map((client) => client.id));
+  const missingIds = uniqueIds.filter((id) => !foundIds.has(id));
+  if (missingIds.length > 0) {
+    throw new NotFoundError("Client");
+  }
+
+  const existing = await prisma.enrollment.findMany({
+    where: { classId, clientId: { in: uniqueIds } },
+    select: { clientId: true },
+  });
+  const alreadyEnrolled = new Set(existing.map((row) => row.clientId));
+  const toCreate = uniqueIds.filter((id) => !alreadyEnrolled.has(id));
+
+  if (toCreate.length === 0) {
+    throw new ConflictError(
+      uniqueIds.length === 1
+        ? "Client is already enrolled in this class"
+        : "All selected clients are already enrolled in this class"
+    );
+  }
+
+  await prisma.enrollment.createMany({
+    data: toCreate.map((clientId) => ({ clientId, classId })),
+  });
+
+  const enrollments = await prisma.enrollment.findMany({
+    where: { classId, clientId: { in: toCreate } },
+    orderBy: { enrolledAt: "asc" },
+    include: {
+      client: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+        },
+      },
+    },
+  });
+
+  return {
+    enrollments,
+    created: enrollments.length,
+    skipped: uniqueIds.length - enrollments.length,
+  };
+}
+
+/** Enroll a single client — delegates to {@link enrollClients}. */
+export async function enrollClient(
+  classId: string,
+  clientId: string,
+  instructorId: string
+) {
+  const result = await enrollClients(classId, [clientId], instructorId);
+  return result.enrollments[0]!;
+}
+
+export async function unenrollClients(
+  classId: string,
+  enrollmentIds: string[],
+  instructorId: string
+) {
+  await assertClassOwned(classId, instructorId);
+
+  const uniqueIds = [...new Set(enrollmentIds)];
+  if (uniqueIds.length === 0) {
+    throw new ValidationError("At least one enrollment is required");
+  }
+
+  const enrollments = await prisma.enrollment.findMany({
+    where: { id: { in: uniqueIds }, classId },
+    select: { id: true },
+  });
+  const foundIds = new Set(enrollments.map((row) => row.id));
+  const missingIds = uniqueIds.filter((id) => !foundIds.has(id));
+  if (missingIds.length > 0) {
+    throw new NotFoundError("Enrollment");
+  }
+
+  const result = await prisma.enrollment.deleteMany({
+    where: { id: { in: uniqueIds }, classId },
+  });
+
+  return {
+    removed: result.count,
+    message:
+      result.count === 1
+        ? "Client unenrolled"
+        : `${result.count} clients unenrolled`,
+  };
+}
+
+/** Unenroll a single client — delegates to {@link unenrollClients}. */
+export async function unenrollClient(
+  classId: string,
+  enrollmentId: string,
+  instructorId: string
+) {
+  return unenrollClients(classId, [enrollmentId], instructorId);
+}
+
+// ─── Attendance ──────────────────────────────────────────────────────────────
+
+export async function getAttendance(instanceId: string, instructorId: string) {
+  const instance = await getInstanceWithClass(instanceId, instructorId);
+
+  const enrollments = await prisma.enrollment.findMany({
+    where: {
+      classId: instance.classId,
+      client: { instructorId, ...active },
+    },
+    orderBy: [{ client: { lastName: "asc" } }, { client: { firstName: "asc" } }],
+    include: {
+      client: {
+        select: { id: true, firstName: true, lastName: true },
+      },
+    },
+  });
+
+  const attendanceRows = await prisma.attendance.findMany({
+    where: { classInstanceId: instanceId },
+  });
+
+  const attendanceByClient = new Map(
+    attendanceRows.map((a) => [a.clientId, a.present])
+  );
+
+  return enrollments.map((e) => ({
+    clientId: e.client.id,
+    firstName: e.client.firstName,
+    lastName: e.client.lastName,
+    present: attendanceByClient.has(e.client.id)
+      ? attendanceByClient.get(e.client.id)!
+      : null,
+  }));
+}
+
+export async function markAttendance(
+  instanceId: string,
+  instructorId: string,
+  attendance: { clientId: string; present: boolean }[]
+) {
+  const instance = await getInstanceWithClass(instanceId, instructorId);
+
+  const enrolledClientIds = new Set(
+    (
+      await prisma.enrollment.findMany({
+        where: { classId: instance.classId },
+        select: { clientId: true },
+      })
+    ).map((e) => e.clientId)
+  );
+
+  for (const row of attendance) {
+    if (!enrolledClientIds.has(row.clientId)) {
+      throw new ValidationError(
+        `Client ${row.clientId} is not enrolled in this class`
+      );
+    }
+  }
+
+  await prisma.$transaction(
+    attendance.map((row) =>
+      prisma.attendance.upsert({
+        where: {
+          clientId_classInstanceId: {
+            clientId: row.clientId,
+            classInstanceId: instanceId,
+          },
+        },
+        create: {
+          clientId: row.clientId,
+          classInstanceId: instanceId,
+          present: row.present,
+        },
+        update: { present: row.present },
+      })
+    )
+  );
+
+  return getAttendance(instanceId, instructorId);
 }

@@ -8,6 +8,7 @@ import { classPlanApi } from "@/services/class-plan-api";
 import { schedulingApi } from "@/services/scheduling-api";
 import { ExercisePickerDialog } from "@/components/class-plans/exercise-picker-dialog";
 import { InstanceExerciseRow } from "@/components/scheduling/instance-exercise-row";
+import { AttendanceChecklist } from "@/components/scheduling/attendance-checklist";
 import { EditScopeDialog, type EditScope } from "@/components/scheduling/edit-scope-dialog";
 import { EditClassDialog } from "@/components/scheduling/edit-class-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -785,12 +786,11 @@ export function ClassInstanceDrawer({
                   </Button>
                 </div>
 
-                <div className="rounded-2xl border border-dashed border-border bg-muted/15 p-4">
-                  <p className="text-sm font-medium text-foreground">Clients</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Client roster and attendance will be available in a later release.
-                  </p>
-                </div>
+                <AttendanceChecklist
+                  instanceId={detail.id}
+                  classId={detail.classId}
+                  status={detail.status}
+                />
 
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">Plan</h3>

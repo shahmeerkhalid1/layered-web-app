@@ -46,6 +46,7 @@ model Instructor {
   classPlanTemplates ClassPlanTemplate[]
   classes            Class[]
   classInstances     ClassInstance[]
+  clients            Client[]
 }
 
 model Session {
@@ -319,9 +320,10 @@ model Class {
   createdAt        DateTime  @default(now())
   deletedAt        DateTime?
 
-  instructor Instructor          @relation(fields: [instructorId], references: [id])
-  template   ClassPlanTemplate?   @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  instances  ClassInstance[]
+  instructor  Instructor   @relation(fields: [instructorId], references: [id])
+  template    ClassPlanTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  instances   ClassInstance[]
+  enrollments Enrollment[]
 
   @@index([instructorId])
   @@index([templateId])
@@ -345,13 +347,66 @@ model ClassInstance {
   createdAt       DateTime       @default(now())
   deletedAt       DateTime?
 
-  class      Class              @relation(fields: [classId], references: [id], onDelete: Cascade)
-  instructor Instructor         @relation(fields: [instructorId], references: [id])
-  template   ClassPlanTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  sections   PlanSection[]
+  class       Class              @relation(fields: [classId], references: [id], onDelete: Cascade)
+  instructor  Instructor         @relation(fields: [instructorId], references: [id])
+  template    ClassPlanTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  sections    PlanSection[]
+  attendances Attendance[]
 
   @@index([classId])
   @@index([instructorId])
   @@index([date])
   @@index([templateId])
+}
+
+// ─── Clients / Roster ────────────────────────────────────────────────────────
+
+model Client {
+  id           String    @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String
+  phone        String?
+  injuries     String?
+  focusAreas   String?
+  goals        String?
+  instructorId String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  instructor  Instructor   @relation(fields: [instructorId], references: [id])
+  enrollments Enrollment[]
+  attendances Attendance[]
+
+  @@unique([email, instructorId])
+  @@index([instructorId])
+}
+
+model Enrollment {
+  id         String   @id @default(cuid())
+  clientId   String
+  classId    String
+  enrolledAt DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  class  Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, classId])
+  @@index([clientId])
+  @@index([classId])
+}
+
+model Attendance {
+  id              String  @id @default(cuid())
+  clientId        String
+  classInstanceId String
+  present         Boolean @default(false)
+
+  client        Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  classInstance ClassInstance @relation(fields: [classInstanceId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, classInstanceId])
+  @@index([clientId])
+  @@index([classInstanceId])
 }

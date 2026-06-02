@@ -15,6 +15,7 @@ import {
   FileText,
   LogOut,
   User,
+  Users,
   ChevronsUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -46,7 +47,7 @@ const navItems: MainNavItem[] = [
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/class-plans", label: "Class Plans", icon: FileText },
   { href: "/exercises", label: "Exercises Library", icon: Dumbbell },
-  // { href: "/clients", label: "Clients", icon: Users },
+  { href: "/clients", label: "Clients", icon: Users },
 ];
 
 const adminNavItems = [
@@ -79,23 +80,16 @@ export function Sidebar() {
   const navContent = (
     <nav className="flex h-full min-h-0 flex-col gap-1 px-3 py-4">
       <div className="mb-6 shrink-0  border-b border-sidebar-border p-2 py-4">
-        <div className="flex items-center gap-3">
-          {/* <div className="flex size-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground">
-            <Dumbbell className="size-5" />
-          </div> */}
-          {/* <div>
-            <h1 className="text-base font-semibold tracking-[-0.03em] text-card-foreground uppercase text-center">
-              Layered.
-            </h1>
-          </div> */}
-          {/* <Image src="/layered-logo.png" alt="Layered. Logo" className="p-0" width={120} height={100} /> */}
-          <Image
-            src="/layered-logo.png"
-            alt="Layered. Logo"
-            width={607}
-            height={115}
-            style={{ width: 120, height: "auto" }}
-          />
+        <div className="flex items-center gap-3 cursor-pointer">
+          <Link href="/">
+            <Image
+              src="/layered-logo.png"
+              alt="Layered. Logo"
+              width={607}
+              height={115}
+              style={{ width: 120, height: "auto" }}
+            />
+          </Link>
         </div>
       </div>
       <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">

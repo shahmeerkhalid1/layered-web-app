@@ -17,6 +17,7 @@ import classInstanceRoutes from "./modules/scheduling/class-instance.routes";
 import quickScheduleRoutes from "./modules/scheduling/quick-schedule.routes";
 import uploadRoutes from "./modules/uploads/upload.routes";
 import dropdownRoutes from "./modules/dropdowns/dropdown.routes";
+import clientRoutes from "./modules/clients/client.routes";
 
 const app = express();
 
@@ -63,6 +64,7 @@ app.use("/api/class-plans", classPlanRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/class-instances", classInstanceRoutes);
 app.use("/api/quick-schedule", quickScheduleRoutes);
+app.use("/api/clients", clientRoutes);
 app.use("/api/dropdowns", authenticate, dropdownRoutes);
 app.use(errorHandler);
 
