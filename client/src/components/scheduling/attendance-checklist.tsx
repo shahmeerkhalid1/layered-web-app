@@ -14,12 +14,14 @@ interface AttendanceChecklistProps {
   instanceId: string;
   classId: string;
   status: InstanceStatus;
+  onAttendanceSaved?: () => void;
 }
 
 export function AttendanceChecklist({
   instanceId,
   classId,
   status,
+  onAttendanceSaved,
 }: AttendanceChecklistProps) {
   const [rows, setRows] = useState<AttendanceRow[]>([]);
   const [draft, setDraft] = useState<Record<string, boolean>>({});
@@ -61,6 +63,7 @@ export function AttendanceChecklist({
       const updated = await clientApi.markAttendance(instanceId, attendance);
       setRows(updated);
       toast.success("Attendance saved");
+      onAttendanceSaved?.();
     } catch {
       toast.error("Failed to save attendance");
     } finally {

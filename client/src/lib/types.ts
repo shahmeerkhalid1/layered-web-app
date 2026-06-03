@@ -351,3 +351,49 @@ export interface AttendanceRow {
   lastName: string;
   present: boolean | null;
 }
+
+// ─── Session Notes ───────────────────────────────────────────────────────────
+
+export interface SessionNoteExerciseRow {
+  id: string;
+  exerciseId: string;
+  exercise: { id: string; name: string };
+}
+
+export interface SessionNote {
+  id: string;
+  classInstanceId: string;
+  clientId: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  client: { id: string; firstName: string; lastName: string };
+  exercises: SessionNoteExerciseRow[];
+}
+
+export interface SessionNoteTimelineItem {
+  id: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  classInstance: {
+    id: string;
+    date: string;
+    time: string;
+    status: InstanceStatus;
+    class: {
+      id: string;
+      title: string;
+      type: ScheduledClassType;
+      durationMinutes: number;
+    };
+  };
+  exercises: SessionNoteExerciseRow[];
+}
+
+export interface SessionNoteTimelineResponse {
+  data: SessionNoteTimelineItem[];
+  total: number;
+  page: number;
+  limit: number;
+}

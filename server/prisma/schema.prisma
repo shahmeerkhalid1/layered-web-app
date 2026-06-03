@@ -47,6 +47,7 @@ model Instructor {
   classes            Class[]
   classInstances     ClassInstance[]
   clients            Client[]
+  sessionNotes       SessionNote[]
 }
 
 model Session {
@@ -166,6 +167,7 @@ model Exercise {
   images               ExerciseImage[]
   layers               ExerciseLayer[]
   planSectionExercises PlanSectionExercise[]
+  sessionNoteExercises SessionNoteExercise[]
 
   @@index([instructorId])
   @@index([folderId])
@@ -350,8 +352,9 @@ model ClassInstance {
   class       Class              @relation(fields: [classId], references: [id], onDelete: Cascade)
   instructor  Instructor         @relation(fields: [instructorId], references: [id])
   template    ClassPlanTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  sections    PlanSection[]
-  attendances Attendance[]
+  sections     PlanSection[]
+  attendances  Attendance[]
+  sessionNotes SessionNote[]
 
   @@index([classId])
   @@index([instructorId])
@@ -376,8 +379,9 @@ model Client {
   deletedAt    DateTime?
 
   instructor  Instructor   @relation(fields: [instructorId], references: [id])
-  enrollments Enrollment[]
-  attendances Attendance[]
+  enrollments  Enrollment[]
+  attendances  Attendance[]
+  sessionNotes SessionNote[]
 
   @@unique([email, instructorId])
   @@index([instructorId])
@@ -409,4 +413,40 @@ model Attendance {
   @@unique([clientId, classInstanceId])
   @@index([clientId])
   @@index([classInstanceId])
+}
+
+// ─── Session Notes ───────────────────────────────────────────────────────────
+
+model SessionNote {
+  id              String    @id @default(cuid())
+  classInstanceId String
+  clientId        String
+  content         String    @default("")
+  instructorId    String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  classInstance ClassInstance         @relation(fields: [classInstanceId], references: [id], onDelete: Cascade)
+  client        Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  instructor    Instructor            @relation(fields: [instructorId], references: [id])
+  exercises     SessionNoteExercise[]
+
+  @@unique([classInstanceId, clientId])
+  @@index([classInstanceId])
+  @@index([clientId])
+  @@index([instructorId])
+}
+
+model SessionNoteExercise {
+  id            String @id @default(cuid())
+  sessionNoteId String
+  exerciseId    String
+
+  sessionNote SessionNote @relation(fields: [sessionNoteId], references: [id], onDelete: Cascade)
+  exercise    Exercise    @relation(fields: [exerciseId], references: [id])
+
+  @@unique([sessionNoteId, exerciseId])
+  @@index([sessionNoteId])
+  @@index([exerciseId])
 }

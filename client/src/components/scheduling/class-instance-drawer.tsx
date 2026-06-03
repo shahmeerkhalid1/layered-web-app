@@ -9,6 +9,7 @@ import { schedulingApi } from "@/services/scheduling-api";
 import { ExercisePickerDialog } from "@/components/class-plans/exercise-picker-dialog";
 import { InstanceExerciseRow } from "@/components/scheduling/instance-exercise-row";
 import { AttendanceChecklist } from "@/components/scheduling/attendance-checklist";
+import { SessionNotesSection } from "@/components/scheduling/session-notes-section";
 import { EditScopeDialog, type EditScope } from "@/components/scheduling/edit-scope-dialog";
 import { EditClassDialog } from "@/components/scheduling/edit-class-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -113,6 +114,7 @@ export function ClassInstanceDrawer({
   const [scopeOpen, setScopeOpen] = useState(false);
   const pendingRef = useRef<{ anchorYmd: string; newIso: string; newDateStr: string } | null>(null);
   const [reschedule, setReschedule] = useState({ date: "", time: "" });
+  const [attendanceRefreshKey, setAttendanceRefreshKey] = useState(0);
 
   const load = useCallback(async () => {
     if (!instanceId) return;
@@ -796,6 +798,15 @@ export function ClassInstanceDrawer({
                   instanceId={detail.id}
                   classId={detail.classId}
                   status={detail.status}
+                  onAttendanceSaved={() =>
+                    setAttendanceRefreshKey((k) => k + 1)
+                  }
+                />
+
+                <SessionNotesSection
+                  instanceId={detail.id}
+                  status={detail.status}
+                  attendanceRefreshKey={attendanceRefreshKey}
                 />
 
                 <div>

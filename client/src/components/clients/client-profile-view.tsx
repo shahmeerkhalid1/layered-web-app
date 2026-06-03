@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Calendar, Mail, Phone } from "lucide-react";
 import { ExercisePreText } from "@/components/exercises/exercise-pre-text";
 import { Badge } from "@/components/ui/badge";
+import { ClientSessionTimeline } from "@/components/clients/client-session-timeline";
 import type { ClientDetail } from "@/lib/types";
 
 function ProfileDetail({
@@ -149,6 +150,8 @@ export function ClientProfileView({ client }: ClientProfileViewProps) {
           </ul>
         )}
       </section>
+
+      <ClientSessionTimeline clientId={client.id} />
     </div>
   );
 }

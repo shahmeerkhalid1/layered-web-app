@@ -15,6 +15,8 @@ import {
   updateSectionExerciseSchema,
   updateSectionSchema,
 } from "../class-plans/class-plan.validation";
+import * as sessionNoteService from "../session-notes/session-note.service";
+import { createSessionNoteSchema } from "../session-notes/session-note.validation";
 
 const router = Router();
 router.use(authenticate);
@@ -148,6 +150,27 @@ router.delete(
       req.user!.instructorId
     );
     res.json(result);
+  }
+);
+
+router.get("/:id/notes", async (req: Request, res: Response) => {
+  const notes = await sessionNoteService.listSessionNotesForInstance(
+    req.params.id as string,
+    req.user!.instructorId
+  );
+  res.json(notes);
+});
+
+router.post(
+  "/:id/notes",
+  validate(createSessionNoteSchema),
+  async (req: Request, res: Response) => {
+    const note = await sessionNoteService.createOrUpsertSessionNote(
+      req.params.id as string,
+      req.user!.instructorId,
+      req.body
+    );
+    res.status(201).json(note);
   }
 );
 

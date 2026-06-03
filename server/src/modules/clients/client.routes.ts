@@ -9,6 +9,11 @@ import {
   deleteClientsSchema,
   type ListClientsQuery,
 } from "./client.validation";
+import * as sessionNoteService from "../session-notes/session-note.service";
+import {
+  listClientNotesQuerySchema,
+  type ListClientNotesQuery,
+} from "../session-notes/session-note.validation";
 
 const router = Router();
 
@@ -38,6 +43,19 @@ router.delete(
     const result = await clientService.deleteClients(
       req.body.clientIds as string[],
       req.user!.instructorId
+    );
+    res.json(result);
+  }
+);
+
+router.get(
+  "/:id/notes",
+  validateQuery(listClientNotesQuerySchema),
+  async (req: Request, res: Response) => {
+    const result = await sessionNoteService.getClientSessionNotesTimeline(
+      req.params.id as string,
+      req.user!.instructorId,
+      req.query as unknown as ListClientNotesQuery
     );
     res.json(result);
   }

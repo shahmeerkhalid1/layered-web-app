@@ -91,8 +91,20 @@ export function TimePicker({
         }
       />
       <PopoverContent
-        className="w-auto border-border bg-popover p-0 text-popover-foreground shadow-lg ring-1 ring-border/50"
+        className="block w-auto border-border bg-popover p-0 text-popover-foreground shadow-lg ring-1 ring-border/50"
         align="start"
+        side="bottom"
+        sideOffset={8}
+        positionMethod="fixed"
+        collisionAvoidance={{
+          side: "flip",
+          align: "shift",
+          fallbackAxisSide: "none",
+        }}
+        collisionBoundary={
+          typeof document !== "undefined" ? document.documentElement : undefined
+        }
+        collisionPadding={16}
       >
         <TimePickerPanel value={value} onChange={onChange} />
       </PopoverContent>

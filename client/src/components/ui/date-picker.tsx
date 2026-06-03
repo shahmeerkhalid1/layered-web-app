@@ -19,6 +19,10 @@ export interface DatePickerProps {
   minDate?: string;
   placeholder?: string;
   className?: string;
+  /** Where the calendar opens relative to the trigger (default: bottom). */
+  popoverSide?: "top" | "bottom";
+  /** When true, never flips to the opposite vertical side (avoids layout jumps in scrollable panels). */
+  lockPopoverSide?: boolean;
   "aria-invalid"?: boolean;
 }
 
@@ -30,6 +34,8 @@ export function DatePicker({
   minDate,
   placeholder = "Pick a date",
   className,
+  popoverSide = "bottom",
+  lockPopoverSide = false,
   "aria-invalid": ariaInvalid,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
@@ -91,8 +97,20 @@ export function DatePicker({
         }
       />
       <PopoverContent
-        className="w-auto border-border bg-popover p-0 text-popover-foreground shadow-lg ring-1 ring-border/50"
+        className="block max-h-none w-auto overflow-visible border-border bg-popover p-0 text-popover-foreground shadow-lg ring-1 ring-border/50"
         align="start"
+        side={popoverSide}
+        sideOffset={8}
+        positionMethod="fixed"
+        collisionAvoidance={{
+          side: lockPopoverSide ? "none" : "flip",
+          align: "shift",
+          fallbackAxisSide: "none",
+        }}
+        collisionBoundary={
+          typeof document !== "undefined" ? document.documentElement : undefined
+        }
+        collisionPadding={16}
       >
         <Calendar
           key={hasValue ? value : "empty"}
