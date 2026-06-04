@@ -352,7 +352,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
             <Button
               type="button"
               size="sm"
-              variant="secondary"
+              variant="outline"
               className="rounded-full"
               onClick={() => setScheduleOpen(true)}
               disabled={pending}

@@ -48,7 +48,7 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
+/* :root {
   --background: oklch(0.991 0.012 86);
   --foreground: oklch(0.21 0.018 64);
   --card: oklch(0.991 0.012 86);
@@ -83,42 +83,133 @@
   --sidebar-ring: oklch(0.694 0.038 77);
   --field-empty: oklch(0.988 0.01 86);
   --field-filled: oklch(0.948 0.023 83);
+} */
+
+:root {
+  /* Base */
+  --background:             oklch(0.985 0.008 85);
+  --foreground:             oklch(0.135 0.015 65);
+
+  /* Cards */
+  --card:                   oklch(0.995 0.005 85);
+  --card-foreground:        oklch(0.135 0.015 65);
+  
+  --popover:                oklch(1 0 0);
+  --popover-foreground:     oklch(0.18 0.015 65);
+
+  /* Brand */
+  --primary:                oklch(0.48 0.18 255);   /* Nice vibrant blue */
+  --primary-foreground:     oklch(0.98 0.01 260);
+
+  /* Secondary surfaces */
+  --secondary:              oklch(0.94 0.015 85);
+  --secondary-foreground:   oklch(0.22 0.02 70);
+
+  /* Muted */
+  --muted:                  oklch(0.955 0.012 85);
+  --muted-foreground:       oklch(0.48 0.025 75);
+
+  /* Hover states */
+  --accent:                 oklch(0.925 0.018 85);
+  --accent-foreground:      oklch(0.135 0.015 65);
+
+  /* Danger */
+  --destructive:            oklch(0.62 0.22 25);
+  --destructive-foreground: oklch(0.98 0.01 260);
+
+  /* Inputs & Borders */
+  --border:                 oklch(0.89 0.018 85);
+  --input:                  oklch(0.97 0.01 85);
+  --ring:                   oklch(0.55 0.18 255);
+
+  /* Charts */
+  --chart-1:                oklch(0.68 0.15 240);
+  --chart-2:                oklch(0.75 0.14 195);
+  --chart-3:                oklch(0.62 0.16 165);
+  --chart-4:                oklch(0.78 0.13 125);
+  --chart-5:                oklch(0.71 0.16 80);
+
+  /* Sidebar */
+  --sidebar:                oklch(0.975 0.01 85);
+  --sidebar-foreground:     oklch(0.135 0.015 65);
+
+  --sidebar-primary:        oklch(0.48 0.18 255);
+  --sidebar-primary-foreground: oklch(0.98 0.01 260);
+
+  --sidebar-accent:         oklch(0.94 0.015 85);
+  --sidebar-accent-foreground: oklch(0.135 0.015 65);
+
+  --sidebar-border:         oklch(0.89 0.018 85);
+  --sidebar-ring:           oklch(0.55 0.18 255);
+
+  /* Form fields */
+  --field-empty:            oklch(0.975 0.008 85);
+  --field-filled:           oklch(0.94 0.015 85);
+
+  /* Radius */
+  --radius:                 0.625rem;
 }
 
 .dark {
-  --background: oklch(0.16 0.018 64);
-  --foreground: oklch(0.965 0.012 86);
-  --card: oklch(0.2 0.018 64);
-  --card-foreground: oklch(0.965 0.012 86);
-  --popover: oklch(0.2 0.018 64);
-  --popover-foreground: oklch(0.965 0.012 86);
-  --primary: oklch(0.934 0.018 86);
-  --primary-foreground: oklch(0.2 0.018 64);
-  --secondary: oklch(0.3 0.035 116);
-  --secondary-foreground: oklch(0.934 0.018 86);
-  --muted: oklch(0.27 0.016 64);
-  --muted-foreground: oklch(0.74 0.025 78);
-  --accent: oklch(0.29 0.02 70);
-  --accent-foreground: oklch(0.955 0.014 86);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(0.35 0.018 64 / 70%);
-  --input: oklch(0.35 0.018 64 / 80%);
-  --ring: oklch(0.63 0.032 78);
-  --chart-1: oklch(0.76 0.042 126);
-  --chart-2: oklch(0.7 0.036 80);
-  --chart-3: oklch(0.62 0.03 64);
-  --chart-4: oklch(0.82 0.034 93);
-  --chart-5: oklch(0.55 0.038 116);
-  --sidebar: oklch(0.18 0.018 64);
-  --sidebar-foreground: oklch(0.965 0.012 86);
-  --sidebar-primary: oklch(0.934 0.018 86);
-  --sidebar-primary-foreground: oklch(0.2 0.018 64);
-  --sidebar-accent: oklch(0.29 0.02 70);
-  --sidebar-accent-foreground: oklch(0.955 0.014 86);
-  --sidebar-border: oklch(0.35 0.018 64 / 70%);
-  --sidebar-ring: oklch(0.63 0.032 78);
-  --field-empty: oklch(0.22 0.016 64 / 55%);
-  --field-filled: oklch(0.29 0.02 70 / 90%);
+  /* Base */
+  --background:             oklch(0.14 0.01 260);
+  --foreground:             oklch(0.98 0.005 260);
+
+  /* Cards */
+  --card:                   oklch(0.19 0.01 260);
+  --card-foreground:        oklch(0.98 0.005 260);
+  
+  --popover:                oklch(0.19 0.01 260);
+  --popover-foreground:     oklch(0.98 0.005 260);
+
+  /* Brand */
+  --primary:                #004aad;
+  --primary-foreground:     #ffffff;
+
+  /* Secondary surfaces */
+  --secondary:              oklch(0.24 0.012 260);
+  --secondary-foreground:   oklch(0.96 0.005 260);
+
+  /* Muted */
+  --muted:                  oklch(0.22 0.008 260);
+  --muted-foreground:       oklch(0.72 0.015 260);
+
+  /* Hover states */
+  --accent:                 oklch(0.26 0.012 260);
+  --accent-foreground:      oklch(0.98 0.005 260);
+
+  /* Danger */
+  --destructive:            oklch(0.63 0.22 25);
+  --destructive-foreground: #ffffff;
+
+  /* Inputs & Borders */
+  --border:                 oklch(0.3 0.01 260);
+  --input:                  oklch(0.3 0.01 260);
+  --ring:                   #2563eb;
+
+  /* Charts */
+  --chart-1:                oklch(0.62 0.18 255);
+  --chart-2:                oklch(0.72 0.14 220);
+  --chart-3:                oklch(0.56 0.15 190);
+  --chart-4:                oklch(0.8 0.12 140);
+  --chart-5:                oklch(0.68 0.15 90);
+
+  /* Sidebar */
+  --sidebar:                oklch(0.16 0.01 260);
+  --sidebar-foreground:     oklch(0.98 0.005 260);
+
+  --sidebar-primary:        #004aad;
+  --sidebar-primary-foreground: #ffffff;
+
+  --sidebar-accent:         oklch(0.24 0.012 260);
+  --sidebar-accent-foreground: oklch(0.98 0.005 260);
+
+  --sidebar-border:         oklch(0.28 0.01 260);
+  --sidebar-ring:           #2563eb;
+
+  /* Form fields */
+  --field-empty:            oklch(0.22 0.01 260);
+  --field-filled:           oklch(0.28 0.01 260);
 }
 
 /* react-day-picker — theme tokens (see https://daypicker.dev/docs/styling) */
@@ -232,7 +323,7 @@
   .dark input[type="checkbox"]:not([data-slot="checkbox-input"]):checked {
     background-color: var(--primary);
     border-color: var(--primary);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23262626' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
   }
 
   body {

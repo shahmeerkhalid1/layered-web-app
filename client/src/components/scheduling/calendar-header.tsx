@@ -37,7 +37,7 @@ export function CalendarHeader({
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
       <div className="flex min-w-0 items-start gap-3">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-secondary/80 text-secondary-foreground">
           <Calendar className="size-5" aria-hidden />
         </div>
         <div className="min-w-0 space-y-1">
@@ -94,7 +94,7 @@ export function CalendarHeader({
         <div className="flex rounded-full border border-border bg-muted/30 p-0.5">
           <Button
             type="button"
-            variant={mode === "week" ? "secondary" : "ghost"}
+            variant={mode === "week" ? "default" : "ghost"}
             size="sm"
             className={cn(
               "h-7 rounded-full px-3 text-xs font-medium shadow-none",
@@ -106,7 +106,7 @@ export function CalendarHeader({
           </Button>
           <Button
             type="button"
-            variant={mode === "month" ? "secondary" : "ghost"}
+            variant={mode === "month" ? "default" : "ghost"}
             size="sm"
             className={cn(
               "h-7 rounded-full px-3 text-xs font-medium shadow-none",

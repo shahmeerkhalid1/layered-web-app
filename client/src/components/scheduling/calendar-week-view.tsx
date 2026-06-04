@@ -201,7 +201,7 @@ export function CalendarEventBlock({ instance, onSelect, layout }: CalendarEvent
         : "flex min-h-0 flex-col gap-0.5 px-2 py-1 text-[11px]",
     isGroup
       ? "border-l-primary border-primary/25 bg-primary/12 text-primary hover:bg-primary/18"
-      : "border-l-secondary border-secondary/30 bg-secondary/15 text-secondary-foreground hover:bg-secondary/22"
+      : "border-l-secondary border-secondary/30 bg-secondary/50 text-secondary-foreground hover:bg-secondary/22 hover:ring-secondary/100"
   );
 
   const blockContent = veryTight ? (

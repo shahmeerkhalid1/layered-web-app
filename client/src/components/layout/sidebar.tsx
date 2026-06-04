@@ -14,15 +14,18 @@ import {
   FileText,
   KeyRound,
   LogOut,
+  Moon,
+  Sun,
   User,
   UserCog,
   Users,
   ChevronsUpDown,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import {
   DropdownMenu,
@@ -55,6 +58,45 @@ const adminNavItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/users", label: "User Management", icon: UserPlus },
 ];
+
+function ThemeToggleMenuItem() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <DropdownMenuItem disabled className="rounded-xl my-1.5">
+        <Sun className="mr-2 size-4" />
+        Theme
+      </DropdownMenuItem>
+    );
+  }
+
+  const isDark = resolvedTheme === "dark";
+
+  return (
+    <DropdownMenuItem
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="rounded-xl my-1.5"
+    >
+      {isDark ? (
+        <>
+          <Sun className="mr-2 size-4" />
+          Light mode
+        </>
+      ) : (
+        <>
+          <Moon className="mr-2 size-4" />
+          Dark mode
+        </>
+      )}
+    </DropdownMenuItem>
+  );
+}
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -180,10 +222,10 @@ export function Sidebar() {
           <DropdownMenuContent
             side="top"
             align="start"
-            className="w-64 rounded-2xl border-border bg-popover p-2 shadow-xl"
+            className="w-64 rounded-2xl border border-border/60 bg-popover p-2 shadow-xl"
           >
-            <div className="flex items-center gap-3 rounded-xl bg-accent px-3 py-2.5">
-              <div className="flex size-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+            <div className="flex items-center gap-3 rounded-xl bg-accent/70 px-3 py-2.5">
+              <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <User className="size-4" />
               </div>
               <div className="flex min-w-0 flex-col">
@@ -222,6 +264,9 @@ export function Sidebar() {
               <KeyRound className="mr-2 size-4" />
               Change password
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <ThemeToggleMenuItem />
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={async () => {
                 await logout();

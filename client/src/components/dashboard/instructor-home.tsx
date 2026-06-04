@@ -34,15 +34,25 @@ type StatCardProps = {
 
 function StatCard({ title, value, hint, href, icon: Icon, accent }: StatCardProps) {
   const accentStyles = {
-    primary: "bg-primary/10 text-primary group-hover:bg-primary/15",
-    secondary: "bg-secondary/15 text-secondary-foreground group-hover:bg-secondary/25",
-    muted: "bg-muted text-muted-foreground group-hover:bg-muted/80",
+    primary: {
+      icon: "dark:bg-primary dark:text-secondary-foreground dark:border-border dark:group-hover:bg-primary/100",
+      card: "bg-primary/10 text-primary group-hover:bg-primary/15 dark:border-primary/25 dark:bg-primary dark:text-secondary-foreground",
+    },
+    secondary: {
+      icon: "bg-secondary/80 text-secondary-foreground group-hover:bg-secondary/100",
+      card: "border-border/80 bg-background/60 hover:border-border  hover:bg-muted/30",
+    },
+    muted: {
+      icon: "bg-muted text-muted-foreground group-hover:bg-muted/80",
+      card: "border-border/80 bg-card/80",
+    },
   } as const;
 
   const className = cn(
-    "group flex flex-col rounded-2xl border border-border/80 bg-card/80 p-4 transition-all",
+    "group flex flex-col rounded-2xl border p-4 transition-all",
+    accentStyles[accent].card,
     href &&
-      "hover:-translate-y-px hover:border-border hover:bg-card hover:shadow-md focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+      "hover:border-border  hover:shadow-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
     !href && "opacity-95"
   );
 
@@ -52,7 +62,7 @@ function StatCard({ title, value, hint, href, icon: Icon, accent }: StatCardProp
         <div
           className={cn(
             "flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors",
-            accentStyles[accent]
+            accentStyles[accent].icon
           )}
         >
           <Icon className="size-4.5" aria-hidden />
@@ -104,7 +114,7 @@ function QuickAction({ href, title, description, icon: Icon }: QuickActionProps)
         "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       )}
     >
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground transition-colors group-hover:bg-secondary/100">
         <Icon className="size-4.5" aria-hidden />
       </div>
       <div className="min-w-0 flex-1">
@@ -158,7 +168,7 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
         <div className="border-b border-border/70 px-4 py-5 md:px-6 md:py-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex min-w-0 items-start gap-3">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-secondary/80 text-secondary-foreground">
                 <LayoutDashboard className="size-5" aria-hidden />
               </div>
               <div className="min-w-0 space-y-1">
@@ -228,17 +238,11 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
               }
               href="/class-plans"
               icon={FileText}
-              accent="primary"
+              accent="secondary"
             />
           </div>
         </div>
 
-        <div className="px-4 py-2 md:px-6">
-          <p className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
-            <Sparkles className="size-3.5 shrink-0 text-primary/70" aria-hidden />
-            Stats are placeholders — live counts will appear as features connect.
-          </p>
-        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
