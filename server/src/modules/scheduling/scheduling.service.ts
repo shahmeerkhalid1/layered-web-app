@@ -1004,7 +1004,7 @@ export async function getAttendance(instanceId: string, instructorId: string) {
     orderBy: [{ client: { lastName: "asc" } }, { client: { firstName: "asc" } }],
     include: {
       client: {
-        select: { id: true, firstName: true, lastName: true },
+        select: { id: true, firstName: true, lastName: true, email: true },
       },
     },
   });
@@ -1021,6 +1021,7 @@ export async function getAttendance(instanceId: string, instructorId: string) {
     clientId: e.client.id,
     firstName: e.client.firstName,
     lastName: e.client.lastName,
+    email: e.client.email,
     present: attendanceByClient.has(e.client.id)
       ? attendanceByClient.get(e.client.id)!
       : null,

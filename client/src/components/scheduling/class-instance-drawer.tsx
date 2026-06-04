@@ -794,20 +794,24 @@ export function ClassInstanceDrawer({
                   </Button>
                 </div>
 
-                <AttendanceChecklist
-                  instanceId={detail.id}
-                  classId={detail.classId}
-                  status={detail.status}
-                  onAttendanceSaved={() =>
-                    setAttendanceRefreshKey((k) => k + 1)
-                  }
-                />
+                {detail.class.type === "PRIVATE" && (
+                  <>
+                    <AttendanceChecklist
+                      instanceId={detail.id}
+                      classId={detail.classId}
+                      status={detail.status}
+                      onAttendanceSaved={() =>
+                        setAttendanceRefreshKey((k) => k + 1)
+                      }
+                    />
 
-                <SessionNotesSection
-                  instanceId={detail.id}
-                  status={detail.status}
-                  attendanceRefreshKey={attendanceRefreshKey}
-                />
+                    <SessionNotesSection
+                      instanceId={detail.id}
+                      status={detail.status}
+                      attendanceRefreshKey={attendanceRefreshKey}
+                    />
+                  </>
+                )}
 
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">Plan</h3>

@@ -88,3 +88,93 @@ export async function sendInviteEmail(input: SendInviteEmailInput): Promise<Send
     return { ok: false, message };
   }
 }
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function contentToHtmlParagraphs(content: string): string {
+  const escaped = escapeHtml(content.trim());
+  if (!escaped) return "";
+  return escaped
+    .split(/\n/)
+    .map((line) => `<p style="margin:0 0 8px;">${line || "&nbsp;"}</p>`)
+    .join("");
+}
+
+export type SendSessionNoteEmailInput = {
+  to: string;
+  clientFirstName: string;
+  instructorName: string;
+  classTitle: string;
+  sessionDate: string;
+  content: string;
+  exercises: string[];
+};
+
+export type SendSessionNoteEmailResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+export async function sendSessionNoteEmail(
+  input: SendSessionNoteEmailInput
+): Promise<SendSessionNoteEmailResult> {
+  const from = process.env.MAIL_FROM?.trim();
+  if (!from || !isMailConfigured()) {
+    return { ok: false, message: "SMTP is not configured" };
+  }
+
+  const subject = `Your session summary — ${input.classTitle} (${input.sessionDate})`;
+  const exerciseLines =
+    input.exercises.length > 0
+      ? ["", "Exercises covered:", ...input.exercises.map((name) => `• ${name}`)]
+      : [];
+
+  const text = [
+    `Hi ${input.clientFirstName},`,
+    "",
+    `Here is a summary from your session with ${input.instructorName} on ${input.sessionDate}.`,
+    "",
+    input.content.trim(),
+    ...exerciseLines,
+    "",
+    "— Layered.",
+  ].join("\n");
+
+  const instructorHtml = escapeHtml(input.instructorName);
+  const titleHtml = escapeHtml(input.classTitle);
+  const dateHtml = escapeHtml(input.sessionDate);
+  const firstNameHtml = escapeHtml(input.clientFirstName);
+  const bodyHtml = contentToHtmlParagraphs(input.content);
+  const exercisesHtml =
+    input.exercises.length > 0
+      ? `<p style="margin:16px 0 8px;font-weight:600;">Exercises covered</p><ul style="margin:0;padding-left:20px;">${input.exercises.map((name) => `<li>${escapeHtml(name)}</li>`).join("")}</ul>`
+      : "";
+
+  const html = `
+    <p>Hi ${firstNameHtml},</p>
+    <p>Here is a summary from your session with <strong>${instructorHtml}</strong> on <strong>${dateHtml}</strong> (${titleHtml}).</p>
+    ${bodyHtml}
+    ${exercisesHtml}
+    <p style="color:#666;font-size:12px;margin-top:24px;">— Layered.</p>
+  `.trim();
+
+  try {
+    const transport = createTransport();
+    await transport.sendMail({
+      from,
+      to: input.to,
+      subject,
+      text,
+      html,
+    });
+    return { ok: true };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Failed to send email";
+    return { ok: false, message };
+  }
+}

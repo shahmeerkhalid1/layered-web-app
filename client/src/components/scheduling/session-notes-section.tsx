@@ -97,6 +97,7 @@ export function SessionNotesSection({
               instanceId={instanceId}
               clientId={row.clientId}
               clientName={`${row.firstName} ${row.lastName}`}
+              clientEmail={row.email}
               existingNote={notesByClientId.get(row.clientId)}
               statusHint={statusHint}
               onUpdated={() => void load()}

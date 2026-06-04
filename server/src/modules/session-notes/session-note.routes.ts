@@ -11,6 +11,14 @@ const router = Router();
 
 router.use(authenticate);
 
+router.post("/:id/share", async (req: Request, res: Response) => {
+  const result = await sessionNoteService.shareSessionNote(
+    req.params.id as string,
+    req.user!.instructorId
+  );
+  res.json(result);
+});
+
 router.get("/:id", async (req: Request, res: Response) => {
   const note = await sessionNoteService.getSessionNoteById(
     req.params.id as string,

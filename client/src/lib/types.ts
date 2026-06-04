@@ -349,6 +349,7 @@ export interface AttendanceRow {
   clientId: string;
   firstName: string;
   lastName: string;
+  email: string;
   present: boolean | null;
 }
 
@@ -367,7 +368,7 @@ export interface SessionNote {
   content: string;
   createdAt: string;
   updatedAt: string;
-  client: { id: string; firstName: string; lastName: string };
+  client: { id: string; firstName: string; lastName: string; email: string };
   exercises: SessionNoteExerciseRow[];
 }
 

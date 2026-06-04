@@ -1,13 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, X } from "lucide-react";
+import { Mail, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import type { SessionNote } from "@/lib/types";
 import { sessionNoteApi } from "@/services/session-note-api";
 import { SessionNoteExercisePickerDialog } from "@/components/scheduling/session-note-exercise-picker-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { formControlTextareaClasses } from "@/lib/form-control-styles";
 import { cn } from "@/lib/utils";
@@ -16,6 +24,7 @@ export interface SessionNoteCardProps {
   instanceId: string;
   clientId: string;
   clientName: string;
+  clientEmail: string;
   existingNote?: SessionNote;
   defaultExpanded?: boolean;
   statusHint?: string;
@@ -26,6 +35,7 @@ export function SessionNoteCard({
   instanceId,
   clientId,
   clientName,
+  clientEmail,
   existingNote,
   defaultExpanded = false,
   statusHint,
@@ -35,6 +45,8 @@ export function SessionNoteCard({
   const [content, setContent] = useState(existingNote?.content ?? "");
   const [note, setNote] = useState<SessionNote | undefined>(existingNote);
   const [pending, setPending] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
@@ -45,6 +57,34 @@ export function SessionNoteCard({
 
   const noteId = note?.id;
   const exercises = note?.exercises ?? [];
+  const emailForShare = (note?.client.email ?? clientEmail).trim();
+  const canShare = Boolean(noteId && content.trim());
+
+  async function handleShare() {
+    if (!noteId) return;
+    setSharing(true);
+    try {
+      if (content.trim() !== (note?.content ?? "").trim()) {
+        const updated = await sessionNoteApi.updateNote(noteId, {
+          content: content.trim(),
+        });
+        setNote(updated);
+      }
+      const result = await sessionNoteApi.shareNote(noteId);
+      if (result.emailSent) {
+        toast.success(`Session notes sent to ${emailForShare}`);
+        setShareDialogOpen(false);
+      } else {
+        toast.error(result.emailError ?? "Could not send email");
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to send session notes";
+      toast.error(message);
+    } finally {
+      setSharing(false);
+    }
+  }
 
   async function handleSave() {
     setPending(true);
@@ -210,6 +250,19 @@ export function SessionNoteCard({
         >
           {pending ? "Saving…" : "Save note"}
         </Button>
+        {noteId && canShare ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            disabled={pending || sharing}
+            onClick={() => setShareDialogOpen(true)}
+          >
+            <Mail className="mr-1 size-3.5" aria-hidden />
+            Send to client
+          </Button>
+        ) : null}
         {noteId ? (
           <Button
             type="button"
@@ -244,6 +297,39 @@ export function SessionNoteCard({
         attachedExerciseIds={exercises.map((e) => e.exerciseId)}
         onConfirm={handleAttachExercises}
       />
+
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent className="rounded-3xl sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send session summary</DialogTitle>
+            <DialogDescription>
+              Email this session&apos;s notes to{" "}
+              <span className="font-medium text-foreground">{emailForShare}</span>
+              ? The client will receive your written notes and any exercises listed
+              on this note.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-full"
+              disabled={sharing}
+              onClick={() => setShareDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="rounded-full"
+              disabled={sharing}
+              onClick={() => void handleShare()}
+            >
+              {sharing ? "Sending…" : "Send email"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </li>
   );
 }

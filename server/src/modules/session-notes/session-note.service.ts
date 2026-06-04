@@ -1,5 +1,6 @@
 import { prisma } from "../../lib/prisma";
 import { NotFoundError, ValidationError } from "../../lib/errors";
+import { sendSessionNoteEmail } from "../../lib/mail";
 import type {
   AttachExercisesInput,
   CreateSessionNoteInput,
@@ -11,7 +12,7 @@ const activeFilter = { deletedAt: null };
 
 const noteInclude = {
   client: {
-    select: { id: true, firstName: true, lastName: true },
+    select: { id: true, firstName: true, lastName: true, email: true },
   },
   exercises: {
     include: {
@@ -299,4 +300,83 @@ export async function detachExerciseFromNote(
 
   await prisma.sessionNoteExercise.delete({ where: { id: row.id } });
   return getSessionNoteById(noteId, instructorId);
+}
+
+function formatSessionDateLabel(date: Date, time: Date): string {
+  const datePart = date.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  const timePart = time.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "UTC",
+  });
+  return `${datePart} · ${timePart}`;
+}
+
+export async function shareSessionNote(noteId: string, instructorId: string) {
+  const note = await prisma.sessionNote.findFirst({
+    where: { id: noteId, instructorId, ...activeFilter },
+    include: {
+      client: {
+        select: { id: true, firstName: true, lastName: true, email: true },
+      },
+      exercises: {
+        include: { exercise: { select: { name: true } } },
+        orderBy: { exercise: { name: "asc" as const } },
+      },
+      classInstance: {
+        select: {
+          date: true,
+          time: true,
+          class: { select: { title: true, type: true } },
+        },
+      },
+    },
+  });
+
+  if (!note) throw new NotFoundError("Session note");
+
+  if (note.classInstance.class.type !== "PRIVATE") {
+    throw new ValidationError("Session notes can only be shared for private sessions");
+  }
+
+  const content = note.content.trim();
+  if (!content) {
+    throw new ValidationError("Add note content before sharing with the client");
+  }
+
+  const clientEmail = note.client.email.trim();
+  if (!clientEmail) {
+    throw new ValidationError("Client does not have an email address on file");
+  }
+
+  const instructor = await prisma.instructor.findUnique({
+    where: { id: instructorId },
+    select: { name: true },
+  });
+  const instructorName = instructor?.name?.trim() || "Your instructor";
+
+  const sessionDate = formatSessionDateLabel(note.classInstance.date, note.classInstance.time);
+  const exerciseNames = note.exercises.map((row) => row.exercise.name);
+
+  const result = await sendSessionNoteEmail({
+    to: clientEmail,
+    clientFirstName: note.client.firstName,
+    instructorName,
+    classTitle: note.classInstance.class.title,
+    sessionDate,
+    content,
+    exercises: exerciseNames,
+  });
+
+  if (!result.ok) {
+    return { emailSent: false, emailError: result.message };
+  }
+
+  return { emailSent: true };
 }

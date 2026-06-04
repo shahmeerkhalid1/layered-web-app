@@ -23,6 +23,11 @@ export type ClientNotesParams = {
   endDate?: string;
 };
 
+export type ShareSessionNoteResult = {
+  emailSent: boolean;
+  emailError?: string;
+};
+
 function clientNotesParamsToQuery(params?: ClientNotesParams): Record<string, string> {
   const q: Record<string, string> = {};
   if (params?.page !== undefined) q.page = String(params.page);
@@ -74,5 +79,10 @@ export const sessionNoteApi = {
   detachExercise: (noteId: string, exerciseId: string) =>
     api.delete<SessionNote>(
       `/session-notes/${encodeURIComponent(noteId)}/exercises/${encodeURIComponent(exerciseId)}`
+    ),
+
+  shareNote: (noteId: string) =>
+    api.post<ShareSessionNoteResult>(
+      `/session-notes/${encodeURIComponent(noteId)}/share`
     ),
 };
