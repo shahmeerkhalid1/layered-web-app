@@ -143,7 +143,7 @@
   --sidebar-ring:           oklch(0.55 0.18 255);
 
   /* Form fields */
-  --field-empty:            oklch(0.975 0.008 85);
+  --field-empty:            oklch(0.985 0.008 85);
   --field-filled:           oklch(0.94 0.015 85);
 
   /* Radius */
@@ -208,7 +208,7 @@
   --sidebar-ring:           #2563eb;
 
   /* Form fields */
-  --field-empty:            oklch(0.22 0.01 260);
+  --field-empty:            oklch(0.14 0.01 260);
   --field-filled:           oklch(0.28 0.01 260);
 }
 
