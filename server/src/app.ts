@@ -20,6 +20,7 @@ import dropdownRoutes from "./modules/dropdowns/dropdown.routes";
 import clientRoutes from "./modules/clients/client.routes";
 import sessionNoteRoutes from "./modules/session-notes/session-note.routes";
 import profileRoutes from "./modules/profile/profile.routes";
+import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 
 const app = express();
 
@@ -69,6 +70,7 @@ app.use("/api/quick-schedule", quickScheduleRoutes);
 app.use("/api/clients", clientRoutes);
 app.use("/api/session-notes", sessionNoteRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/dropdowns", authenticate, dropdownRoutes);
 app.use(errorHandler);
 

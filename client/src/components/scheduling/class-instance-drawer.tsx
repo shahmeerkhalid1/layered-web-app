@@ -310,7 +310,7 @@ export function ClassInstanceDrawer({
       return `Modified`;
       // return `Modified — based on ${detail.template.name}`;
     }
-    return `Using ${detail.template.name}`;
+    return `${detail.template.name}`;
   }, [detail?.template, detail?.isCustomised]);
 
   const saveReschedule = async () => {
@@ -614,12 +614,13 @@ export function ClassInstanceDrawer({
                     day: "numeric",
                     hour: "numeric",
                     minute: "2-digit",
+                    hour12: true,
                   })} · ${detail?.class.durationMinutes ?? 60} min`
                 : " "}
             </SheetDescription>
             {detail && (
               <div className="mt-2 flex flex-wrap gap-1.5">
-                <Badge variant={detail.class.type === "GROUP" ? "default" : "secondary"}>
+                <Badge variant={detail.class.type === "GROUP" ? "secondary" : "default"}>
                   {detail.class.type}
                 </Badge>
                 <Badge variant="outline">{detail.status}</Badge>

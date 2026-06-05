@@ -81,3 +81,8 @@ export function isBeforeToday(d: Date): boolean {
 export function todayYmd(): string {
   return formatYmdLocal(new Date());
 }
+
+/** Deep link to open a class instance in the calendar drawer. */
+export function calendarInstanceHref(instanceId: string): string {
+  return `/calendar?instance=${encodeURIComponent(instanceId)}`;
+}

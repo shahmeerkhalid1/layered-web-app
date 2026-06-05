@@ -28,6 +28,7 @@ function formatSessionDate(dateStr: string, timeStr: string): string {
   const timePart = new Date(timeStr).toLocaleTimeString(undefined, {
     hour: "numeric",
     minute: "2-digit",
+    hour12: true,
   });
   return `${datePart} · ${timePart}`;
 }
@@ -251,6 +252,7 @@ export function ClientSessionTimeline({ clientId }: ClientSessionTimelineProps) 
           <ul className={cn("space-y-3", hasDateFilter ? "mt-4" : "mt-5")}>
             {items.map((item) => {
               const inst = item.classInstance;
+              console.log("inst", inst);
               const cls = inst.class;
               const expanded = expandedIds.has(item.id);
               const fullContent = item.content.trim();

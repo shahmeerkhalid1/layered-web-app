@@ -17,6 +17,7 @@ import {
 } from "@/components/auth/auth-page-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   loginFormSchema,
   type LoginFormValues,
@@ -87,9 +88,8 @@ export default function LoginPage() {
           </AuthField>
 
           <AuthField id="password" label="Password" error={errors.password?.message}>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               placeholder="Enter your password"
               autoComplete="current-password"
               aria-invalid={errors.password ? true : undefined}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CalendarMonthView } from "@/components/scheduling/calendar-month-view";
 import { CalendarPanel } from "@/components/scheduling/calendar-panel";
 import type { CalendarViewMode } from "@/components/scheduling/calendar-header";
@@ -27,6 +28,24 @@ function isCurrentPeriod(mode: CalendarViewMode, cursor: Date, weekStart: Date):
 }
 
 export default function CalendarPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[40vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      }
+    >
+      <CalendarPageContent />
+    </Suspense>
+  );
+}
+
+function CalendarPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const instanceFromUrl = searchParams.get("instance");
+
   const [cursor, setCursor] = useState(() => new Date());
   const [mode, setMode] = useState<CalendarViewMode>("week");
   const [drawerId, setDrawerId] = useState<string | null>(null);
@@ -81,6 +100,25 @@ export default function CalendarPage() {
     setDrawerOpen(true);
   }, []);
 
+  useEffect(() => {
+    if (!instanceFromUrl) return;
+    setDrawerId(instanceFromUrl);
+    setDrawerOpen(true);
+  }, [instanceFromUrl]);
+
+  const handleDrawerOpenChange = useCallback(
+    (open: boolean) => {
+      setDrawerOpen(open);
+      if (!open) {
+        setDrawerId(null);
+        if (instanceFromUrl) {
+          router.replace("/calendar", { scroll: false });
+        }
+      }
+    },
+    [instanceFromUrl, router]
+  );
+
   const onSelectSlot = (day: Date, hour: number) => {
     const ymd = formatYmdLocal(day);
     const hh = String(hour).padStart(2, "0");
@@ -103,10 +141,7 @@ export default function CalendarPage() {
       <ClassInstanceDrawer
         instanceId={drawerId}
         open={drawerOpen}
-        onOpenChange={(o) => {
-          setDrawerOpen(o);
-          if (!o) setDrawerId(null);
-        }}
+        onOpenChange={handleDrawerOpenChange}
         onInstanceIdChange={setDrawerId}
         onUpdated={() => void refresh()}
       />

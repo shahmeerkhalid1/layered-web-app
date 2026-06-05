@@ -304,7 +304,7 @@ export function ClassPlanLibraryHeader({
           )}
         >
           <div
-            className="min-h-0 overflow-hidden"
+            className="min-h-0 "
             aria-hidden={!filtersExpanded}
             inert={filtersExpanded ? undefined : true}
           >

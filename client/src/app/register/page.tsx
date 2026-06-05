@@ -18,6 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { api } from "@/lib/api";
 import {
   registerFormSchema,
@@ -221,9 +222,8 @@ function RegisterPageContent() {
             hint="Min. 8 characters"
             error={errors.password?.message}
           >
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               placeholder="Create a secure password"
               autoComplete="new-password"
               aria-invalid={errors.password ? true : undefined}

@@ -15,7 +15,7 @@ import { authClient } from "@/lib/auth-client";
 import { AccountPageShell } from "@/components/account/account-page-shell";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -86,9 +86,8 @@ export function ChangePasswordView() {
           <form noValidate onSubmit={onSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="current-password">Current password</Label>
-              <Input
+              <PasswordInput
                 id="current-password"
-                type="password"
                 autoComplete="current-password"
                 placeholder="Enter current password"
                 aria-invalid={errors.currentPassword ? true : undefined}
@@ -111,9 +110,8 @@ export function ChangePasswordView() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="new-password">New password</Label>
-                  <Input
+                  <PasswordInput
                     id="new-password"
-                    type="password"
                     autoComplete="new-password"
                     placeholder="At least 8 characters"
                     aria-invalid={errors.newPassword ? true : undefined}
@@ -147,9 +145,8 @@ export function ChangePasswordView() {
 
                 <div className="space-y-2">
                   <Label htmlFor="confirm-password">Confirm new password</Label>
-                  <Input
+                  <PasswordInput
                     id="confirm-password"
-                    type="password"
                     autoComplete="new-password"
                     placeholder="Re-enter new password"
                     aria-invalid={errors.confirmPassword ? true : undefined}

@@ -398,3 +398,27 @@ export interface SessionNoteTimelineResponse {
   page: number;
   limit: number;
 }
+
+// ─── Dashboard ───────────────────────────────────────────────────────────────
+
+export interface DashboardStats {
+  todayClasses: number;
+  totalExercises: number;
+  totalTemplates: number;
+  totalClients: number;
+}
+
+export interface DashboardNotificationItem {
+  instanceId: string;
+  classTitle: string;
+  date: string;
+  time: string;
+  classType: ScheduledClassType;
+  clientName?: string;
+}
+
+export interface DashboardNotificationsResponse {
+  noPlan: DashboardNotificationItem[];
+  missingNotes: DashboardNotificationItem[];
+  upcoming: DashboardNotificationItem[];
+}
