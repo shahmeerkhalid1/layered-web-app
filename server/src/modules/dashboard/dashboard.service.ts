@@ -55,7 +55,7 @@ export async function getDashboardNotifications(instructorId: string) {
   const today = todayUtcDate();
   const now = new Date();
 
-  const [noPlanRows, missingNoteRows, upcomingRows] = await Promise.all([
+  const [noPlanRows, needsClosureRows, missingNoteRows, upcomingRows] = await Promise.all([
     prisma.classInstance.findMany({
       where: {
         instructorId,
@@ -67,6 +67,20 @@ export async function getDashboardNotifications(instructorId: string) {
         sections: { none: {} },
       },
       orderBy: [{ date: "asc" }, { time: "asc" }],
+      include: {
+        class: { select: { title: true, type: true } },
+      },
+    }),
+    prisma.classInstance.findMany({
+      where: {
+        instructorId,
+        ...active,
+        status: "SCHEDULED",
+        date: { lt: today },
+        class: active,
+      },
+      orderBy: [{ date: "desc" }, { time: "desc" }],
+      take: 20,
       include: {
         class: { select: { title: true, type: true } },
       },
@@ -115,6 +129,7 @@ export async function getDashboardNotifications(instructorId: string) {
   ]);
 
   const noPlan = noPlanRows.map((row) => mapNotificationItem(row));
+  const needsClosure = needsClosureRows.map((row) => mapNotificationItem(row));
 
   const missingNotes = missingNoteRows.flatMap((instance) => {
     const notedClientIds = new Set(instance.sessionNotes.map((n) => n.clientId));
@@ -130,5 +145,5 @@ export async function getDashboardNotifications(instructorId: string) {
 
   const upcoming = upcomingRows.map((row) => mapNotificationItem(row));
 
-  return { noPlan, missingNotes, upcoming };
+  return { noPlan, needsClosure, missingNotes, upcoming };
 }

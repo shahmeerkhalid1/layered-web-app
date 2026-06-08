@@ -34,7 +34,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { localDateAndTimeToUtcIso } from "@/lib/datetime-local";
-import { todayYmd } from "@/lib/calendar-utils";
+import { isBeforeToday, todayYmd } from "@/lib/calendar-utils";
 import { cn } from "@/lib/utils";
 
 function sortSections(sections: PlanSectionDetail[]): PlanSectionDetail[] {
@@ -194,6 +194,9 @@ export function ClassInstanceDrawer({
   }, [selectedTemplateId, filteredTemplates]);
 
   const start = detail ? new Date(detail.time) : null;
+  const isOpen = detail?.status === "SCHEDULED";
+  const isPast = detail ? isBeforeToday(new Date(detail.date)) : false;
+  const canEditPlanAndSchedule = isOpen && !isPast;
 
   const submitAddSection = async () => {
     if (!instanceId) return;
@@ -397,6 +400,7 @@ export function ClassInstanceDrawer({
     <>
       <EditClassDialog
         classId={detail?.class.id ?? null}
+        mode={detail?.class.isRecurring ? "series" : "single"}
         open={editClassOpen}
         onOpenChange={setEditClassOpen}
         onSuccess={() => void refresh()}
@@ -600,7 +604,7 @@ export function ClassInstanceDrawer({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="right"
-          className="gap-0 overflow-y-auto p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-4xl"
+          className="gap-0 overflow-y-auto p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-4xl data-[side=right]:lg:max-w-5xl"
         >
           <SheetHeader className="border-b border-border p-4 text-left">
             <SheetTitle className="text-lg">
@@ -653,7 +657,17 @@ export function ClassInstanceDrawer({
             {!loading && detail && (
               <>
                 <div className="space-y-2">
-                  <div >
+                  {isOpen && isPast && (
+                    <div className="rounded-2xl border border-amber-500/30 bg-amber-50/80 px-4 py-3 dark:bg-amber-950/20">
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                        This session is past its scheduled date
+                      </p>
+                      <p className="mt-0.5 text-xs text-amber-700/80 dark:text-amber-400/70">
+                        Mark it complete if it happened, or cancel if it did not.
+                      </p>
+                    </div>
+                  )}
+                  <div>
                     <h3 className="text-sm font-semibold text-foreground">Session actions</h3>
                     <p className="mt-0.5 max-w-full text-xs text-muted-foreground">
                       Update this occurrence: mark it done, cancel it, load a different class plan template, or
@@ -687,7 +701,7 @@ export function ClassInstanceDrawer({
                       size="sm"
                       variant="outline"
                       className="rounded-full"
-                      disabled={pending}
+                      disabled={pending || !canEditPlanAndSchedule}
                       onClick={() => void openAssign()}
                     >
                       Assign / swap template
@@ -697,21 +711,32 @@ export function ClassInstanceDrawer({
                       size="sm"
                       variant="outline"
                       className="rounded-full"
-                      disabled={pending}
+                      disabled={pending || !canEditPlanAndSchedule}
                       onClick={() => setAddSectionOpen(true)}
                     >
                       Add section
                     </Button>
-                    {detail.class.isRecurring && (
+                    {detail.class.isRecurring ? (
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
                         className="rounded-full"
-                        disabled={pending}
+                        disabled={pending || isPast}
                         onClick={() => setEditClassOpen(true)}
                       >
                         Edit series…
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full"
+                        disabled={pending || isPast}
+                        onClick={() => setEditClassOpen(true)}
+                      >
+                        Edit class…
                       </Button>
                     )}
                     {detail.templateId && (
@@ -720,7 +745,7 @@ export function ClassInstanceDrawer({
                         size="sm"
                         variant="outline"
                         className="rounded-full"
-                        disabled={pending}
+                        disabled={pending || !canEditPlanAndSchedule || !detail.isCustomised}
                         onClick={() => setResetConfirmOpen(true)}
                       >
                         Reset to template
@@ -731,7 +756,7 @@ export function ClassInstanceDrawer({
                       size="sm"
                       variant="destructive"
                       className="rounded-full"
-                      disabled={pending || detail.status === "CANCELLED"}
+                      disabled={pending || !isOpen}
                       onClick={async () => {
                         setPending(true);
                         try {
@@ -767,7 +792,7 @@ export function ClassInstanceDrawer({
                         value={reschedule.date}
                         onChange={(date) => setReschedule((r) => ({ ...r, date }))}
                         minDate={todayYmd()}
-                        disabled={pending}
+                        disabled={pending || !canEditPlanAndSchedule}
                         className="mt-1"
                       />
                     </div>
@@ -779,7 +804,7 @@ export function ClassInstanceDrawer({
                         id="rs-time"
                         value={reschedule.time}
                         onChange={(time) => setReschedule((r) => ({ ...r, time }))}
-                        disabled={pending}
+                        disabled={pending || !canEditPlanAndSchedule}
                         className="mt-1"
                       />
                     </div>
@@ -788,7 +813,7 @@ export function ClassInstanceDrawer({
                     type="button"
                     size="sm"
                     className="mt-3 rounded-full"
-                    disabled={pending}
+                    disabled={pending || !canEditPlanAndSchedule}
                     onClick={() => void saveReschedule()}
                   >
                     Save schedule
@@ -844,7 +869,7 @@ export function ClassInstanceDrawer({
                                   variant="ghost"
                                   size="icon-sm"
                                   className="text-muted-foreground hover:text-foreground"
-                                  disabled={pending || idx === 0}
+                                  disabled={pending || !canEditPlanAndSchedule || idx === 0}
                                   aria-label="Move section up"
                                   onClick={() => void moveSection(section.id, "up")}
                                 >
@@ -855,7 +880,7 @@ export function ClassInstanceDrawer({
                                   variant="ghost"
                                   size="icon-sm"
                                   className="text-muted-foreground hover:text-foreground"
-                                  disabled={pending || idx === sortedAll.length - 1}
+                                  disabled={pending || !canEditPlanAndSchedule || idx === sortedAll.length - 1}
                                   aria-label="Move section down"
                                   onClick={() => void moveSection(section.id, "down")}
                                 >
@@ -866,7 +891,7 @@ export function ClassInstanceDrawer({
                                   variant="ghost"
                                   size="icon-sm"
                                   className="text-muted-foreground hover:text-foreground"
-                                  disabled={pending}
+                                  disabled={pending || !canEditPlanAndSchedule}
                                   aria-label="Rename section"
                                   onClick={() => {
                                     setEditingSection(section);
@@ -881,7 +906,7 @@ export function ClassInstanceDrawer({
                                   variant="ghost"
                                   size="sm"
                                   className="h-7 text-destructive hover:text-destructive"
-                                  disabled={pending}
+                                  disabled={pending || !canEditPlanAndSchedule}
                                   onClick={async () => {
                                     if (!instanceId) return;
                                     setPending(true);
@@ -907,7 +932,7 @@ export function ClassInstanceDrawer({
                                   instanceId={instanceId!}
                                   sectionId={section.id}
                                   row={row}
-                                  disabled={pending}
+                                  disabled={pending || !canEditPlanAndSchedule}
                                   canMoveUp={exIndex > 0}
                                   canMoveDown={exIndex < exSorted.length - 1}
                                   onMoveUp={() =>
@@ -925,7 +950,7 @@ export function ClassInstanceDrawer({
                               variant="outline"
                               size="sm"
                               className="mt-3 rounded-full border-dashed border-border"
-                              disabled={pending}
+                              disabled={pending || !canEditPlanAndSchedule}
                               onClick={() => setPickerSectionId(section.id)}
                             >
                               <Plus className="mr-1 size-4" aria-hidden />

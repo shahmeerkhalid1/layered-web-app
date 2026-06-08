@@ -419,6 +419,8 @@ export interface DashboardNotificationItem {
 
 export interface DashboardNotificationsResponse {
   noPlan: DashboardNotificationItem[];
+  /** Past SCHEDULED instances that still need mark complete or cancel. */
+  needsClosure: DashboardNotificationItem[];
   missingNotes: DashboardNotificationItem[];
   upcoming: DashboardNotificationItem[];
 }

@@ -64,14 +64,23 @@ function todayYmd(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+export type EditClassDialogMode = "series" | "single";
+
 interface EditClassDialogProps {
   classId: string | null;
+  mode?: EditClassDialogMode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }
 
-export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: EditClassDialogProps) {
+export function EditClassDialog({
+  classId,
+  mode = "series",
+  open,
+  onOpenChange,
+  onSuccess,
+}: EditClassDialogProps) {
   const [daySet, setDaySet] = useState<Set<number>>(new Set());
   const [daysOfWeekError, setDaysOfWeekError] = useState<string | null>(null);
   const [loadingClass, setLoadingClass] = useState(false);
@@ -137,7 +146,9 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
           });
         })
         .catch(() => {
-          if (!cancelled) toast.error("Could not load class series");
+          if (!cancelled) {
+            toast.error(mode === "single" ? "Could not load class" : "Could not load class series");
+          }
         })
         .finally(() => {
           if (!cancelled) setLoadingClass(false);
@@ -205,6 +216,19 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
     return false;
   };
 
+  const submitSingleUpdate = async (values: CreateClassFormValues) => {
+    if (!classId) return;
+
+    await schedulingApi.updateClass(classId, {
+      title: values.title.trim(),
+      type: values.type,
+      durationMinutes: parseDurationMinutesStr(values.durationMinutesStr),
+    });
+    toast.success("Class updated");
+    onOpenChange(false);
+    onSuccess?.();
+  };
+
   const submitUpdate = async (values: CreateClassFormValues) => {
     if (!classId) return;
     const timeIso = localDateAndTimeToUtcIso(values.startDate, values.clockTime);
@@ -240,6 +264,16 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
   };
 
   const onSubmit = async (values: CreateClassFormValues) => {
+    if (mode === "single") {
+      try {
+        await submitSingleUpdate(values);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "Could not update class";
+        toast.error(msg);
+      }
+      return;
+    }
+
     if (values.isRecurring && !validateRecurringExtras()) {
       return;
     }
@@ -276,9 +310,11 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-h-[90vh] overflow-y-auto rounded-3xl sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit class series</DialogTitle>
+            <DialogTitle>{mode === "single" ? "Edit class" : "Edit class series"}</DialogTitle>
             <DialogDescription>
-              Update the recurring schedule for all future sessions. Past sessions are not changed.
+              {mode === "single"
+                ? "Update the title, type, and duration for this class. Use Date and time below to change when it runs."
+                : "Update the recurring schedule for all future sessions. Past sessions are not changed."}
             </DialogDescription>
           </DialogHeader>
 
@@ -343,67 +379,71 @@ export function EditClassDialog({ classId, open, onOpenChange, onSuccess }: Edit
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="ec-rec"
-                  {...isRecurringField}
-                  onChange={(e) => {
-                    isRecurringField.onChange(e);
-                    if (!e.target.checked) {
-                      clearErrors("endDate");
-                      setDaysOfWeekError(null);
-                    }
-                  }}
-                />
-                <Label htmlFor="ec-rec" className="font-medium">
-                  Recurring class
-                </Label>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="ec-start">
-                    Start date <span className="text-destructive">*</span>
-                  </Label>
-                  <Controller
-                    name="startDate"
-                    control={control}
-                    render={({ field }) => (
-                      <DatePicker
-                        id="ec-start"
-                        value={field.value}
-                        onChange={field.onChange}
-                        aria-invalid={!!errors.startDate}
-                      />
-                    )}
+              {mode === "series" && (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="ec-rec"
+                    {...isRecurringField}
+                    onChange={(e) => {
+                      isRecurringField.onChange(e);
+                      if (!e.target.checked) {
+                        clearErrors("endDate");
+                        setDaysOfWeekError(null);
+                      }
+                    }}
                   />
-                  {errors.startDate && (
-                    <p className="text-xs text-destructive">{errors.startDate.message}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ec-clock">
-                    Time <span className="text-destructive">*</span>
+                  <Label htmlFor="ec-rec" className="font-medium">
+                    Recurring class
                   </Label>
-                  <Controller
-                    name="clockTime"
-                    control={control}
-                    render={({ field }) => (
-                      <TimePicker
-                        id="ec-clock"
-                        value={field.value}
-                        onChange={field.onChange}
-                        aria-invalid={!!errors.clockTime}
-                      />
-                    )}
-                  />
-                  {errors.clockTime && (
-                    <p className="text-xs text-destructive">{errors.clockTime.message}</p>
-                  )}
                 </div>
-              </div>
+              )}
 
-              {isRecurring && (
+              {mode === "series" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="ec-start">
+                      Start date <span className="text-destructive">*</span>
+                    </Label>
+                    <Controller
+                      name="startDate"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          id="ec-start"
+                          value={field.value}
+                          onChange={field.onChange}
+                          aria-invalid={!!errors.startDate}
+                        />
+                      )}
+                    />
+                    {errors.startDate && (
+                      <p className="text-xs text-destructive">{errors.startDate.message}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ec-clock">
+                      Time <span className="text-destructive">*</span>
+                    </Label>
+                    <Controller
+                      name="clockTime"
+                      control={control}
+                      render={({ field }) => (
+                        <TimePicker
+                          id="ec-clock"
+                          value={field.value}
+                          onChange={field.onChange}
+                          aria-invalid={!!errors.clockTime}
+                        />
+                      )}
+                    />
+                    {errors.clockTime && (
+                      <p className="text-xs text-destructive">{errors.clockTime.message}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {mode === "series" && isRecurring && (
                 <>
                   <div className="space-y-2">
                     <Label>

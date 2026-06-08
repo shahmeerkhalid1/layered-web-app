@@ -188,6 +188,82 @@ function formatNotificationWhen(item: DashboardNotificationItem): string {
   });
 }
 
+function NeedsClosureNotificationsGroup({ items }: { items: DashboardNotificationItem[] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const title =
+    items.length === 1
+      ? "1 past session still open"
+      : `${items.length} past sessions still open`;
+
+  return (
+    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 text-amber-900 dark:text-amber-100">
+      <div className="flex items-start gap-3 px-4 py-3">
+        <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium">{title}</p>
+          <p className="mt-0.5 text-xs opacity-80">
+            These classes are past their scheduled date. Mark complete if they happened, or cancel
+            if they did not.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 shrink-0 gap-1 rounded-full px-2.5 text-xs text-amber-900 hover:bg-amber-500/10 dark:text-amber-100"
+          onClick={() => setExpanded((open) => !open)}
+          aria-expanded={expanded}
+        >
+          {expanded ? (
+            <>
+              Hide details
+              <ChevronUp className="size-3.5" aria-hidden />
+            </>
+          ) : (
+            <>
+              Show details
+              <ChevronDown className="size-3.5" aria-hidden />
+            </>
+          )}
+        </Button>
+      </div>
+
+      {expanded ? (
+        <ul className="space-y-1.5 border-t border-amber-500/20 px-3 py-3">
+          {items.map((item) => (
+            <li key={item.instanceId}>
+              <Link
+                href={calendarInstanceHref(item.instanceId)}
+                className={cn(
+                  "flex items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-background/60 px-3 py-2.5 transition-all",
+                  "hover:border-amber-500/35 hover:bg-muted/30 hover:shadow-sm",
+                  "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                )}
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {item.classTitle}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {formatNotificationWhen(item)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Badge variant="outline" className="rounded-full text-[10px]">
+                    {item.classType === "GROUP" ? "Group" : "Private"}
+                  </Badge>
+                  <ArrowRight className="size-3.5 text-muted-foreground/50" aria-hidden />
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 function NoPlanNotificationsGroup({ items }: { items: DashboardNotificationItem[] }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -277,9 +353,10 @@ function NotificationsSection({
   }
 
   const noPlan = data?.noPlan ?? [];
+  const needsClosure = data?.needsClosure ?? [];
   const missingNotes = data?.missingNotes ?? [];
   const upcoming = data?.upcoming ?? [];
-  const total = noPlan.length + missingNotes.length + upcoming.length;
+  const total = noPlan.length + needsClosure.length + missingNotes.length + upcoming.length;
 
   if (total === 0) {
     return (
@@ -288,7 +365,8 @@ function NotificationsSection({
         <div>
           <p className="text-sm font-medium text-foreground">All caught up</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            No plans to attach, notes to write, or upcoming reminders right now.
+            No open past sessions, plans to attach, notes to write, or upcoming reminders right
+            now.
           </p>
         </div>
       </div>
@@ -297,6 +375,9 @@ function NotificationsSection({
 
   return (
     <div className="space-y-2">
+      {needsClosure.length > 0 ? (
+        <NeedsClosureNotificationsGroup items={needsClosure} />
+      ) : null}
       {noPlan.length > 0 ? <NoPlanNotificationsGroup items={noPlan} /> : null}
       {missingNotes.slice(0, 3).map((item) => (
         <NotificationCard
@@ -515,7 +596,7 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
           Notifications
         </h2>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Plans to attach, notes to write, and what&apos;s coming up
+          Open past sessions, plans to attach, notes to write, and what&apos;s coming up
         </p>
         <div className="mt-5">
           <NotificationsSection data={notifications} loading={loadingNotifications} />

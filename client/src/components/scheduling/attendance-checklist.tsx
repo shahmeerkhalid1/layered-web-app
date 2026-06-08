@@ -90,9 +90,16 @@ export function AttendanceChecklist({
     <>
       <div className="rounded-2xl border border-border bg-muted/10 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-medium text-foreground">
-            Clients ({rows.length} enrolled)
-          </p>
+          <div>
+            <p className="text-sm font-medium text-foreground">Client</p>
+            <p className="text-xs text-muted-foreground">
+              {rows.length === 0
+                ? "Private session — assign one client"
+                : rows[0]
+                  ? `${rows[0].firstName} ${rows[0].lastName}`.trim()
+                  : "Assigned"}
+            </p>
+          </div>
           <Button
             type="button"
             variant="outline"
@@ -101,14 +108,14 @@ export function AttendanceChecklist({
             onClick={() => setEnrollOpen(true)}
           >
             <Settings2 className="mr-1.5 size-3.5" />
-            Manage enrollment
+            {rows.length === 0 ? "Assign client" : "Change client"}
           </Button>
         </div>
 
         {rows.length === 0 ? (
           <div className="mt-3 rounded-xl border border-dashed border-border/80 bg-muted/15 px-3 py-6 text-center">
             <p className="text-xs text-muted-foreground">
-              No clients enrolled in this class yet.
+              No client assigned to this private session yet.
             </p>
             <Button
               type="button"
@@ -118,7 +125,7 @@ export function AttendanceChecklist({
               onClick={() => setEnrollOpen(true)}
             >
               <UserPlus className="mr-1.5 size-3.5" />
-              Add clients
+              Assign client
             </Button>
           </div>
         ) : showAttendance ? (
@@ -171,6 +178,7 @@ export function AttendanceChecklist({
         open={enrollOpen}
         onOpenChange={setEnrollOpen}
         classId={classId}
+        mode="private"
         onUpdated={() => void load()}
       />
     </>
