@@ -165,6 +165,15 @@ export async function createOrUpsertSessionNote(
     });
     noteId = existing.id;
   } else {
+    // Clear any legacy soft-deleted row blocking the unique (instance, client) slot
+    await prisma.sessionNote.deleteMany({
+      where: {
+        classInstanceId: instanceId,
+        clientId: input.clientId,
+        deletedAt: { not: null },
+      },
+    });
+
     const created = await prisma.sessionNote.create({
       data: {
         classInstanceId: instanceId,
@@ -269,10 +278,7 @@ export async function updateSessionNote(
 
 export async function deleteSessionNote(noteId: string, instructorId: string) {
   await getOwnedNote(noteId, instructorId);
-  await prisma.sessionNote.update({
-    where: { id: noteId },
-    data: { deletedAt: new Date() },
-  });
+  await prisma.sessionNote.delete({ where: { id: noteId } });
   return { message: "Session note deleted" };
 }
 
