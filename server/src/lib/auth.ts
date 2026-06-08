@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin } from "better-auth/plugins/admin";
 import { adminAc, userAc } from "better-auth/plugins/admin/access";
+import { isMailConfigured, sendPasswordResetEmail } from "./mail";
 import { prisma } from "./prisma";
 
 export const auth = betterAuth({
@@ -12,6 +13,21 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
+    sendResetPassword: async ({ user, url }) => {
+      const result = await sendPasswordResetEmail({
+        to: user.email,
+        resetLink: url,
+      });
+      if (!result.ok) {
+        if (!isMailConfigured()) {
+          console.warn(
+            `[auth] Password reset email not sent (SMTP not configured). Reset link for ${user.email}: ${url}`
+          );
+          return;
+        }
+        console.error(`[auth] Failed to send password reset email to ${user.email}: ${result.message}`);
+      }
+    },
   },
   user: {
     modelName: "Instructor",
@@ -58,6 +74,26 @@ export const auth = betterAuth({
             ]);
           }
         },
+      },
+    },
+  },
+  rateLimit: {
+    enabled: process.env.NODE_ENV === "production",
+    window: 60,
+    max: 100,
+    storage: "memory",
+    customRules: {
+      "/request-password-reset": {
+        window: 15 * 60,
+        max: 3,
+      },
+      "/reset-password": {
+        window: 15 * 60,
+        max: 5,
+      },
+      "/reset-password/*": {
+        window: 60,
+        max: 30,
       },
     },
   },

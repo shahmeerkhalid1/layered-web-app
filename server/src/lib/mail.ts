@@ -47,6 +47,15 @@ export type SendInviteEmailResult =
   | { ok: true }
   | { ok: false; message: string };
 
+export type SendPasswordResetEmailInput = {
+  to: string;
+  resetLink: string;
+};
+
+export type SendPasswordResetEmailResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
 export async function sendInviteEmail(input: SendInviteEmailInput): Promise<SendInviteEmailResult> {
   const from = process.env.MAIL_FROM?.trim();
   if (!from || !isMailConfigured()) {
@@ -71,6 +80,48 @@ export async function sendInviteEmail(input: SendInviteEmailInput): Promise<Send
     <p><a href="${hrefAttr}">Complete your registration</a></p>
     <p>This link expires in 7 days.</p>
     <p style="color:#666;font-size:12px;">If you did not expect this email, you can ignore it.</p>
+  `.trim();
+
+  try {
+    const transport = createTransport();
+    await transport.sendMail({
+      from,
+      to: input.to,
+      subject,
+      text,
+      html,
+    });
+    return { ok: true };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Failed to send email";
+    return { ok: false, message };
+  }
+}
+
+export async function sendPasswordResetEmail(
+  input: SendPasswordResetEmailInput
+): Promise<SendPasswordResetEmailResult> {
+  const from = process.env.MAIL_FROM?.trim();
+  if (!from || !isMailConfigured()) {
+    return { ok: false, message: "SMTP is not configured" };
+  }
+
+  const subject = "Reset your Layered. password";
+  const text = [
+    "We received a request to reset your password.",
+    "",
+    "Use this link to choose a new password (valid for 1 hour):",
+    input.resetLink,
+    "",
+    "If you did not request this, you can ignore this email.",
+  ].join("\n");
+
+  const hrefAttr = input.resetLink.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  const html = `
+    <p>We received a request to reset your password for <strong>Layered.</strong></p>
+    <p><a href="${hrefAttr}">Choose a new password</a></p>
+    <p>This link expires in 1 hour.</p>
+    <p style="color:#666;font-size:12px;">If you did not request this, you can ignore this email.</p>
   `.trim();
 
   try {

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useAuth } from "@/context/auth-context";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import { LogIn } from "lucide-react";
 
 import {
@@ -25,8 +26,24 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <AuthPageShell>
+          <AuthLoadingCard />
+        </AuthPageShell>
+      }
+    >
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+
+function LoginPageContent() {
   const { login, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const passwordResetSuccess = searchParams.get("reset") === "success";
   const {
     register,
     handleSubmit,
@@ -73,6 +90,14 @@ export default function LoginPage() {
         }
       >
         <form onSubmit={onSubmit} className="space-y-5">
+          {passwordResetSuccess ? (
+            <div
+              role="status"
+              className="rounded-2xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm text-foreground"
+            >
+              Your password was updated. Sign in with your new password.
+            </div>
+          ) : null}
           {errors.root ? <AuthFormAlert>{errors.root.message}</AuthFormAlert> : null}
 
           <AuthField id="email" label="Email" error={errors.email?.message}>
@@ -87,7 +112,19 @@ export default function LoginPage() {
             />
           </AuthField>
 
-          <AuthField id="password" label="Password" error={errors.password?.message}>
+          <AuthField
+            id="password"
+            label="Password"
+            labelEnd={
+              <Link
+                href="/forgot-password"
+                className="text-xs font-medium text-primary underline-offset-4 transition-colors hover:underline"
+              >
+                Forgot password?
+              </Link>
+            }
+            error={errors.password?.message}
+          >
             <PasswordInput
               id="password"
               placeholder="Enter your password"

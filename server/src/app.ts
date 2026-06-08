@@ -21,6 +21,7 @@ import clientRoutes from "./modules/clients/client.routes";
 import sessionNoteRoutes from "./modules/session-notes/session-note.routes";
 import profileRoutes from "./modules/profile/profile.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
+import passwordResetRoutes from "./modules/auth/password-reset.routes";
 
 const app = express();
 
@@ -45,6 +46,9 @@ app.get("/api/signup-status", async (_req, res) => {
   const enabled = await adminService.isSignupEnabled();
   res.json({ signupEnabled: enabled });
 });
+
+// Public endpoint: request password reset (returns 404 when email is unknown)
+app.use("/api/password-reset", passwordResetRoutes);
 
 // Public endpoint: verify invitation token
 app.get("/api/invite/verify", async (req, res) => {

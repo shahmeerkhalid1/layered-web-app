@@ -141,18 +141,19 @@ export interface AuthFieldProps {
   id: string;
   label: string;
   hint?: string;
+  labelEnd?: ReactNode;
   error?: string;
   children: ReactNode;
 }
 
-export function AuthField({ id, label, hint, error, children }: AuthFieldProps) {
+export function AuthField({ id, label, hint, labelEnd, error, children }: AuthFieldProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-baseline justify-between gap-2">
         <label htmlFor={id} className="text-sm font-medium text-foreground">
           {label}
         </label>
-        {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
+        {labelEnd ?? (hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null)}
       </div>
       {children}
       {error ? (
