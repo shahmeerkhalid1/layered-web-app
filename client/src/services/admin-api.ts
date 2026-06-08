@@ -40,4 +40,13 @@ export const adminApi = {
     api.patch<PlatformSettings>("/admin/settings", body),
   invite: (body: { email: string; role: "ADMIN" | "INSTRUCTOR" }) =>
     api.post<InviteResponse>("/admin/invite", body),
+  revokeInvitation: (id: string) =>
+    api.delete<{ invitation: InvitationRow }>(`/admin/invitations/${id}`),
 };
+
+export function buildInviteLink(token: string): string {
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}/register?token=${token}`;
+  }
+  return `/register?token=${token}`;
+}

@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Copy,
   Eye,
   Loader2,
+  Mail,
   MoreHorizontal,
   SearchX,
   Shield,
@@ -11,6 +13,7 @@ import {
   UserRound,
   UserX,
 } from "lucide-react";
+import type { InvitationRow } from "@/services/admin-api";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
@@ -56,6 +59,7 @@ export type AdminListUser = {
 
 interface AdminUserListProps {
   users: AdminListUser[];
+  pendingInvitations?: InvitationRow[];
   loading: boolean;
   showFilteredEmpty?: boolean;
   onClearFilters?: () => void;
@@ -66,6 +70,9 @@ interface AdminUserListProps {
   onRefresh?: () => Promise<void>;
   selfId?: string;
   onViewDetails: (user: AdminListUser) => void;
+  onViewInvitationDetails?: (invitation: InvitationRow) => void;
+  onCopyInviteLink?: (invitation: InvitationRow) => void;
+  onRevokeInvitation?: (invitation: InvitationRow) => void;
   onMakeAdmin: (user: AdminListUser) => void;
   onMakeInstructor: (user: AdminListUser) => void;
   onDeactivate: (user: AdminListUser) => void;
@@ -74,6 +81,7 @@ interface AdminUserListProps {
 
 export function AdminUserList({
   users,
+  pendingInvitations = [],
   loading,
   showFilteredEmpty,
   onClearFilters,
@@ -84,6 +92,9 @@ export function AdminUserList({
   onRefresh,
   selfId,
   onViewDetails,
+  onViewInvitationDetails,
+  onCopyInviteLink,
+  onRevokeInvitation,
   onMakeAdmin,
   onMakeInstructor,
   onDeactivate,
@@ -266,7 +277,7 @@ export function AdminUserList({
         </div>
       ) : showFilteredEmpty && onClearFilters ? (
         <AdminUserFilteredEmptyState onClearFilters={onClearFilters} />
-      ) : users.length === 0 ? (
+      ) : users.length === 0 && pendingInvitations.length === 0 ? (
         <AdminUserEmptyState onInvite={onInvite} />
       ) : (
         <>
@@ -303,6 +314,93 @@ export function AdminUserList({
               </TableRow>
             </TableHeader>
             <TableBody>
+              {pendingInvitations.map((invitation) => (
+                <TableRow
+                  key={`invite-${invitation.id}`}
+                  tabIndex={0}
+                  className="cursor-pointer border-border bg-muted/15 hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
+                  onClick={() => onViewInvitationDetails?.(invitation)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onViewInvitationDetails?.(invitation);
+                    }
+                  }}
+                >
+                  <TableCell className="px-4 py-3" />
+                  <TableCell className="px-4 py-3 font-medium text-muted-foreground italic">
+                    Pending
+                  </TableCell>
+                  <TableCell className="max-w-[12rem] truncate px-4 py-3 text-muted-foreground sm:max-w-none">
+                    {invitation.email}
+                  </TableCell>
+                  <TableCell className="hidden px-4 py-3 sm:table-cell">
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "border-border bg-muted/40 text-[11px] font-semibold",
+                        invitation.role === "ADMIN" &&
+                          "border-primary/30 bg-primary/10 text-primary",
+                      )}
+                    >
+                      {invitation.role}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="px-4 py-3">
+                    <Badge
+                      variant="outline"
+                      className="rounded-full border-primary/25 bg-primary/10 text-[11px] text-primary"
+                    >
+                      <Mail className="mr-1 size-3" />
+                      Invite pending
+                    </Badge>
+                  </TableCell>
+                  <TableCell
+                    className="px-4 py-3 text-right"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        className={cn(
+                          buttonVariants({ variant: "ghost", size: "icon-sm" }),
+                          "shrink-0 rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground data-popup-open:bg-accent",
+                        )}
+                        aria-label={`Open menu for ${invitation.email}`}
+                      >
+                        <MoreHorizontal className="size-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="rounded-2xl border-border bg-popover p-1 shadow-xl w-48"
+                      >
+                        <DropdownMenuItem
+                          className="rounded-xl"
+                          onClick={() => onViewInvitationDetails?.(invitation)}
+                        >
+                          <Eye className="size-4" />
+                          View details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="rounded-xl"
+                          onClick={() => onCopyInviteLink?.(invitation)}
+                        >
+                          <Copy className="size-4" />
+                          Copy invite link
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          variant="destructive"
+                          className="rounded-xl"
+                          onClick={() => onRevokeInvitation?.(invitation)}
+                        >
+                          <UserX className="size-4" />
+                          Revoke invitation
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
               {users.map((user) => {
                 const banned = Boolean(user.banned);
                 const self = isSelf(user);

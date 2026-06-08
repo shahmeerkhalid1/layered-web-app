@@ -1,12 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Copy, Loader2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
-import { adminApi } from "@/services/admin-api";
+import {
+  adminApi,
+  buildInviteLink,
+  type InvitationRow,
+} from "@/services/admin-api";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
@@ -72,6 +76,7 @@ export default function AdminUsersPage() {
   const selfId = instructor?.id;
 
   const [users, setUsers] = useState<AdminListUser[]>([]);
+  const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
@@ -94,6 +99,10 @@ export default function AdminUsersPage() {
   });
 
   const [detailsUser, setDetailsUser] = useState<AdminListUser | null>(null);
+  const [detailsInvitation, setDetailsInvitation] =
+    useState<InvitationRow | null>(null);
+  const [confirmRevokeInvitation, setConfirmRevokeInvitation] =
+    useState<InvitationRow | null>(null);
 
   const [confirmBan, setConfirmBan] = useState<AdminListUser | null>(null);
   const [confirmUnban, setConfirmUnban] = useState<AdminListUser | null>(null);
@@ -106,37 +115,42 @@ export default function AdminUsersPage() {
   const prevDebouncedRef = useRef(debouncedSearch);
   const lastFetchKeyRef = useRef("");
 
-  const loadUsers = useCallback(
+  const loadDirectory = useCallback(
     async (pageForQuery: number) => {
       setLoading(true);
       try {
         const offset = (pageForQuery - 1) * PAGE_SIZE;
         const q = debouncedSearch.trim();
-        const res = await authClient.admin.listUsers({
-          query: {
-            limit: PAGE_SIZE,
-            offset,
-            ...(q
-              ? {
-                  searchValue: q,
-                  searchField: "email" as const,
-                  searchOperator: "contains" as const,
-                }
-              : {}),
-            sortBy: "createdAt",
-            sortDirection: "desc",
-          },
-        });
-        const err = (res as { error?: { message?: string } }).error;
+        const [usersRes, invRes] = await Promise.all([
+          authClient.admin.listUsers({
+            query: {
+              limit: PAGE_SIZE,
+              offset,
+              ...(q
+                ? {
+                    searchValue: q,
+                    searchField: "email" as const,
+                    searchOperator: "contains" as const,
+                  }
+                : {}),
+              sortBy: "createdAt",
+              sortDirection: "desc",
+            },
+          }),
+          adminApi.getInvitations(),
+        ]);
+        const err = (usersRes as { error?: { message?: string } }).error;
         if (err?.message) {
           throw new Error(err.message);
         }
-        const { users: list, total: t } = parseListUsersResult(res);
+        const { users: list, total: t } = parseListUsersResult(usersRes);
         setUsers(list);
         setTotal(t);
+        setInvitations(invRes.invitations);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Failed to load users");
         setUsers([]);
+        setInvitations([]);
         setTotal(0);
       } finally {
         setLoading(false);
@@ -160,9 +174,9 @@ export default function AdminUsersPage() {
       if (searchBump && page !== 1) {
         setPage(1);
       }
-      void loadUsers(pageForQuery);
+      void loadDirectory(pageForQuery);
     });
-  }, [page, debouncedSearch, loadUsers]);
+  }, [page, debouncedSearch, loadDirectory]);
 
   const openInvite = () => {
     reset({ email: "", role: "INSTRUCTOR" });
@@ -185,6 +199,7 @@ export default function AdminUsersPage() {
           description: data.emailError,
         });
       }
+      await loadDirectory(page);
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Invite failed");
     } finally {
@@ -213,7 +228,7 @@ export default function AdminUsersPage() {
       if (err?.message) throw new Error(err.message);
       toast.success("User deactivated");
       setConfirmBan(null);
-      await loadUsers(page);
+      await loadDirectory(page);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Ban failed");
     } finally {
@@ -230,7 +245,7 @@ export default function AdminUsersPage() {
       if (err?.message) throw new Error(err.message);
       toast.success("User activated");
       setConfirmUnban(null);
-      await loadUsers(page);
+      await loadDirectory(page);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Unban failed");
     } finally {
@@ -254,7 +269,7 @@ export default function AdminUsersPage() {
       if (err?.message) throw new Error(err.message);
       toast.success("Role updated");
       setConfirmRole(null);
-      await loadUsers(page);
+      await loadDirectory(page);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Role update failed");
     } finally {
@@ -262,17 +277,62 @@ export default function AdminUsersPage() {
     }
   };
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const searchTrim = debouncedSearch.trim();
+  const pendingInvitations = useMemo(() => {
+    const now = Date.now();
+    return invitations.filter((invitation) => {
+      if (invitation.status !== "PENDING") return false;
+      if (new Date(invitation.expiresAt).getTime() <= now) return false;
+      if (!searchTrim) return true;
+      return invitation.email
+        .toLowerCase()
+        .includes(searchTrim.toLowerCase());
+    });
+  }, [invitations, searchTrim]);
+
+  const directoryTotal = total + pendingInvitations.length;
+  const visibleCount = users.length + pendingInvitations.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const hasActiveFilters = searchTrim.length > 0;
   const showFilteredEmpty =
-    !loading && users.length === 0 && hasActiveFilters && total === 0;
+    !loading &&
+    users.length === 0 &&
+    pendingInvitations.length === 0 &&
+    hasActiveFilters &&
+    directoryTotal === 0;
+
+  const copyInvitationLink = async (invitation: InvitationRow) => {
+    try {
+      await navigator.clipboard.writeText(buildInviteLink(invitation.token));
+      toast.success("Invite link copied");
+    } catch {
+      toast.error("Could not copy to clipboard");
+    }
+  };
+
+  const runRevokeInvitation = async () => {
+    if (!confirmRevokeInvitation) return;
+    setActionLoading(true);
+    try {
+      await adminApi.revokeInvitation(confirmRevokeInvitation.id);
+      toast.success("Invitation revoked");
+      setConfirmRevokeInvitation(null);
+      if (detailsInvitation?.id === confirmRevokeInvitation.id) {
+        setDetailsInvitation(null);
+      }
+      await loadDirectory(page);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Failed to revoke invitation");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6 rounded-[2rem] bg-background px-2 pb-6 sm:px-4">
       <AdminUserLibraryHeader
-        totalUsers={loading ? undefined : total}
-        visibleUserCount={users.length}
+        totalUsers={loading ? undefined : directoryTotal}
+        visibleUserCount={visibleCount}
         loading={loading}
         hasActiveFilters={hasActiveFilters}
         search={searchInput}
@@ -282,6 +342,7 @@ export default function AdminUsersPage() {
 
       <AdminUserList
         users={users}
+        pendingInvitations={pendingInvitations}
         loading={loading}
         showFilteredEmpty={showFilteredEmpty}
         onClearFilters={() => setSearchInput("")}
@@ -289,9 +350,12 @@ export default function AdminUsersPage() {
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        onRefresh={() => loadUsers(page)}
+        onRefresh={() => loadDirectory(page)}
         selfId={selfId}
         onViewDetails={setDetailsUser}
+        onViewInvitationDetails={setDetailsInvitation}
+        onCopyInviteLink={(invitation) => void copyInvitationLink(invitation)}
+        onRevokeInvitation={setConfirmRevokeInvitation}
         onMakeAdmin={(user) => setConfirmRole({ user, nextRole: "ADMIN" })}
         onMakeInstructor={(user) =>
           setConfirmRole({ user, nextRole: "INSTRUCTOR" })
@@ -437,6 +501,102 @@ export default function AdminUsersPage() {
         </DialogContent>
       </Dialog>
 
+      <Sheet
+        open={!!detailsInvitation}
+        onOpenChange={(o) => !o && setDetailsInvitation(null)}
+      >
+        <SheetContent
+          side="right"
+          className="border-border bg-background sm:max-w-md"
+        >
+          <SheetHeader>
+            <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
+              Pending Invitation
+            </p>
+            <SheetTitle className="text-xl font-semibold tracking-[-0.02em] text-foreground">
+              Invite details
+            </SheetTitle>
+            <SheetDescription className="text-muted-foreground">
+              Awaiting registration via invite link.
+            </SheetDescription>
+          </SheetHeader>
+          {detailsInvitation && (
+            <dl className="grid gap-3 px-4 text-sm">
+              <div className="rounded-2xl border border-border bg-card/60 p-3">
+                <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                  Email
+                </dt>
+                <dd className="mt-1 font-semibold text-card-foreground">
+                  {detailsInvitation.email}
+                </dd>
+              </div>
+              <div className="rounded-2xl border border-border bg-card/60 p-3">
+                <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                  Role
+                </dt>
+                <dd className="mt-1 text-muted-foreground">
+                  {detailsInvitation.role}
+                </dd>
+              </div>
+              <div className="rounded-2xl border border-border bg-card/60 p-3">
+                <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                  Status
+                </dt>
+                <dd className="mt-1 text-muted-foreground">Pending</dd>
+              </div>
+              <div className="rounded-2xl border border-border bg-card/60 p-3">
+                <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                  Expires
+                </dt>
+                <dd className="mt-1 text-muted-foreground">
+                  {new Date(detailsInvitation.expiresAt).toLocaleString()}
+                </dd>
+              </div>
+              <div className="rounded-2xl border border-border bg-card/60 p-3">
+                <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                  Invited
+                </dt>
+                <dd className="mt-1 text-muted-foreground">
+                  {new Date(detailsInvitation.createdAt).toLocaleString()}
+                </dd>
+              </div>
+              {detailsInvitation.invitedBy ? (
+                <div className="rounded-2xl border border-border bg-card/60 p-3">
+                  <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                    Invited by
+                  </dt>
+                  <dd className="mt-1 text-muted-foreground">
+                    {detailsInvitation.invitedBy.name} (
+                    {detailsInvitation.invitedBy.email})
+                  </dd>
+                </div>
+              ) : null}
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => void copyInvitationLink(detailsInvitation)}
+                >
+                  <Copy className="mr-2 size-3.5" />
+                  Copy invite link
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => setConfirmRevokeInvitation(detailsInvitation)}
+                >
+                  Revoke
+                </Button>
+              </div>
+            </dl>
+          )}
+        </SheetContent>
+      </Sheet>
+
       <Sheet open={!!detailsUser} onOpenChange={(o) => !o && setDetailsUser(null)}>
         <SheetContent
           side="right"
@@ -578,6 +738,42 @@ export default function AdminUsersPage() {
               className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90"
             >
               Activate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!confirmRevokeInvitation}
+        onOpenChange={(o) => !o && setConfirmRevokeInvitation(null)}
+      >
+        <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-popover-foreground">
+              Revoke invitation?
+            </DialogTitle>
+            <DialogDescription className="leading-6 text-muted-foreground">
+              {confirmRevokeInvitation?.email} will no longer be able to register
+              with the current invite link. You can send a new invitation later.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmRevokeInvitation(null)}
+              className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={actionLoading}
+              onClick={() => void runRevokeInvitation()}
+              className="rounded-full"
+            >
+              Revoke
             </Button>
           </DialogFooter>
         </DialogContent>

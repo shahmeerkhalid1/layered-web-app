@@ -61,6 +61,18 @@ export async function acceptInvitation(token: string) {
   });
 }
 
+export async function revokeInvitation(id: string) {
+  const invitation = await prisma.invitation.findUnique({ where: { id } });
+  if (!invitation) throw new NotFoundError("Invitation");
+  if (invitation.status !== "PENDING") {
+    throw new ConflictError("Only pending invitations can be revoked");
+  }
+  return prisma.invitation.update({
+    where: { id },
+    data: { status: "EXPIRED" as InvitationStatus },
+  });
+}
+
 // ─── Platform Settings ──────────────────────────────────────────────────────
 
 export async function getSettings() {

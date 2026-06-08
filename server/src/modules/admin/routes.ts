@@ -41,6 +41,11 @@ router.get("/invitations", async (_req: Request, res: Response) => {
   res.json({ invitations });
 });
 
+router.delete("/invitations/:id", async (req: Request, res: Response) => {
+  const invitation = await adminService.revokeInvitation(req.params.id as string);
+  res.json({ invitation });
+});
+
 // ─── Invitation Verification (public, no admin guard) ───────────────────────
 
 router.get("/invite/verify", async (req: Request, res: Response) => {
