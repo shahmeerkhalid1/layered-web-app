@@ -304,11 +304,11 @@ export function ClassPlanLibraryHeader({
           )}
         >
           <div
-            className="min-h-0 "
+            className="min-h-0 overflow-hidden"
             aria-hidden={!filtersExpanded}
             inert={filtersExpanded ? undefined : true}
           >
-            <div className="pt-4">
+            <div className="pt-4 px-1">
               <ClassPlanFilterBar
                 classTypeFilter={classTypeFilter}
                 onClassTypeFilterChange={onClassTypeFilterChange}

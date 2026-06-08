@@ -615,11 +615,11 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
       const hasError = STEP_FIELD_GROUPS[i].some((field) => errors[field] != null);
       if (hasError) {
         setStepIndex(i);
-        toast.error("Fix the highlighted fields before saving.");
+        toast.error("Fill the highlighted fields before saving.");
         return;
       }
     }
-    toast.error("Fix the highlighted fields before saving.");
+    toast.error("Fill the highlighted fields before saving.");
   };
 
   const submitForm = handleSubmit(
