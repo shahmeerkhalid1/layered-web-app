@@ -6,6 +6,7 @@ import { Calendar } from "lucide-react";
 
 import {
   addDays,
+  calendarDayHref,
   formatYmdLocal,
   startOfMonth,
   startOfWeekMonday,
@@ -106,9 +107,9 @@ export function DashboardMiniCalendar() {
           return (
             <Link
               key={ymd}
-              href="/calendar"
+              href={calendarDayHref(ymd)}
               className={cn(
-                "flex min-h-9 flex-col items-center justify-center rounded-lg text-xs transition-colors",
+                "flex min-h-9 cursor-pointer flex-col items-center justify-center rounded-lg text-xs transition-colors",
                 "hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
                 !inMonth && "text-muted-foreground/40",
                 isToday && "bg-primary/15 font-semibold text-primary"

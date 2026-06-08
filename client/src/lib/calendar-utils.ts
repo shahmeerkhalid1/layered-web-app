@@ -86,3 +86,8 @@ export function todayYmd(): string {
 export function calendarInstanceHref(instanceId: string): string {
   return `/calendar?instance=${encodeURIComponent(instanceId)}`;
 }
+
+/** Deep link to the calendar week view centered on a local calendar day (`YYYY-MM-DD`). */
+export function calendarDayHref(ymd: string): string {
+  return `/calendar?date=${encodeURIComponent(ymd)}`;
+}

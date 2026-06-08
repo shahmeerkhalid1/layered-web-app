@@ -12,6 +12,7 @@ import { QuickScheduleDialog } from "@/components/scheduling/quick-schedule-dial
 import {
   addDays,
   formatYmdLocal,
+  parseYmdLocal,
   startOfMonth,
   startOfWeekMonday,
 } from "@/lib/calendar-utils";
@@ -45,8 +46,11 @@ function CalendarPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const instanceFromUrl = searchParams.get("instance");
+  const dateFromUrl = searchParams.get("date");
 
-  const [cursor, setCursor] = useState(() => new Date());
+  const [cursor, setCursor] = useState(() =>
+    dateFromUrl ? parseYmdLocal(dateFromUrl) : new Date()
+  );
   const [mode, setMode] = useState<CalendarViewMode>("week");
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -105,6 +109,12 @@ function CalendarPageContent() {
     setDrawerId(instanceFromUrl);
     setDrawerOpen(true);
   }, [instanceFromUrl]);
+
+  useEffect(() => {
+    if (!dateFromUrl) return;
+    setCursor(parseYmdLocal(dateFromUrl));
+    setMode("week");
+  }, [dateFromUrl]);
 
   const handleDrawerOpenChange = useCallback(
     (open: boolean) => {
