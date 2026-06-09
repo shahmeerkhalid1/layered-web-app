@@ -39,6 +39,7 @@ export function ExerciseCard({ exercise, onRequestDelete }: ExerciseCardProps) {
                 <Image
                   src={exercise.images[0].url}
                   alt={exercise.name}
+                  priority
                   fill
                   sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
