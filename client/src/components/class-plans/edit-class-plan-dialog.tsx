@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api";
 import { classPlanApi } from "@/services/class-plan-api";
 import type { ClassPlanFolder, ClassPlanTemplateDetail, DropdownOptionRow } from "@/lib/types";
 import {
@@ -16,6 +17,10 @@ import {
   toUpdateClassPlanBody,
   type ClassPlanTemplateFormValues,
 } from "@/lib/validation/class-plan-template-form-schema";
+import {
+  DUPLICATE_CLASS_PLAN_NAME_MESSAGE,
+  isDuplicateDisplayName,
+} from "@/lib/validation/unique-display-name";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -66,6 +71,7 @@ export function EditClassPlanDialog({
   const classTypeDd = useDropdownOptions("class_type");
   const classStyleDd = useDropdownOptions("class_style");
   const [customTag, setCustomTag] = useState("");
+  const [existingPlans, setExistingPlans] = useState<{ id: string; name: string }[]>([]);
 
   const {
     register,
@@ -83,6 +89,24 @@ export function EditClassPlanDialog({
   });
 
   const tags = useWatch({ control, name: "tags", defaultValue: [] }) ?? [];
+  const planName = useWatch({ control, name: "name", defaultValue: "" }) ?? "";
+  const duplicatePlanName = isDuplicateDisplayName(planName, existingPlans, plan?.id);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void classPlanApi
+      .listClassPlans({ limit: 100, page: 1 })
+      .then((res) => {
+        if (!cancelled) {
+          setExistingPlans(res.data.map((item) => ({ id: item.id, name: item.name })));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open || !plan) return;
@@ -123,14 +147,18 @@ export function EditClassPlanDialog({
 
   const onSubmit = async (values: ClassPlanTemplateFormValues) => {
     if (!plan) return;
+    if (isDuplicateDisplayName(values.name, existingPlans, plan.id)) {
+      toast.error(DUPLICATE_CLASS_PLAN_NAME_MESSAGE);
+      return;
+    }
     try {
       const body = toUpdateClassPlanBody(values);
       await classPlanApi.updateClassPlan(plan.id, body);
       toast.success("Class plan updated");
       onOpenChange(false);
       onSaved?.();
-    } catch {
-      toast.error("Failed to update class plan");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Failed to update class plan");
     }
   };
 
@@ -168,13 +196,18 @@ export function EditClassPlanDialog({
                 placeholder="e.g. Reformer Flow — Tuesday"
                 className={cn(
                   "h-11 rounded-2xl border-input bg-background/70 shadow-none focus-visible:ring-ring/35",
-                  errors.name && "border-destructive"
+                  (errors.name || duplicatePlanName) && "border-destructive"
                 )}
-                aria-invalid={errors.name ? true : undefined}
+                aria-invalid={errors.name || duplicatePlanName ? true : undefined}
                 {...register("name")}
               />
               {errors.name && (
                 <p className="pl-1.5 text-sm text-destructive">{errors.name.message}</p>
+              )}
+              {!errors.name && duplicatePlanName && (
+                <p className="pl-1.5 text-sm text-destructive">
+                  {DUPLICATE_CLASS_PLAN_NAME_MESSAGE}
+                </p>
               )}
             </div>
 
@@ -432,7 +465,7 @@ export function EditClassPlanDialog({
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || !plan}
+              disabled={isSubmitting || !plan || duplicatePlanName}
               className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90"
             >
               {isSubmitting ? "Saving…" : "Save changes"}

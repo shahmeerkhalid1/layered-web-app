@@ -1,5 +1,7 @@
 import { prisma } from "../../lib/prisma";
 import { ConflictError, NotFoundError, ValidationError } from "../../lib/errors";
+import { getClassIdsWithUpcomingScheduledInstances } from "../../lib/upcoming-instances";
+import { activeEnrollmentFilter } from "../../lib/enrollment-scope";
 import type {
   CreateClientInput,
   UpdateClientInput,
@@ -76,7 +78,12 @@ export async function listClients(instructorId: string, query: ListClientsQuery)
       skip,
       take: limit,
       include: {
-        _count: { select: { enrollments: true, attendances: true } },
+        _count: {
+          select: {
+            enrollments: { where: activeEnrollmentFilter },
+            attendances: true,
+          },
+        },
       },
     }),
   ]);
@@ -86,6 +93,7 @@ export async function listClients(instructorId: string, query: ListClientsQuery)
 
 const clientDetailInclude = {
   enrollments: {
+    where: activeEnrollmentFilter,
     orderBy: { enrolledAt: "desc" as const },
     include: {
       class: {
@@ -111,8 +119,17 @@ export async function getClientById(clientId: string, instructorId: string) {
   if (!client) throw new NotFoundError("Client");
 
   const enrollments = client.enrollments.filter((e) => e.class.deletedAt === null);
+  const upcomingClassIds = await getClassIdsWithUpcomingScheduledInstances(
+    enrollments.map((enrollment) => enrollment.classId)
+  );
 
-  return { ...client, enrollments };
+  return {
+    ...client,
+    enrollments: enrollments.map((enrollment) => ({
+      ...enrollment,
+      canUnenroll: upcomingClassIds.has(enrollment.classId),
+    })),
+  };
 }
 
 export async function updateClient(

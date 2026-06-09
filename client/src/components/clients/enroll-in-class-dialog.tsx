@@ -45,7 +45,11 @@ export function EnrollInClassDialog({
       setLoading(true);
       void (async () => {
         try {
-          const result = await schedulingApi.listClasses({ page: 1, limit: 100 });
+          const result = await schedulingApi.listClasses({
+            page: 1,
+            limit: 100,
+            upcoming: true,
+          });
           if (!cancelled) setClasses(result.data);
         } catch {
           if (!cancelled) toast.error("Failed to load classes");
@@ -104,7 +108,7 @@ export function EnrollInClassDialog({
               placeholder="Search classes…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              className="pl-9 border-border bg-background max-w-[96%]"
             />
           </div>
 
@@ -117,8 +121,8 @@ export function EnrollInClassDialog({
               ) : filtered.length === 0 ? (
                 <p className="py-8 text-center text-sm text-muted-foreground">
                   {classes.length === 0
-                    ? "No classes scheduled yet."
-                    : "No matching classes or client is already enrolled."}
+                    ? "No upcoming classes scheduled yet."
+                    : "No matching upcoming classes or client is already enrolled."}
                 </p>
               ) : (
                 filtered.map((cls) => (

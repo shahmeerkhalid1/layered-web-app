@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/prisma";
-import { NotFoundError } from "../../lib/errors";
+import { ConflictError, NotFoundError } from "../../lib/errors";
 import { promoteImage, deleteImage } from "../../lib/cloudinary";
 import type {
   CreateExerciseInput,
@@ -142,11 +142,30 @@ export async function saveExerciseToLibrary(
   });
 }
 
+async function assertUniqueExerciseName(
+  instructorId: string,
+  name: string,
+  excludeId?: string
+) {
+  const existing = await prisma.exercise.findFirst({
+    where: {
+      instructorId,
+      ...activeFilter,
+      name: { equals: name, mode: "insensitive" },
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+  });
+  if (existing) {
+    throw new ConflictError("An exercise with this name already exists");
+  }
+}
+
 export async function createExercise(
   instructorId: string,
   data: CreateExerciseInput
 ) {
   const { layers, savedToLibrary, ...rest } = data;
+  await assertUniqueExerciseName(instructorId, rest.name);
   return prisma.exercise.create({
     data: {
       ...rest,
@@ -179,6 +198,10 @@ export async function updateExercise(
   if (!exercise) throw new NotFoundError("Exercise");
 
   const { layers, ...rest } = data;
+
+  if (rest.name !== undefined) {
+    await assertUniqueExerciseName(instructorId, rest.name, id);
+  }
 
   return prisma.exercise.update({
     where: { id },
@@ -295,9 +318,29 @@ export async function listFolders(instructorId: string) {
   return { folders, totalExercises };
 }
 
+async function assertUniqueExerciseFolderName(
+  instructorId: string,
+  name: string,
+  excludeId?: string
+) {
+  const existing = await prisma.exerciseFolder.findFirst({
+    where: {
+      instructorId,
+      ...activeFilter,
+      name: { equals: name, mode: "insensitive" },
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+  });
+  if (existing) {
+    throw new ConflictError("A folder with this name already exists");
+  }
+}
+
 export async function createFolder(instructorId: string, name: string) {
+  const trimmed = name.trim();
+  await assertUniqueExerciseFolderName(instructorId, trimmed);
   return prisma.exerciseFolder.create({
-    data: { name, instructorId },
+    data: { name: trimmed, instructorId },
   });
 }
 
@@ -311,7 +354,9 @@ export async function updateFolder(
   });
   if (!folder) throw new NotFoundError("Folder");
 
-  return prisma.exerciseFolder.update({ where: { id }, data: { name } });
+  const trimmed = name.trim();
+  await assertUniqueExerciseFolderName(instructorId, trimmed, id);
+  return prisma.exerciseFolder.update({ where: { id }, data: { name: trimmed } });
 }
 
 export async function deleteFolder(id: string, instructorId: string) {

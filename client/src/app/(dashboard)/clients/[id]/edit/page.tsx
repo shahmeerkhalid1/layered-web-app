@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Calendar, Trash2, UserMinus, UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api";
 import { ClientForm } from "@/components/clients/client-form";
 import { EnrollInClassDialog } from "@/components/clients/enroll-in-class-dialog";
 import { Button } from "@/components/ui/button";
@@ -88,12 +89,12 @@ export default function ClientEditPage() {
   async function handleUnenroll(enrollmentId: string, classId: string) {
     setPending(true);
     try {
-      await clientApi.unenrollClient(classId, enrollmentId);
-      toast.success("Removed from class");
+      const result = await clientApi.unenrollClient(classId, enrollmentId);
+      toast.success(result.message);
       await load();
       setUnenrollTarget(null);
-    } catch {
-      toast.error("Failed to unenroll client");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Failed to unenroll client");
     } finally {
       setPending(false);
     }
@@ -205,23 +206,30 @@ export default function ClientEditPage() {
                     </span>
                   </div>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0 rounded-full"
-                  disabled={pending}
-                  onClick={() =>
-                    setUnenrollTarget({
-                      enrollmentId: enrollment.id,
-                      classId: enrollment.classId,
-                      classTitle: enrollment.class.title,
-                    })
-                  }
-                >
-                  <UserMinus className="mr-2 size-4" />
-                  Unenroll
-                </Button>
+                <div className="flex flex-col items-stretch gap-1 sm:items-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 rounded-full"
+                    disabled={pending || !enrollment.canUnenroll}
+                    onClick={() =>
+                      setUnenrollTarget({
+                        enrollmentId: enrollment.id,
+                        classId: enrollment.classId,
+                        classTitle: enrollment.class.title,
+                      })
+                    }
+                  >
+                    <UserMinus className="mr-2 size-4" />
+                    Unenroll
+                  </Button>
+                  {!enrollment.canUnenroll ? (
+                    <p className="text-xs text-muted-foreground sm:text-right">
+                      No upcoming sessions
+                    </p>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>
@@ -275,8 +283,8 @@ export default function ClientEditPage() {
         title="Unenroll from class?"
         description={
           unenrollTarget
-            ? `${client.firstName} ${client.lastName} will be removed from “${unenrollTarget.classTitle}”.`
-            : "This client will be removed from the class."
+            ? `${client.firstName} ${client.lastName} will be removed from upcoming sessions of “${unenrollTarget.classTitle}”. Past attendance and session notes are kept.`
+            : "This client will be removed from upcoming sessions."
         }
         confirmLabel="Unenroll"
         confirmPendingLabel="Removing…"

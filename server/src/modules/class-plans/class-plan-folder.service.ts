@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/prisma";
-import { NotFoundError } from "../../lib/errors";
+import { ConflictError, NotFoundError } from "../../lib/errors";
 
 const activeFilter = { deletedAt: null };
 
@@ -19,9 +19,29 @@ export async function listFolders(instructorId: string) {
   return { folders, totalTemplates };
 }
 
+async function assertUniqueClassPlanFolderName(
+  instructorId: string,
+  name: string,
+  excludeId?: string
+) {
+  const existing = await prisma.classPlanFolder.findFirst({
+    where: {
+      instructorId,
+      ...activeFilter,
+      name: { equals: name, mode: "insensitive" },
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+  });
+  if (existing) {
+    throw new ConflictError("A folder with this name already exists");
+  }
+}
+
 export async function createFolder(instructorId: string, name: string) {
+  const trimmed = name.trim();
+  await assertUniqueClassPlanFolderName(instructorId, trimmed);
   return prisma.classPlanFolder.create({
-    data: { name, instructorId },
+    data: { name: trimmed, instructorId },
   });
 }
 
@@ -35,7 +55,9 @@ export async function updateFolder(
   });
   if (!folder) throw new NotFoundError("Folder");
 
-  return prisma.classPlanFolder.update({ where: { id }, data: { name } });
+  const trimmed = name.trim();
+  await assertUniqueClassPlanFolderName(instructorId, trimmed, id);
+  return prisma.classPlanFolder.update({ where: { id }, data: { name: trimmed } });
 }
 
 export async function deleteFolder(id: string, instructorId: string) {

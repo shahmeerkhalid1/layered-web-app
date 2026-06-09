@@ -30,6 +30,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X, ArrowLeft, Plus, ImagePlus, Loader2, GripVertical } from "lucide-react";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api";
 import { useDropdownOptions } from "@/hooks/use-dropdown-options";
 import { useFancybox } from "@/hooks/use-fancybox";
 import { Separator } from "@/components/ui/separator";
@@ -40,6 +41,10 @@ import {
   exerciseFormSchema,
   type ExerciseFormValues,
 } from "@/lib/validation/exercise-form-schema";
+import {
+  DUPLICATE_EXERCISE_NAME_MESSAGE,
+  isDuplicateDisplayName,
+} from "@/lib/validation/unique-display-name";
 import { cn } from "@/lib/utils";
 import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 
@@ -98,6 +103,24 @@ export function ExerciseForm({
     if (embedInClassPlan && (!exercise || exercise.savedToLibrary === false)) return false;
     return true;
   });
+  const [existingExercises, setExistingExercises] = useState<
+    { id: string; name: string }[]
+  >([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void exerciseApi
+      .getExercises()
+      .then((list) => {
+        if (!cancelled) {
+          setExistingExercises(list.map((item) => ({ id: item.id, name: item.name })));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const {
     control,
@@ -150,6 +173,12 @@ export function ExerciseForm({
   });
 
   const wTags = useWatch({ control, name: "tags" }) ?? [];
+
+  const duplicateExerciseName = isDuplicateDisplayName(
+    wName ?? "",
+    existingExercises,
+    exercise?.id
+  );
 
   const layersWatch = useWatch({ control, name: "layers" }) ?? [];
 
@@ -529,6 +558,13 @@ export function ExerciseForm({
   // ─── Submit ──────────────────────────────────────────────────────────────
 
   const onSubmit = handleSubmit(async (formValues) => {
+    if (
+      isDuplicateDisplayName(formValues.name, existingExercises, exercise?.id)
+    ) {
+      toast.error(DUPLICATE_EXERCISE_NAME_MESSAGE);
+      return;
+    }
+
     const tempPublicIds = images
       .filter((i): i is ImageItem & { type: "temp" } => i.type === "temp")
       .map((i) => i.data.publicId);
@@ -597,8 +633,10 @@ export function ExerciseForm({
         toast.success("Exercise created");
         router.push(`/exercises/${created.id}`);
       }
-    } catch {
-      toast.error("Failed to save exercise");
+    } catch (e) {
+      toast.error(
+        e instanceof ApiError ? e.message : "Failed to save exercise"
+      );
     }
   });
 
@@ -627,11 +665,19 @@ export function ExerciseForm({
               id="name"
               {...register("name")}
               placeholder="e.g. Hundred"
-              aria-invalid={errors.name ? true : undefined}
-              className="h-12 rounded-2xl border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+              aria-invalid={errors.name || duplicateExerciseName ? true : undefined}
+              className={cn(
+                "h-12 rounded-2xl border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35",
+                duplicateExerciseName && "border-destructive"
+              )}
             />
             {errors.name && (
               <p className="pl-1.5 text-sm text-destructive">{errors.name.message}</p>
+            )}
+            {!errors.name && duplicateExerciseName && (
+              <p className="pl-1.5 text-sm text-destructive">
+                {DUPLICATE_EXERCISE_NAME_MESSAGE}
+              </p>
             )}
           </div>
 
@@ -1649,12 +1695,7 @@ export function ExerciseForm({
         </Button>
         <Button
           type="submit"
-          // disabled={
-          //   isSubmitting ||
-          //   uploading ||
-          //   !(wName ?? "").trim() ||
-          //   (wMovementType ?? "none") === "none"
-          // }
+          disabled={duplicateExerciseName}
           className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
         >
           {isSubmitting

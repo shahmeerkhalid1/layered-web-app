@@ -1,5 +1,12 @@
 import { prisma } from "../../lib/prisma";
 import { NotFoundError, ValidationError, ConflictError } from "../../lib/errors";
+import { assertClassHasUpcomingScheduledInstances } from "../../lib/upcoming-instances";
+import {
+  activeEnrollmentFilter,
+  enrollmentAppliesToInstance,
+  unenrollEffectiveAt,
+} from "../../lib/enrollment-scope";
+import { assertUniquePlanSectionName } from "../../lib/plan-section-name";
 import { Prisma } from "../../generated/prisma/client";
 import type {
   CreateClassInput,
@@ -395,7 +402,7 @@ export async function createClass(instructorId: string, data: CreateClassInput) 
 }
 
 export async function listClasses(instructorId: string, query: ListClassesQuery) {
-  const { page, limit, type, startDate, endDate } = query;
+  const { page, limit, type, startDate, endDate, upcoming } = query;
   const skip = (page - 1) * limit;
   const where: Prisma.ClassWhereInput = { instructorId, ...active };
 
@@ -405,13 +412,22 @@ export async function listClasses(instructorId: string, query: ListClassesQuery)
     if (startDate) where.startDate.gte = utcCalendarDate(parseYmd(startDate));
     if (endDate) where.startDate.lte = utcCalendarDate(parseYmd(endDate));
   }
+  if (upcoming === "true") {
+    where.instances = {
+      some: {
+        ...active,
+        status: "SCHEDULED",
+        date: { gte: utcCalendarDate(new Date()) },
+      },
+    };
+  }
 
   const [data, total] = await Promise.all([
     prisma.class.findMany({
       where,
       skip,
       take: limit,
-      orderBy: { startDate: "desc" },
+      orderBy: { startDate: upcoming === "true" ? "asc" : "desc" },
       include: {
         _count: { select: { instances: { where: active } } },
       },
@@ -699,9 +715,13 @@ export async function addInstanceSection(
     order = (agg._max.order ?? -1) + 1;
   }
 
+  const name = await assertUniquePlanSectionName(data.name, {
+    classInstanceId: instanceId,
+  });
+
   const section = await prisma.planSection.create({
     data: {
-      name: data.name,
+      name,
       order,
       classInstanceId: instanceId,
       templateId: null,
@@ -724,10 +744,19 @@ export async function updateInstanceSection(
 ) {
   await assertSectionInInstance(sectionId, instanceId, instructorId);
 
+  let name: string | undefined;
+  if (data.name !== undefined) {
+    name = await assertUniquePlanSectionName(
+      data.name,
+      { classInstanceId: instanceId },
+      sectionId
+    );
+  }
+
   const row = await prisma.planSection.update({
     where: { id: sectionId },
     data: {
-      ...(data.name !== undefined && { name: data.name }),
+      ...(name !== undefined && { name }),
       ...(data.order !== undefined && { order: data.order }),
     },
   });
@@ -854,6 +883,7 @@ export async function getEnrollments(classId: string, instructorId: string) {
   const enrollments = await prisma.enrollment.findMany({
     where: {
       classId,
+      ...activeEnrollmentFilter,
       client: { instructorId, ...active },
     },
     orderBy: { enrolledAt: "asc" },
@@ -897,12 +927,26 @@ export async function enrollClients(
 
   const existing = await prisma.enrollment.findMany({
     where: { classId, clientId: { in: uniqueIds } },
-    select: { clientId: true },
+    select: { id: true, clientId: true, unenrolledAt: true },
   });
-  const alreadyEnrolled = new Set(existing.map((row) => row.clientId));
-  const toCreate = uniqueIds.filter((id) => !alreadyEnrolled.has(id));
+  const existingByClient = new Map(existing.map((row) => [row.clientId, row]));
 
-  if (toCreate.length === 0) {
+  const toCreate: string[] = [];
+  const toReactivate: string[] = [];
+  let skipped = 0;
+
+  for (const clientId of uniqueIds) {
+    const row = existingByClient.get(clientId);
+    if (!row) {
+      toCreate.push(clientId);
+    } else if (row.unenrolledAt) {
+      toReactivate.push(row.id);
+    } else {
+      skipped += 1;
+    }
+  }
+
+  if (toCreate.length === 0 && toReactivate.length === 0) {
     throw new ConflictError(
       uniqueIds.length === 1
         ? "Client is already enrolled in this class"
@@ -910,12 +954,28 @@ export async function enrollClients(
     );
   }
 
-  await prisma.enrollment.createMany({
-    data: toCreate.map((clientId) => ({ clientId, classId })),
-  });
+  if (toReactivate.length > 0) {
+    await prisma.enrollment.updateMany({
+      where: { id: { in: toReactivate } },
+      data: { unenrolledAt: null },
+    });
+  }
+
+  if (toCreate.length > 0) {
+    await prisma.enrollment.createMany({
+      data: toCreate.map((clientId) => ({ clientId, classId })),
+    });
+  }
+
+  const affectedClientIds = [
+    ...toCreate,
+    ...existing
+      .filter((row) => toReactivate.includes(row.id))
+      .map((row) => row.clientId),
+  ];
 
   const enrollments = await prisma.enrollment.findMany({
-    where: { classId, clientId: { in: toCreate } },
+    where: { classId, clientId: { in: affectedClientIds } },
     orderBy: { enrolledAt: "asc" },
     include: {
       client: {
@@ -932,8 +992,8 @@ export async function enrollClients(
 
   return {
     enrollments,
-    created: enrollments.length,
-    skipped: uniqueIds.length - enrollments.length,
+    created: toCreate.length + toReactivate.length,
+    skipped,
   };
 }
 
@@ -953,6 +1013,7 @@ export async function unenrollClients(
   instructorId: string
 ) {
   await assertClassOwned(classId, instructorId);
+  await assertClassHasUpcomingScheduledInstances(classId);
 
   const uniqueIds = [...new Set(enrollmentIds)];
   if (uniqueIds.length === 0) {
@@ -960,13 +1021,34 @@ export async function unenrollClients(
   }
 
   const enrollments = await prisma.enrollment.findMany({
-    where: { id: { in: uniqueIds }, classId },
+    where: { id: { in: uniqueIds }, classId, ...activeEnrollmentFilter },
     select: { id: true },
   });
   const foundIds = new Set(enrollments.map((row) => row.id));
   const missingIds = uniqueIds.filter((id) => !foundIds.has(id));
   if (missingIds.length > 0) {
     throw new NotFoundError("Enrollment");
+  }
+
+  const cls = await prisma.class.findFirst({
+    where: { id: classId, instructorId, ...active },
+    select: { isRecurring: true },
+  });
+  if (!cls) throw new NotFoundError("Class");
+
+  if (cls.isRecurring) {
+    const result = await prisma.enrollment.updateMany({
+      where: { id: { in: uniqueIds }, classId, ...activeEnrollmentFilter },
+      data: { unenrolledAt: unenrollEffectiveAt() },
+    });
+
+    return {
+      removed: result.count,
+      message:
+        result.count === 1
+          ? "Client unenrolled from upcoming sessions"
+          : `${result.count} clients unenrolled from upcoming sessions`,
+    };
   }
 
   const result = await prisma.enrollment.deleteMany({
@@ -1009,6 +1091,13 @@ export async function getAttendance(instanceId: string, instructorId: string) {
     },
   });
 
+  const roster = enrollments.filter((enrollment) =>
+    enrollmentAppliesToInstance(enrollment, {
+      date: instance.date,
+      status: instance.status,
+    })
+  );
+
   const attendanceRows = await prisma.attendance.findMany({
     where: { classInstanceId: instanceId },
   });
@@ -1017,7 +1106,7 @@ export async function getAttendance(instanceId: string, instructorId: string) {
     attendanceRows.map((a) => [a.clientId, a.present])
   );
 
-  return enrollments.map((e) => ({
+  return roster.map((e) => ({
     clientId: e.client.id,
     firstName: e.client.firstName,
     lastName: e.client.lastName,
@@ -1035,13 +1124,20 @@ export async function markAttendance(
 ) {
   const instance = await getInstanceWithClass(instanceId, instructorId);
 
+  const enrollments = await prisma.enrollment.findMany({
+    where: { classId: instance.classId },
+    select: { clientId: true, unenrolledAt: true },
+  });
+
   const enrolledClientIds = new Set(
-    (
-      await prisma.enrollment.findMany({
-        where: { classId: instance.classId },
-        select: { clientId: true },
-      })
-    ).map((e) => e.clientId)
+    enrollments
+      .filter((enrollment) =>
+        enrollmentAppliesToInstance(enrollment, {
+          date: instance.date,
+          status: instance.status,
+        })
+      )
+      .map((enrollment) => enrollment.clientId)
   );
 
   for (const row of attendance) {

@@ -12,12 +12,28 @@ import { Label } from "@/components/ui/label";
 /** Minimal folder shape for create/rename dialogs (exercise or class plan folders). */
 export type FolderDialogFolder = { id: string; name: string };
 
+function isDuplicateFolderName(
+  name: string,
+  existingFolders: FolderDialogFolder[],
+  editingFolder: FolderDialogFolder | null
+) {
+  const trimmed = name.trim();
+  if (!trimmed) return false;
+  const normalized = trimmed.toLowerCase();
+  return existingFolders.some(
+    (folder) =>
+      folder.name.toLowerCase() === normalized &&
+      folder.id !== editingFolder?.id
+  );
+}
+
 interface FolderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   folderName: string;
   onFolderNameChange: (value: string) => void;
   editingFolder: FolderDialogFolder | null;
+  existingFolders: FolderDialogFolder[];
   onSave: () => void;
 }
 
@@ -27,8 +43,16 @@ export function FolderDialog({
   folderName,
   onFolderNameChange,
   editingFolder,
+  existingFolders,
   onSave,
 }: FolderDialogProps) {
+  const trimmedName = folderName.trim();
+  const duplicateName = isDuplicateFolderName(
+    folderName,
+    existingFolders,
+    editingFolder
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl">
@@ -50,8 +74,14 @@ export function FolderDialog({
               value={folderName}
               onChange={(event) => onFolderNameChange(event.target.value)}
               placeholder="e.g. Reformer, Mat, Chair"
-              className="h-11 rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+              aria-invalid={duplicateName}
+              className="h-11 rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 aria-invalid:border-destructive"
             />
+            {duplicateName ? (
+              <p className="text-sm text-destructive">
+                A folder with this name already exists
+              </p>
+            ) : null}
           </div>
         </div>
         <DialogFooter>
@@ -64,7 +94,7 @@ export function FolderDialog({
           </Button>
           <Button
             onClick={onSave}
-            disabled={!folderName.trim()}
+            disabled={!trimmedName || duplicateName}
             className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
           >
             {editingFolder ? "Save" : "Create"}

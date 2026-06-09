@@ -1,5 +1,7 @@
 import { prisma } from "../../lib/prisma";
 import { NotFoundError, ValidationError } from "../../lib/errors";
+import { enrollmentAppliesToInstance } from "../../lib/enrollment-scope";
+import type { InstanceStatus } from "../../generated/prisma/client";
 import { sendSessionNoteEmail } from "../../lib/mail";
 import type {
   AttachExercisesInput,
@@ -55,15 +57,14 @@ async function getOwnedInstance(instanceId: string, instructorId: string) {
       ...activeFilter,
       class: activeFilter,
     },
-    select: { id: true, classId: true },
+    select: { id: true, classId: true, date: true, status: true },
   });
   if (!instance) throw new NotFoundError("Class instance");
   return instance;
 }
 
 async function assertClientPresentOnInstance(
-  instanceId: string,
-  classId: string,
+  instance: { id: string; classId: string; date: Date; status: InstanceStatus },
   clientId: string,
   instructorId: string
 ) {
@@ -75,17 +76,17 @@ async function assertClientPresentOnInstance(
 
   const attendance = await prisma.attendance.findUnique({
     where: {
-      clientId_classInstanceId: { clientId, classInstanceId: instanceId },
+      clientId_classInstanceId: { clientId, classInstanceId: instance.id },
     },
     select: { present: true },
   });
 
   if (!attendance?.present) {
     const enrolled = await prisma.enrollment.findFirst({
-      where: { classId, clientId },
-      select: { id: true },
+      where: { classId: instance.classId, clientId },
+      select: { unenrolledAt: true },
     });
-    if (!enrolled) {
+    if (!enrolled || !enrollmentAppliesToInstance(enrolled, instance)) {
       throw new ValidationError("Client is not enrolled in this class");
     }
     throw new ValidationError(
@@ -138,12 +139,7 @@ export async function createOrUpsertSessionNote(
   input: CreateSessionNoteInput
 ) {
   const instance = await getOwnedInstance(instanceId, instructorId);
-  await assertClientPresentOnInstance(
-    instanceId,
-    instance.classId,
-    input.clientId,
-    instructorId
-  );
+  await assertClientPresentOnInstance(instance, input.clientId, instructorId);
 
   const content = input.content ?? "";
 

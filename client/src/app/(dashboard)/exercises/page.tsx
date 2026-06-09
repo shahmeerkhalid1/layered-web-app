@@ -73,6 +73,7 @@ export default function ExercisesPage() {
         folderName={folderDialog.name}
         onFolderNameChange={folderDialog.setName}
         editingFolder={folderDialog.editingFolder}
+        existingFolders={library.folders}
         onSave={folderDialog.save}
       />
 

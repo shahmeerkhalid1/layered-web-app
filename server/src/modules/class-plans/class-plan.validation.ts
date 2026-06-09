@@ -50,13 +50,13 @@ const planSectionExerciseSchema = z.object({
 });
 
 const planSectionSchema = z.object({
-  name: z.string().min(1).max(200),
+  name: z.string().trim().min(1).max(200),
   order: z.number().int().nonnegative(),
   exercises: z.array(planSectionExerciseSchema).optional(),
 });
 
 export const createClassPlanSchema = z.object({
-  name: z.string().min(1).max(200),
+  name: z.string().trim().min(1, "Title is required").max(200),
   classType: z.string().max(100).nullable().optional(),
   classStyle: z.string().max(100).nullable().optional(),
   durationMinutes: z.number().int().positive().max(MAX_DURATION_MINUTES).optional(),
@@ -82,13 +82,13 @@ export type UpdateClassPlanInput = z.infer<typeof updateClassPlanSchema>;
 export type ListClassPlansQuery = z.infer<typeof listClassPlansSchema>;
 
 export const addSectionSchema = z.object({
-  name: z.string().min(1).max(200),
+  name: z.string().trim().min(1).max(200),
   order: z.number().int().nonnegative().optional(),
 });
 
 export const updateSectionSchema = z
   .object({
-    name: z.string().min(1).max(200).optional(),
+    name: z.string().trim().min(1).max(200).optional(),
     order: z.number().int().nonnegative().optional(),
   })
   .refine((d) => d.name !== undefined || d.order !== undefined, {

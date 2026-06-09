@@ -1,5 +1,9 @@
 import { prisma } from "../../lib/prisma";
-import { NotFoundError } from "../../lib/errors";
+import { ConflictError, NotFoundError } from "../../lib/errors";
+import {
+  assertUniquePlanSectionName,
+  assertUniqueSectionNamesInPayload,
+} from "../../lib/plan-section-name";
 import type {
   AddExerciseToSectionInput,
   AddSectionInput,
@@ -104,6 +108,45 @@ function collectExerciseIdsFromSections(
   return ids;
 }
 
+async function assertUniqueClassPlanName(
+  instructorId: string,
+  name: string,
+  excludeId?: string
+) {
+  const existing = await prisma.classPlanTemplate.findFirst({
+    where: {
+      instructorId,
+      ...activeFilter,
+      name: { equals: name, mode: "insensitive" },
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+  });
+  if (existing) {
+    throw new ConflictError("A class plan with this name already exists");
+  }
+}
+
+async function resolveUniqueClassPlanCopyName(
+  instructorId: string,
+  baseName: string
+): Promise<string> {
+  let candidate = `${baseName} (Copy)`;
+  let counter = 2;
+  while (true) {
+    const taken = await prisma.classPlanTemplate.findFirst({
+      where: {
+        instructorId,
+        ...activeFilter,
+        name: { equals: candidate, mode: "insensitive" },
+      },
+      select: { id: true },
+    });
+    if (!taken) return candidate;
+    candidate = `${baseName} (Copy ${counter})`;
+    counter += 1;
+  }
+}
+
 export async function createClassPlan(
   instructorId: string,
   data: CreateClassPlanInput
@@ -118,6 +161,12 @@ export async function createClassPlan(
     instructorId,
     collectExerciseIdsFromSections(sections)
   );
+
+  await assertUniqueClassPlanName(instructorId, rest.name);
+
+  if (sections?.length) {
+    assertUniqueSectionNamesInPayload(sections);
+  }
 
   const template = await prisma.classPlanTemplate.create({
     data: {
@@ -228,6 +277,7 @@ export async function updateClassPlan(
       instructorId,
       collectExerciseIdsFromSections(sections)
     );
+    assertUniqueSectionNamesInPayload(sections);
   }
 
   const noop =
@@ -240,6 +290,10 @@ export async function updateClassPlan(
     folderId === undefined;
   if (noop) {
     return getClassPlanById(id, instructorId);
+  }
+
+  if (rest.name !== undefined) {
+    await assertUniqueClassPlanName(instructorId, rest.name, id);
   }
 
   await prisma.$transaction(async (tx) => {
@@ -303,7 +357,7 @@ export async function duplicateClassPlan(id: string, instructorId: string) {
   });
   if (!original) throw new NotFoundError("Class plan template");
 
-  const copyName = `${original.name} (Copy)`;
+  const copyName = await resolveUniqueClassPlanCopyName(instructorId, original.name);
 
   return prisma.classPlanTemplate.create({
     data: {
@@ -350,9 +404,11 @@ export async function addSection(
     order = (agg._max.order ?? -1) + 1;
   }
 
+  const name = await assertUniquePlanSectionName(data.name, { templateId });
+
   return prisma.planSection.create({
     data: {
-      name: data.name,
+      name,
       order,
       templateId,
     },
@@ -372,10 +428,15 @@ export async function updateSection(
   });
   if (!section) throw new NotFoundError("Section");
 
+  let name: string | undefined;
+  if (data.name !== undefined) {
+    name = await assertUniquePlanSectionName(data.name, { templateId }, sectionId);
+  }
+
   return prisma.planSection.update({
     where: { id: sectionId },
     data: {
-      ...(data.name !== undefined && { name: data.name }),
+      ...(name !== undefined && { name }),
       ...(data.order !== undefined && { order: data.order }),
     },
   });

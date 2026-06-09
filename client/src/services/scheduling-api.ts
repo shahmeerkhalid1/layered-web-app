@@ -117,6 +117,7 @@ export const schedulingApi = {
       type?: "GROUP" | "PRIVATE";
       startDate?: string;
       endDate?: string;
+      upcoming?: boolean;
     },
     signal?: AbortSignal
   ) =>
@@ -128,6 +129,7 @@ export const schedulingApi = {
             ...(params.type && { type: params.type }),
             ...(params.startDate && { startDate: params.startDate }),
             ...(params.endDate && { endDate: params.endDate }),
+            ...(params.upcoming === true && { upcoming: "true" }),
           }
         : undefined,
       signal,

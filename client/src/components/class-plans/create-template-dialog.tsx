@@ -5,6 +5,7 @@ import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api";
 import { classPlanApi } from "@/services/class-plan-api";
 import type { ClassPlanFolder, DropdownOptionRow } from "@/lib/types";
 import {
@@ -16,6 +17,10 @@ import {
   toCreateClassPlanBody,
   type ClassPlanTemplateFormValues,
 } from "@/lib/validation/class-plan-template-form-schema";
+import {
+  DUPLICATE_CLASS_PLAN_NAME_MESSAGE,
+  isDuplicateDisplayName,
+} from "@/lib/validation/unique-display-name";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -65,6 +70,7 @@ export function CreateTemplateDialog({
   const classTypeDd = useDropdownOptions("class_type");
   const classStyleDd = useDropdownOptions("class_style");
   const [customTag, setCustomTag] = useState("");
+  const [existingPlans, setExistingPlans] = useState<{ id: string; name: string }[]>([]);
 
   const {
     register,
@@ -82,6 +88,24 @@ export function CreateTemplateDialog({
   });
 
   const tags = useWatch({ control, name: "tags", defaultValue: [] }) ?? [];
+  const planName = useWatch({ control, name: "name", defaultValue: "" }) ?? "";
+  const duplicatePlanName = isDuplicateDisplayName(planName, existingPlans, null);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void classPlanApi
+      .listClassPlans({ limit: 100, page: 1 })
+      .then((res) => {
+        if (!cancelled) {
+          setExistingPlans(res.data.map((plan) => ({ id: plan.id, name: plan.name })));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -121,6 +145,10 @@ export function CreateTemplateDialog({
   };
 
   const onSubmit = async (values: ClassPlanTemplateFormValues) => {
+    if (isDuplicateDisplayName(values.name, existingPlans, null)) {
+      toast.error(DUPLICATE_CLASS_PLAN_NAME_MESSAGE);
+      return;
+    }
     try {
       const body = toCreateClassPlanBody(values);
       const created = await classPlanApi.createClassPlan(body);
@@ -128,8 +156,8 @@ export function CreateTemplateDialog({
       onOpenChange(false);
       onCreated?.();
       router.push(`/class-plans/${created.id}`);
-    } catch {
-      toast.error("Failed to create class plan");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Failed to create class plan");
     }
   };
 
@@ -167,13 +195,18 @@ export function CreateTemplateDialog({
                 placeholder="e.g. Reformer Flow — Tuesday"
                 className={cn(
                   "h-11 rounded-2xl border-input bg-background/70 shadow-none focus-visible:ring-ring/35",
-                  errors.name && "border-destructive"
+                  (errors.name || duplicatePlanName) && "border-destructive"
                 )}
-                aria-invalid={errors.name ? true : undefined}
+                aria-invalid={errors.name || duplicatePlanName ? true : undefined}
                 {...register("name")}
               />
               {errors.name && (
                 <p className="pl-1.5 text-sm text-destructive">{errors.name.message}</p>
+              )}
+              {!errors.name && duplicatePlanName && (
+                <p className="pl-1.5 text-sm text-destructive">
+                  {DUPLICATE_CLASS_PLAN_NAME_MESSAGE}
+                </p>
               )}
             </div>
 
@@ -431,7 +464,7 @@ export function CreateTemplateDialog({
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || duplicatePlanName}
               className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90"
             >
               {isSubmitting ? "Creating…" : "Create"}

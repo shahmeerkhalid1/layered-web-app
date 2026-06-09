@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api";
 import { classPlanApi } from "@/services/class-plan-api";
 import type { ClassPlanFolder } from "@/lib/types";
 
@@ -77,8 +78,8 @@ export function useClassPlanFolders({
       setFolderName("");
       setEditingFolder(null);
       void refreshLibrary();
-    } catch {
-      toast.error("Failed to save folder");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Failed to save folder");
     }
   };
 

@@ -14,8 +14,13 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api";
 import type { ClassPlanFolder, ClassPlanTemplateDetail, PlanSectionDetail, PlanSectionExerciseRow } from "@/lib/types";
 import { classPlanApi } from "@/services/class-plan-api";
+import {
+  DUPLICATE_CLASS_PLAN_SECTION_NAME_MESSAGE,
+  isDuplicateDisplayName,
+} from "@/lib/validation/unique-display-name";
 import { EditClassPlanDialog } from "@/components/class-plans/edit-class-plan-dialog";
 import { ExercisePickerDialog } from "@/components/class-plans/exercise-picker-dialog";
 import { QuickScheduleDialog } from "@/components/scheduling/quick-schedule-dialog";
@@ -134,6 +139,17 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
     [plan]
   );
 
+  const addSectionDuplicate = isDuplicateDisplayName(
+    newSectionName,
+    sortedSections,
+    null
+  );
+  const editSectionDuplicate = isDuplicateDisplayName(
+    editSectionName,
+    sortedSections,
+    editingSection?.id
+  );
+
   const refreshAfterMutation = async () => {
     try {
       await fetchPlan();
@@ -153,14 +169,18 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
       toast.error("Section name is required");
       return;
     }
+    if (isDuplicateDisplayName(name, sortedSections, null)) {
+      toast.error(DUPLICATE_CLASS_PLAN_SECTION_NAME_MESSAGE);
+      return;
+    }
     setPending(true);
     try {
       await classPlanApi.addSection(planId, { name });
       toast.success("Section added");
       setAddOpen(false);
       await refreshAfterMutation();
-    } catch {
-      toast.error("Failed to add section");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Failed to add section");
     } finally {
       setPending(false);
     }
@@ -179,6 +199,10 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
       toast.error("Section name is required");
       return;
     }
+    if (isDuplicateDisplayName(name, sortedSections, editingSection.id)) {
+      toast.error(DUPLICATE_CLASS_PLAN_SECTION_NAME_MESSAGE);
+      return;
+    }
     setPending(true);
     try {
       await classPlanApi.updateSection(planId, editingSection.id, { name });
@@ -186,8 +210,8 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
       setEditOpen(false);
       setEditingSection(null);
       await refreshAfterMutation();
-    } catch {
-      toast.error("Failed to update section");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Failed to update section");
     } finally {
       setPending(false);
     }
@@ -542,7 +566,8 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
               value={newSectionName}
               onChange={(e) => setNewSectionName(e.target.value)}
               placeholder="e.g. Warm-up, Flow, Stretch"
-              className="rounded-2xl"
+              aria-invalid={addSectionDuplicate ? true : undefined}
+              className={cn("rounded-2xl", addSectionDuplicate && "border-destructive")}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -550,6 +575,11 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
                 }
               }}
             />
+            {addSectionDuplicate ? (
+              <p className="text-sm text-destructive">
+                {DUPLICATE_CLASS_PLAN_SECTION_NAME_MESSAGE}
+              </p>
+            ) : null}
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
@@ -564,7 +594,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
             <Button
               type="button"
               className="rounded-full"
-              disabled={pending || !newSectionName.trim()}
+              disabled={pending || !newSectionName.trim() || addSectionDuplicate}
               onClick={() => void submitAdd()}
             >
               {pending ? "Saving…" : "Add section"}
@@ -586,7 +616,8 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
               id="edit-section-name"
               value={editSectionName}
               onChange={(e) => setEditSectionName(e.target.value)}
-              className="rounded-2xl"
+              aria-invalid={editSectionDuplicate ? true : undefined}
+              className={cn("rounded-2xl", editSectionDuplicate && "border-destructive")}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -594,6 +625,11 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
                 }
               }}
             />
+            {editSectionDuplicate ? (
+              <p className="text-sm text-destructive">
+                {DUPLICATE_CLASS_PLAN_SECTION_NAME_MESSAGE}
+              </p>
+            ) : null}
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
@@ -611,7 +647,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
             <Button
               type="button"
               className="rounded-full"
-              disabled={pending || !editSectionName.trim()}
+              disabled={pending || !editSectionName.trim() || editSectionDuplicate}
               onClick={() => void submitEdit()}
             >
               {pending ? "Saving…" : "Save"}

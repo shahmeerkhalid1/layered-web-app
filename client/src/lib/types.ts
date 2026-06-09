@@ -299,6 +299,7 @@ export interface ClientDetail extends Client {
     id: string;
     classId: string;
     enrolledAt: string;
+    canUnenroll: boolean;
     class: {
       id: string;
       title: string;

@@ -3,9 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api";
 import type { ClassInstanceDetail, ClassPlanTemplate, PlanSectionDetail, PlanSectionExerciseRow } from "@/lib/types";
 import { classPlanApi } from "@/services/class-plan-api";
 import { schedulingApi } from "@/services/scheduling-api";
+import {
+  DUPLICATE_CLASS_PLAN_SECTION_NAME_MESSAGE,
+  isDuplicateDisplayName,
+} from "@/lib/validation/unique-display-name";
 import { ExercisePickerDialog } from "@/components/class-plans/exercise-picker-dialog";
 import { InstanceExerciseRow } from "@/components/scheduling/instance-exercise-row";
 import { AttendanceChecklist } from "@/components/scheduling/attendance-checklist";
@@ -201,11 +206,31 @@ export function ClassInstanceDrawer({
   const isPast = detail ? isBeforeToday(new Date(detail.date)) : false;
   const canEditPlanAndSchedule = isOpen && !isPast;
 
+  const sortedInstanceSections = useMemo(
+    () => sortSections(detail?.sections ?? []),
+    [detail?.sections]
+  );
+
+  const addSectionDuplicate = isDuplicateDisplayName(
+    newSectionName,
+    sortedInstanceSections,
+    null
+  );
+  const editSectionDuplicate = isDuplicateDisplayName(
+    editSectionName,
+    sortedInstanceSections,
+    editingSection?.id
+  );
+
   const submitAddSection = async () => {
     if (!instanceId) return;
     const name = newSectionName.trim();
     if (!name) {
       toast.error("Section name is required");
+      return;
+    }
+    if (isDuplicateDisplayName(name, sortedInstanceSections, null)) {
+      toast.error(DUPLICATE_CLASS_PLAN_SECTION_NAME_MESSAGE);
       return;
     }
     setPending(true);
@@ -215,8 +240,8 @@ export function ClassInstanceDrawer({
       setAddSectionOpen(false);
       setNewSectionName("");
       await refresh();
-    } catch {
-      toast.error("Failed to add section");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Failed to add section");
     } finally {
       setPending(false);
     }
@@ -229,6 +254,10 @@ export function ClassInstanceDrawer({
       toast.error("Section name is required");
       return;
     }
+    if (isDuplicateDisplayName(name, sortedInstanceSections, editingSection.id)) {
+      toast.error(DUPLICATE_CLASS_PLAN_SECTION_NAME_MESSAGE);
+      return;
+    }
     setPending(true);
     try {
       await schedulingApi.updateInstanceSection(instanceId, editingSection.id, { name });
@@ -236,8 +265,8 @@ export function ClassInstanceDrawer({
       setEditSectionOpen(false);
       setEditingSection(null);
       await refresh();
-    } catch {
-      toast.error("Failed to rename section");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Failed to rename section");
     } finally {
       setPending(false);
     }
@@ -449,12 +478,23 @@ export function ClassInstanceDrawer({
             value={editSectionName}
             onChange={(e) => setEditSectionName(e.target.value)}
             placeholder="Section name"
+            aria-invalid={editSectionDuplicate ? true : undefined}
+            className={cn(editSectionDuplicate && "border-destructive")}
           />
+          {editSectionDuplicate ? (
+            <p className="text-sm text-destructive">
+              {DUPLICATE_CLASS_PLAN_SECTION_NAME_MESSAGE}
+            </p>
+          ) : null}
           <DialogFooter>
             <Button variant="outline" className="rounded-full" onClick={() => setEditSectionOpen(false)}>
               Cancel
             </Button>
-            <Button className="rounded-full" disabled={pending} onClick={() => void submitEditSection()}>
+            <Button
+              className="rounded-full"
+              disabled={pending || !editSectionName.trim() || editSectionDuplicate}
+              onClick={() => void submitEditSection()}
+            >
               Save
             </Button>
           </DialogFooter>
@@ -495,7 +535,7 @@ export function ClassInstanceDrawer({
             />
           </div>
           <div
-            className="max-h-72  pr-1"
+            className="max-h-72  pr-1 overflow-y-auto"
             role="radiogroup"
             aria-label="Class plan templates"
           >
@@ -593,12 +633,23 @@ export function ClassInstanceDrawer({
             value={newSectionName}
             onChange={(e) => setNewSectionName(e.target.value)}
             placeholder="Section name"
+            aria-invalid={addSectionDuplicate ? true : undefined}
+            className={cn(addSectionDuplicate && "border-destructive")}
           />
+          {addSectionDuplicate ? (
+            <p className="text-sm text-destructive">
+              {DUPLICATE_CLASS_PLAN_SECTION_NAME_MESSAGE}
+            </p>
+          ) : null}
           <DialogFooter>
             <Button variant="outline" className="rounded-full" onClick={() => setAddSectionOpen(false)}>
               Cancel
             </Button>
-            <Button className="rounded-full" disabled={pending} onClick={() => void submitAddSection()}>
+            <Button
+              className="rounded-full"
+              disabled={pending || !newSectionName.trim() || addSectionDuplicate}
+              onClick={() => void submitAddSection()}
+            >
               Add
             </Button>
           </DialogFooter>

@@ -22,7 +22,7 @@ const layersField = z
 const nullableStr = z.string().nullish();
 
 export const createExerciseSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().trim().min(1, "Name is required"),
   description: nullableStr,
   startingPosition: nullableStr,
   orientation: nullableStr,
@@ -63,7 +63,7 @@ export const saveToLibrarySchema = z.object({
 });
 
 export const createFolderSchema = z.object({
-  name: z.string().min(1, "Folder name is required"),
+  name: z.string().trim().min(1, "Folder name is required"),
 });
 
 export const updateFolderSchema = createFolderSchema.partial();

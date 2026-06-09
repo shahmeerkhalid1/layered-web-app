@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api";
 import { exerciseApi } from "@/services/exercise-api";
 import type { ExerciseFolder } from "@/lib/types";
 
@@ -81,8 +82,8 @@ export function useExerciseFolders({
       setFolderName("");
       setEditingFolder(null);
       void refreshLibrary();
-    } catch {
-      toast.error("Failed to save folder");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Failed to save folder");
     }
   };
 

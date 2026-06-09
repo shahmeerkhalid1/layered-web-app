@@ -39,6 +39,8 @@ export const listClassesQuerySchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
+  /** When "true", only classes with at least one future SCHEDULED instance. */
+  upcoming: z.enum(["true", "false"]).optional(),
 });
 
 export const createClassSchema = z

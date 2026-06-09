@@ -388,10 +388,12 @@ model Client {
 }
 
 model Enrollment {
-  id         String   @id @default(cuid())
-  clientId   String
-  classId    String
-  enrolledAt DateTime @default(now())
+  id           String    @id @default(cuid())
+  clientId     String
+  classId      String
+  enrolledAt   DateTime  @default(now())
+  /** When set, client is removed from upcoming sessions only (recurring classes). */
+  unenrolledAt DateTime?
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   class  Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
