@@ -166,10 +166,10 @@ export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
             className="flex flex-col gap-0"
           >
             <TabsList className="mb-4 w-full max-w-xl mx-auto shrink-0">
-              <TabsTrigger value="library" className="flex-1">
+              <TabsTrigger value="library" className={`flex-1 ${tab === 'library' ? 'bg-primary!' : ''}`}>
                 Pick from library
               </TabsTrigger>
-              <TabsTrigger value="create" className="flex-1">
+              <TabsTrigger value="create" className={`flex-1 ${tab === 'create' ? 'bg-primary!' : ''}`}>
                 Create new
               </TabsTrigger>
             </TabsList>

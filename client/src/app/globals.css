@@ -24,7 +24,7 @@
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
-  --color-input: var(--background);
+  --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
@@ -39,6 +39,8 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-field-empty: var(--field-empty);
+  --color-field-filled: var(--field-filled);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -292,6 +294,18 @@
   overflow: visible !important;
 }
 
+/* Date/time picker triggers — match Input/Select field backgrounds (see form-control-styles) */
+@layer components {
+  [data-slot="popover-trigger"] {
+    background-color: var(--field-empty);
+  }
+
+  [data-slot="popover-trigger"][data-filled] {
+    background-color: var(--field-filled);
+    border-color: color-mix(in oklab, var(--input) 90%, transparent);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -299,7 +313,7 @@
 
   /* Native checkboxes without the Checkbox component wrapper */
   input[type="checkbox"]:not([data-slot="checkbox-input"]) {
-    @apply size-4.5 shrink-0 appearance-none rounded-[6px] border-2 border-input bg-(--field-empty) transition-[box-shadow,background-color,border-color] duration-150;
+    @apply size-4.5 shrink-0 appearance-none rounded-[6px] border-2 border-input bg-field-empty transition-[box-shadow,background-color,border-color] duration-150;
     @apply cursor-default enabled:cursor-pointer disabled:cursor-default;
     @apply focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none;
     @apply enabled:hover:border-ring/70 enabled:hover:ring-3 enabled:hover:ring-ring/30;

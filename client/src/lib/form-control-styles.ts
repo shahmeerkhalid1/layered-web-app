@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 /** Shared interaction styles for text fields, selects, and picker triggers. */
 const formControlInteraction = [
   "border border-input outline-none transition-[color,box-shadow,background-color,border-color] duration-150",
-  "bg-(--field-empty)",
+  "bg-field-empty",
   "hover:border-ring/70 hover:ring-3 hover:ring-ring/30",
   "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
   "disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50",
@@ -16,7 +16,7 @@ const formControlInteraction = [
 
 /** Filled state when the control has a value (Input/Textarea set `data-filled`). */
 const formControlFilled = [
-  "data-filled:bg-(--field-filled) data-filled:border-input/90",
+  "data-filled:bg-field-filled data-filled:border-input/90",
   "data-filled:aria-invalid:border-destructive",
   "data-filled:aria-invalid:hover:border-destructive",
   "data-filled:aria-invalid:focus-visible:border-destructive",
@@ -58,28 +58,25 @@ export function isSelectEmptyValue(
 export const formControlSelectTriggerClasses = cn(
   "flex w-fit items-center justify-between gap-1.5 rounded-lg py-2 pr-2 pl-2.5 text-sm whitespace-nowrap select-none",
   "h-8 *:data-[slot=select-value]:min-w-0 *:data-[slot=select-value]:truncate *:data-[slot=select-value]:leading-snug *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5",
-  "data-placeholder:text-muted-foreground data-placeholder:bg-(--field-empty)",
-  "data-empty:bg-(--field-empty)",
-  "data-has-value:bg-(--field-filled) data-has-value:border-input/90",
+  "data-placeholder:text-muted-foreground data-placeholder:bg-field-empty",
+  "data-empty:bg-field-empty",
+  "data-has-value:bg-field-filled data-has-value:border-input/90",
   "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   ...formControlInteraction
 );
 
-/** Outline-style triggers (date/time pickers) — pass `data-filled` when a value is set. */
+/** Popover triggers (date/time pickers) — pass `data-filled` when a value is set. */
 export const formControlPickerTriggerClasses = cn(
-  "h-8 w-full justify-between gap-1 rounded-lg px-2.5 font-normal",
-  "border-border bg-(--field-empty) shadow-none",
-  "data-filled:bg-(--field-filled) data-filled:border-input/90",
-  "data-filled:aria-invalid:border-destructive",
-  "data-filled:aria-invalid:hover:border-destructive",
-  "data-filled:aria-invalid:focus-visible:border-destructive",
-  "hover:bg-(--field-filled)/60",
-  ...formControlInteraction
+  "inline-flex h-8 w-full cursor-pointer items-center justify-between gap-1 rounded-lg px-2.5 text-sm font-normal shadow-none outline-none select-none",
+  "hover:bg-field-filled/60",
+  "aria-expanded:bg-field-empty data-filled:aria-expanded:bg-field-filled",
+  ...formControlInteraction,
+  ...formControlFilled
 );
 
 /** Custom checkbox indicator — uses theme primary when checked. */
 export const checkboxIndicatorClasses = cn(
-  "pointer-events-none flex size-4.5 shrink-0 items-center justify-center rounded-[6px] border-2 border-input bg-(--field-empty)",
+  "pointer-events-none flex size-4.5 shrink-0 items-center justify-center rounded-[6px] border-2 border-input bg-field-empty",
   "transition-[box-shadow,background-color,border-color] duration-150",
   "peer-[&:not(:disabled):hover]:border-ring/70 peer-[&:not(:disabled):hover]:ring-3 peer-[&:not(:disabled):hover]:ring-ring/30",
   "peer-[&:not(:disabled):focus-visible]:border-ring peer-[&:not(:disabled):focus-visible]:ring-3 peer-[&:not(:disabled):focus-visible]:ring-ring/50",

@@ -239,16 +239,6 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
             </div>
           </div>
 
-          {/* <div className="space-y-2">
-            <Label htmlFor="cc-tpl">Template ID (optional)</Label>
-            <Input id="cc-tpl" placeholder="Paste template id or leave blank" {...register("templateId")} />
-            <p className="text-[11px] text-muted-foreground">
-              Tip: open a class plan in another tab and paste its URL id here to copy sections.
-            </p>
-          </div> */}
-
-         
-
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="cc-start">
