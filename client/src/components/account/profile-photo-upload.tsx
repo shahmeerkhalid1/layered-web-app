@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { profileApi } from "@/services/profile-api";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -30,6 +31,7 @@ export function ProfilePhotoUpload({
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
   const blobUrlRef = useRef<string | null>(null);
 
   const clearBlobPreview = useCallback(() => {
@@ -119,6 +121,7 @@ export function ProfilePhotoUpload({
       await syncSessionImage(null);
       onAvatarChange?.(null);
       toast.success("Profile photo removed");
+      setRemoveConfirmOpen(false);
     } catch (e) {
       toast.error(
         e instanceof ApiError || e instanceof Error
@@ -209,7 +212,7 @@ export function ProfilePhotoUpload({
                 variant="outline"
                 className="rounded-full text-destructive hover:text-destructive"
                 disabled={busy}
-                onClick={() => void handleRemove()}
+                onClick={() => setRemoveConfirmOpen(true)}
               >
                 <Trash2 className="mr-2 size-4" aria-hidden />
                 Remove
@@ -218,6 +221,17 @@ export function ProfilePhotoUpload({
           </div>
         </div>
       </div>
+
+      <ConfirmDestructiveDialog
+        open={removeConfirmOpen}
+        onOpenChange={setRemoveConfirmOpen}
+        title="Remove profile photo?"
+        description="Your profile photo will be removed. You can upload a new one anytime."
+        confirmLabel="Remove"
+        confirmPendingLabel="Removing…"
+        pending={removing}
+        onConfirm={handleRemove}
+      />
     </div>
   );
 }

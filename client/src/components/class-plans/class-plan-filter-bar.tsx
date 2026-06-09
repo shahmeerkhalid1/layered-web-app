@@ -74,7 +74,7 @@ export function ClassPlanFilterBar({
         >
           <SelectTrigger
             id="class-plan-filter-type"
-            className="h-12 w-full min-w-0 rounded-2xl border-input bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+            className="h-12 w-full min-w-0 rounded-2xl border-border bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
           >
             <SelectValue>
               <span
@@ -115,7 +115,7 @@ export function ClassPlanFilterBar({
         >
           <SelectTrigger
             id="class-plan-filter-style"
-            className="h-12 w-full min-w-0 rounded-2xl border-input bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+            className="h-12 w-full min-w-0 rounded-2xl border-border bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
           >
             <SelectValue>
               <span

@@ -36,6 +36,7 @@ import {
 import { localDateAndTimeToUtcIso } from "@/lib/datetime-local";
 import { isBeforeToday, todayYmd } from "@/lib/calendar-utils";
 import { cn } from "@/lib/utils";
+import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 
 function sortSections(sections: PlanSectionDetail[]): PlanSectionDetail[] {
   return [...sections].sort((a, b) => {
@@ -108,6 +109,8 @@ export function ClassInstanceDrawer({
   const [editingSection, setEditingSection] = useState<PlanSectionDetail | null>(null);
   const [editSectionName, setEditSectionName] = useState("");
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [sectionRemoveTarget, setSectionRemoveTarget] = useState<PlanSectionDetail | null>(null);
   const [pickerSectionId, setPickerSectionId] = useState<string | null>(null);
   const [editClassOpen, setEditClassOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -488,6 +491,7 @@ export function ClassInstanceDrawer({
               value={templateSearch}
               onChange={(e) => setTemplateSearch(e.target.value)}
               placeholder="Filter by name…"
+              className="border-border"
             />
           </div>
           <div
@@ -757,18 +761,7 @@ export function ClassInstanceDrawer({
                       variant="destructive"
                       className="rounded-full"
                       disabled={pending || !isOpen}
-                      onClick={async () => {
-                        setPending(true);
-                        try {
-                          await schedulingApi.updateClassInstance(detail.id, { status: "CANCELLED" });
-                          toast.success("Class cancelled");
-                          await refresh();
-                        } catch {
-                          toast.error("Update failed");
-                        } finally {
-                          setPending(false);
-                        }
-                      }}
+                      onClick={() => setCancelConfirmOpen(true)}
                     >
                       Cancel class
                     </Button>
@@ -907,19 +900,7 @@ export function ClassInstanceDrawer({
                                   size="sm"
                                   className="h-7 text-destructive hover:text-destructive"
                                   disabled={pending || !canEditPlanAndSchedule}
-                                  onClick={async () => {
-                                    if (!instanceId) return;
-                                    setPending(true);
-                                    try {
-                                      await schedulingApi.deleteInstanceSection(instanceId, section.id);
-                                      toast.success("Section removed");
-                                      await refresh();
-                                    } catch {
-                                      toast.error("Failed to remove section");
-                                    } finally {
-                                      setPending(false);
-                                    }
-                                  }}
+                                  onClick={() => setSectionRemoveTarget(section)}
                                 >
                                   Remove
                                 </Button>
@@ -967,6 +948,65 @@ export function ClassInstanceDrawer({
           </div>
         </SheetContent>
       </Sheet>
+
+      <ConfirmDestructiveDialog
+        open={cancelConfirmOpen}
+        onOpenChange={setCancelConfirmOpen}
+        title="Cancel this class?"
+        description={
+          detail
+            ? `“${detail.class.title}” will be marked cancelled. You can still view it on the calendar.`
+            : "This class will be marked cancelled."
+        }
+        confirmLabel="Cancel class"
+        confirmPendingLabel="Cancelling…"
+        pending={pending}
+        onConfirm={async () => {
+          if (!detail) return;
+          setPending(true);
+          try {
+            await schedulingApi.updateClassInstance(detail.id, { status: "CANCELLED" });
+            toast.success("Class cancelled");
+            setCancelConfirmOpen(false);
+            await refresh();
+          } catch {
+            toast.error("Update failed");
+          } finally {
+            setPending(false);
+          }
+        }}
+      />
+
+      <ConfirmDestructiveDialog
+        open={sectionRemoveTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setSectionRemoveTarget(null);
+        }}
+        title="Remove section?"
+        description={
+          sectionRemoveTarget
+            ? `“${sectionRemoveTarget.name}” and all exercises in it will be removed from this class plan.`
+            : "This section will be removed from the class plan."
+        }
+        confirmLabel="Remove"
+        confirmPendingLabel="Removing…"
+        pending={pending}
+        confirmDisabled={!sectionRemoveTarget || !instanceId}
+        onConfirm={async () => {
+          if (!instanceId || !sectionRemoveTarget) return;
+          setPending(true);
+          try {
+            await schedulingApi.deleteInstanceSection(instanceId, sectionRemoveTarget.id);
+            toast.success("Section removed");
+            setSectionRemoveTarget(null);
+            await refresh();
+          } catch {
+            toast.error("Failed to remove section");
+          } finally {
+            setPending(false);
+          }
+        }}
+      />
     </>
   );
 }

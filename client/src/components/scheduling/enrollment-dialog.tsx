@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { clientApi } from "@/services/client-api";
 import type { Client, EnrollmentRow } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 
 export type EnrollmentDialogMode = "private" | "group";
 
@@ -64,6 +65,7 @@ export function EnrollmentDialog({
   const [selectedAddIds, setSelectedAddIds] = useState<Set<string>>(new Set());
   const [selectedPrivateClientId, setSelectedPrivateClientId] = useState<string | null>(null);
   const [selectedRemoveIds, setSelectedRemoveIds] = useState<Set<string>>(new Set());
+  const [unenrollTarget, setUnenrollTarget] = useState<string[] | null>(null);
   const selectAllAddRef = useRef<HTMLInputElement>(null);
   const selectAllRemoveRef = useRef<HTMLInputElement>(null);
 
@@ -303,7 +305,16 @@ export function EnrollmentDialog({
     ? "Private sessions are one client per class. Search your roster and assign who this session is for."
     : "Add or remove clients from this class roster.";
 
+  const unenrollTargetRows = useMemo(
+    () =>
+      unenrollTarget
+        ? enrollments.filter((row) => unenrollTarget.includes(row.id))
+        : [],
+    [enrollments, unenrollTarget]
+  );
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-hidden rounded-3xl sm:max-w-lg">
         <DialogHeader>
@@ -458,7 +469,7 @@ export function EnrollmentDialog({
                     size="sm"
                     className="rounded-full"
                     disabled={pending}
-                    onClick={() => void handleUnenroll([...selectedRemoveIds])}
+                    onClick={() => setUnenrollTarget([...selectedRemoveIds])}
                   >
                     <UserMinus className="mr-1 size-3.5" />
                     Remove {selectedRemoveIds.size} selected
@@ -512,7 +523,7 @@ export function EnrollmentDialog({
                             size="sm"
                             className="shrink-0 rounded-full text-destructive hover:text-destructive"
                             disabled={pending}
-                            onClick={() => void handleUnenroll([row.id])}
+                            onClick={() => setUnenrollTarget([row.id])}
                           >
                             <UserMinus className="mr-1 size-3.5" />
                             Remove
@@ -610,5 +621,34 @@ export function EnrollmentDialog({
         )}
       </DialogContent>
     </Dialog>
+
+    <ConfirmDestructiveDialog
+      open={unenrollTarget !== null}
+      onOpenChange={(open) => {
+        if (!open) setUnenrollTarget(null);
+      }}
+      title={
+        unenrollTargetRows.length === 1
+          ? "Remove client from class?"
+          : "Remove clients from class?"
+      }
+      description={
+        unenrollTargetRows.length === 1
+          ? `${clientDisplayName(unenrollTargetRows[0]!.client)} will be unenrolled from this class.`
+          : unenrollTargetRows.length > 1
+            ? `${unenrollTargetRows.length} clients will be unenrolled from this class.`
+            : "Selected clients will be unenrolled from this class."
+      }
+      confirmLabel="Remove"
+      confirmPendingLabel="Removing…"
+      pending={pending}
+      confirmDisabled={!unenrollTarget || unenrollTarget.length === 0}
+      onConfirm={async () => {
+        if (!unenrollTarget) return;
+        await handleUnenroll(unenrollTarget);
+        setUnenrollTarget(null);
+      }}
+    />
+    </>
   );
 }

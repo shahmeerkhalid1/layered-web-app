@@ -41,6 +41,7 @@ import {
   type ExerciseFormValues,
 } from "@/lib/validation/exercise-form-schema";
 import { cn } from "@/lib/utils";
+import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 
 const MAX_IMAGES = 3;
 const EXERCISE_FORM_IMAGE_GALLERY = "exercise-form-images";
@@ -160,7 +161,8 @@ export function ExerciseForm({
     exercise?.id ? new Set([exercise.id]) : new Set()
   );
   const [uploading, setUploading] = useState(false);
-
+  const [imageRemoveTarget, setImageRemoveTarget] = useState<ImageItem | null>(null);
+  const [imageRemovePending, setImageRemovePending] = useState(false);
   const [images, setImages] = useState<ImageItem[]>(() => {
     const saved: ImageItem[] = (exercise?.images ?? []).map((img) => ({
       type: "saved",
@@ -601,6 +603,7 @@ export function ExerciseForm({
   });
 
   return (
+    <>
     <form onSubmit={onSubmit} className="w-full min-w-0">
       <Card className="border-border bg-card shadow-xl">
         <CardContent className="space-y-6 p-5 sm:p-6">
@@ -1584,7 +1587,7 @@ export function ExerciseForm({
                     </div>
                     <button
                       type="button"
-                      onClick={() => removeImage(item)}
+                      onClick={() => setImageRemoveTarget(item)}
                       className="pointer-events-auto absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
                       aria-label="Remove image"
                     >
@@ -1664,5 +1667,33 @@ export function ExerciseForm({
         </Button>
       </div>
     </form>
+
+    <ConfirmDestructiveDialog
+      open={imageRemoveTarget !== null}
+      onOpenChange={(open) => {
+        if (!open) setImageRemoveTarget(null);
+      }}
+      title="Remove image?"
+      description={
+        imageRemoveTarget?.type === "saved"
+          ? "This image will be permanently removed from the exercise."
+          : "This uploaded image will be discarded."
+      }
+      confirmLabel="Remove"
+      confirmPendingLabel="Removing…"
+      pending={imageRemovePending}
+      confirmDisabled={!imageRemoveTarget}
+      onConfirm={async () => {
+        if (!imageRemoveTarget) return;
+        setImageRemovePending(true);
+        try {
+          await removeImage(imageRemoveTarget);
+          setImageRemoveTarget(null);
+        } finally {
+          setImageRemovePending(false);
+        }
+      }}
+    />
+    </>
   );
 }

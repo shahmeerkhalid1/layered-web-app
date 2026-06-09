@@ -8,7 +8,7 @@ import { ExerciseCard } from "@/components/exercises/exercise-card";
 interface ExerciseListProps {
   exercises: Exercise[];
   loading: boolean;
-  onDeleteExercise: (exerciseId: string) => void;
+  onRequestDeleteExercise: (exercise: Exercise) => void;
   /** True when the library has exercises but the current folder/search yields none */
   showFilteredEmpty?: boolean;
   onClearFilters?: () => void;
@@ -17,7 +17,7 @@ interface ExerciseListProps {
 export function ExerciseList({
   exercises,
   loading,
-  onDeleteExercise,
+  onRequestDeleteExercise,
   showFilteredEmpty,
   onClearFilters,
 }: ExerciseListProps) {
@@ -38,7 +38,7 @@ export function ExerciseList({
         <ExerciseCard
           key={exercise.id}
           exercise={exercise}
-          onDelete={onDeleteExercise}
+          onRequestDelete={onRequestDeleteExercise}
         />
       ))}
     </div>

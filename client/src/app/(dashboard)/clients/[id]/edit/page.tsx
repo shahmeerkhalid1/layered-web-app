@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { clientApi } from "@/services/client-api";
 import type { ClientDetail } from "@/lib/types";
 import type { ClientFormValues } from "@/lib/validation/client-form-schema";
+import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 
 export default function ClientEditPage() {
   const params = useParams();
@@ -31,6 +32,11 @@ export default function ClientEditPage() {
   const [pending, setPending] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [enrollOpen, setEnrollOpen] = useState(false);
+  const [unenrollTarget, setUnenrollTarget] = useState<{
+    enrollmentId: string;
+    classId: string;
+    classTitle: string;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -85,6 +91,7 @@ export default function ClientEditPage() {
       await clientApi.unenrollClient(classId, enrollmentId);
       toast.success("Removed from class");
       await load();
+      setUnenrollTarget(null);
     } catch {
       toast.error("Failed to unenroll client");
     } finally {
@@ -205,7 +212,11 @@ export default function ClientEditPage() {
                   className="shrink-0 rounded-full"
                   disabled={pending}
                   onClick={() =>
-                    void handleUnenroll(enrollment.id, enrollment.classId)
+                    setUnenrollTarget({
+                      enrollmentId: enrollment.id,
+                      classId: enrollment.classId,
+                      classTitle: enrollment.class.title,
+                    })
                   }
                 >
                   <UserMinus className="mr-2 size-4" />
@@ -255,6 +266,27 @@ export default function ClientEditPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDestructiveDialog
+        open={unenrollTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setUnenrollTarget(null);
+        }}
+        title="Unenroll from class?"
+        description={
+          unenrollTarget
+            ? `${client.firstName} ${client.lastName} will be removed from “${unenrollTarget.classTitle}”.`
+            : "This client will be removed from the class."
+        }
+        confirmLabel="Unenroll"
+        confirmPendingLabel="Removing…"
+        pending={pending}
+        confirmDisabled={!unenrollTarget}
+        onConfirm={async () => {
+          if (!unenrollTarget) return;
+          await handleUnenroll(unenrollTarget.enrollmentId, unenrollTarget.classId);
+        }}
+      />
     </div>
   );
 }

@@ -7,8 +7,9 @@ import { CreateTemplateDialog } from "@/components/class-plans/create-template-d
 import { DeleteClassPlanDialog } from "@/components/class-plans/delete-class-plan-dialog";
 import { ExerciseLibraryPagination } from "@/components/exercises/exercise-library-pagination";
 import { FolderDialog } from "@/components/exercises/folder-dialog";
+import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 import { useClassPlanLibrary } from "@/hooks/class-plans/use-class-plan-library";
-import type { ClassPlanTemplate } from "@/lib/types";
+import type { ClassPlanFolder, ClassPlanTemplate } from "@/lib/types";
 
 export default function ClassPlansPage() {
   const library = useClassPlanLibrary();
@@ -16,6 +17,8 @@ export default function ClassPlansPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [createDialogKey, setCreateDialogKey] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<ClassPlanTemplate | null>(null);
+  const [deleteFolderTarget, setDeleteFolderTarget] = useState<ClassPlanFolder | null>(null);
+  const [deleteFolderPending, setDeleteFolderPending] = useState(false);
 
   const openCreateDialog = useCallback(() => {
     setCreateDialogKey((k) => k + 1);
@@ -64,7 +67,7 @@ export default function ClassPlansPage() {
         selectedFolder={library.selectedFolder}
         onSelectFolder={library.setSelectedFolder}
         onEditFolder={folderDialog.openEdit}
-        onDeleteFolder={folderDialog.delete}
+        onRequestDeleteFolder={setDeleteFolderTarget}
         classTypeFilter={library.classTypeFilter}
         onClassTypeFilterChange={library.setClassTypeFilter}
         classStyleFilter={library.classStyleFilter}
@@ -122,6 +125,33 @@ export default function ClassPlansPage() {
         onConfirm={async (templateId) => {
           await library.deleteClassPlan(templateId);
           setDeleteTarget(null);
+        }}
+      />
+
+      <ConfirmDestructiveDialog
+        open={deleteFolderTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteFolderTarget(null);
+        }}
+        title="Delete folder?"
+        description={
+          deleteFolderTarget
+            ? `“${deleteFolderTarget.name}” will be removed. Class plans in this folder stay in your library without a folder.`
+            : "This folder will be removed."
+        }
+        confirmLabel="Delete"
+        confirmPendingLabel="Deleting…"
+        pending={deleteFolderPending}
+        confirmDisabled={!deleteFolderTarget}
+        onConfirm={async () => {
+          if (!deleteFolderTarget) return;
+          setDeleteFolderPending(true);
+          try {
+            await folderDialog.delete(deleteFolderTarget.id);
+            setDeleteFolderTarget(null);
+          } finally {
+            setDeleteFolderPending(false);
+          }
         }}
       />
     </div>

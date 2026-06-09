@@ -11,10 +11,10 @@ const MAX_TAGS_VISIBLE = 3;
 
 interface ExerciseCardProps {
   exercise: Exercise;
-  onDelete: (exerciseId: string) => void;
+  onRequestDelete: (exercise: Exercise) => void;
 }
 
-export function ExerciseCard({ exercise, onDelete }: ExerciseCardProps) {
+export function ExerciseCard({ exercise, onRequestDelete }: ExerciseCardProps) {
   const tags = exercise.tags ?? [];
   const visibleTags = tags.slice(0, MAX_TAGS_VISIBLE);
   const overflowCount = tags.length - visibleTags.length;
@@ -130,7 +130,7 @@ export function ExerciseCard({ exercise, onDelete }: ExerciseCardProps) {
             size="icon-xs"
             className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
             aria-label="Delete exercise"
-            onClick={() => onDelete(exercise.id)}
+            onClick={() => onRequestDelete(exercise)}
           >
             <Trash2 className="size-3.5" aria-hidden />
           </Button>

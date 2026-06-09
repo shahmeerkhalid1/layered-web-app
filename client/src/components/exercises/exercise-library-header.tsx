@@ -33,7 +33,7 @@ export interface ExerciseLibraryHeaderProps {
   selectedFolder: string | null;
   onSelectFolder: (folderId: string | null) => void;
   onEditFolder: (folder: ExerciseFolder) => void;
-  onDeleteFolder: (folderId: string) => void;
+  onRequestDeleteFolder: (folder: ExerciseFolder) => void;
 }
 
 export function ExerciseLibraryHeader({
@@ -50,7 +50,7 @@ export function ExerciseLibraryHeader({
   selectedFolder,
   onSelectFolder,
   onEditFolder,
-  onDeleteFolder,
+  onRequestDeleteFolder,
 }: ExerciseLibraryHeaderProps) {
   const totalKnown = totalExercises !== undefined;
   const total = totalExercises ?? 0;
@@ -213,7 +213,7 @@ export function ExerciseLibraryHeader({
                 type="button"
                 variant="outline"
                 className="h-12 min-h-12 shrink-0 rounded-2xl border-border px-4 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => onDeleteFolder(selectedFolderRow.id)}
+                onClick={() => onRequestDeleteFolder(selectedFolderRow)}
                 aria-label={`Delete folder ${selectedFolderRow.name}`}
               >
                 <Trash2 className="mr-2 size-4" />

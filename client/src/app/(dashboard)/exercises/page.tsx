@@ -1,14 +1,20 @@
 "use client";
 
+import { useState } from "react";
+import type { Exercise, ExerciseFolder } from "@/lib/types";
 import { ExerciseLibraryHeader } from "@/components/exercises/exercise-library-header";
 import { ExerciseLibraryPagination } from "@/components/exercises/exercise-library-pagination";
 import { ExerciseList } from "@/components/exercises/exercise-list";
 import { FolderDialog } from "@/components/exercises/folder-dialog";
+import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 import { useExerciseLibrary } from "@/hooks/exercises/use-exercise-library";
 
 export default function ExercisesPage() {
   const library = useExerciseLibrary();
   const { folderDialog } = library;
+  const [deleteExerciseTarget, setDeleteExerciseTarget] = useState<Exercise | null>(null);
+  const [deleteFolderTarget, setDeleteFolderTarget] = useState<ExerciseFolder | null>(null);
+  const [deletePending, setDeletePending] = useState(false);
 
   const hasActiveFilters =
     library.selectedFolder !== null || library.search.trim().length > 0;
@@ -37,13 +43,13 @@ export default function ExercisesPage() {
         selectedFolder={library.selectedFolder}
         onSelectFolder={library.setSelectedFolder}
         onEditFolder={folderDialog.openEdit}
-        onDeleteFolder={folderDialog.delete}
+        onRequestDeleteFolder={setDeleteFolderTarget}
       />
 
       <ExerciseList
         exercises={library.exercises}
         loading={library.loading}
-        onDeleteExercise={library.deleteExercise}
+        onRequestDeleteExercise={setDeleteExerciseTarget}
         showFilteredEmpty={showFilteredEmpty}
         onClearFilters={() => {
           library.setSearch("");
@@ -68,6 +74,60 @@ export default function ExercisesPage() {
         onFolderNameChange={folderDialog.setName}
         editingFolder={folderDialog.editingFolder}
         onSave={folderDialog.save}
+      />
+
+      <ConfirmDestructiveDialog
+        open={deleteExerciseTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteExerciseTarget(null);
+        }}
+        title="Delete exercise?"
+        description={
+          deleteExerciseTarget
+            ? `“${deleteExerciseTarget.name}” will be removed from your library. It may still appear in past class plans and session notes.`
+            : "This exercise will be removed from your library."
+        }
+        confirmLabel="Delete"
+        confirmPendingLabel="Deleting…"
+        pending={deletePending}
+        confirmDisabled={!deleteExerciseTarget}
+        onConfirm={async () => {
+          if (!deleteExerciseTarget) return;
+          setDeletePending(true);
+          try {
+            await library.deleteExercise(deleteExerciseTarget.id);
+            setDeleteExerciseTarget(null);
+          } finally {
+            setDeletePending(false);
+          }
+        }}
+      />
+
+      <ConfirmDestructiveDialog
+        open={deleteFolderTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteFolderTarget(null);
+        }}
+        title="Delete folder?"
+        description={
+          deleteFolderTarget
+            ? `“${deleteFolderTarget.name}” will be removed. Exercises in this folder stay in your library without a folder.`
+            : "This folder will be removed."
+        }
+        confirmLabel="Delete"
+        confirmPendingLabel="Deleting…"
+        pending={deletePending}
+        confirmDisabled={!deleteFolderTarget}
+        onConfirm={async () => {
+          if (!deleteFolderTarget) return;
+          setDeletePending(true);
+          try {
+            await folderDialog.delete(deleteFolderTarget.id);
+            setDeleteFolderTarget(null);
+          } finally {
+            setDeletePending(false);
+          }
+        }}
       />
     </div>
   );

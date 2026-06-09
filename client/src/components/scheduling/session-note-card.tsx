@@ -19,6 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { formControlTextareaClasses } from "@/lib/form-control-styles";
 import { cn } from "@/lib/utils";
+import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 
 export interface SessionNoteCardProps {
   instanceId: string;
@@ -48,6 +49,10 @@ export function SessionNoteCard({
   const [sharing, setSharing] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [detachTarget, setDetachTarget] = useState<{ exerciseId: string; name: string } | null>(
+    null
+  );
 
   useEffect(() => {
     setNote(existingNote);
@@ -127,6 +132,7 @@ export function SessionNoteCard({
       setExpanded(false);
       toast.success("Note deleted");
       onUpdated();
+      setDeleteOpen(false);
     } catch {
       toast.error("Failed to delete note");
     } finally {
@@ -163,6 +169,7 @@ export function SessionNoteCard({
       const updated = await sessionNoteApi.detachExercise(noteId, exerciseId);
       setNote(updated);
       onUpdated();
+      setDetachTarget(null);
     } catch {
       toast.error("Failed to remove exercise");
     } finally {
@@ -219,7 +226,9 @@ export function SessionNoteCard({
                   className="rounded-full p-0.5 hover:bg-muted"
                   aria-label={`Remove ${row.exercise.name}`}
                   disabled={pending}
-                  onClick={() => void handleDetach(row.exerciseId)}
+                  onClick={() =>
+                    setDetachTarget({ exerciseId: row.exerciseId, name: row.exercise.name })
+                  }
                 >
                   <X className="size-3" aria-hidden />
                 </button>
@@ -270,7 +279,7 @@ export function SessionNoteCard({
             size="sm"
             className="rounded-full text-destructive hover:text-destructive"
             disabled={pending}
-            onClick={() => void handleDelete()}
+            onClick={() => setDeleteOpen(true)}
           >
             Delete
           </Button>
@@ -330,6 +339,38 @@ export function SessionNoteCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDestructiveDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete session note?"
+        description={`Notes for ${clientName} on this class will be permanently deleted.`}
+        confirmLabel="Delete"
+        confirmPendingLabel="Deleting…"
+        pending={pending}
+        onConfirm={handleDelete}
+      />
+
+      <ConfirmDestructiveDialog
+        open={detachTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetachTarget(null);
+        }}
+        title="Remove exercise?"
+        description={
+          detachTarget
+            ? `“${detachTarget.name}” will be removed from this session note.`
+            : "This exercise will be removed from the session note."
+        }
+        confirmLabel="Remove"
+        confirmPendingLabel="Removing…"
+        pending={pending}
+        confirmDisabled={!detachTarget}
+        onConfirm={async () => {
+          if (!detachTarget) return;
+          await handleDetach(detachTarget.exerciseId);
+        }}
+      />
     </li>
   );
 }

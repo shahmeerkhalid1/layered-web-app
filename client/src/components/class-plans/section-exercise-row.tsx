@@ -154,7 +154,7 @@ export function SectionExerciseRow({
             <p className="text-sm leading-6 text-muted-foreground">
               “{row.exercise.name}” will be removed from this section only.{" "}
               {isDraftExercise
-                ? "You can still edit it from this plan until you remove or delete the exercise."
+                ? "The exercise will be removed from this section only."
                 : "The exercise stays in your library."}
             </p>
           </DialogHeader>

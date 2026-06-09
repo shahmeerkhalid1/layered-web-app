@@ -19,8 +19,8 @@ const calendarClassNames: NonNullable<DayPickerProps["classNames"]> = {
   dropdown_root:
     "relative inline-flex items-center bg-background px-2  has-focus:border-ring has-focus:ring-[3px] has-focus:ring-ring/50 dark:bg-input/30",
   dropdown: "absolute inset-0 cursor-pointer opacity-0 ",
-  months_dropdown: "cursor-inherit appearance-none bg-transparent pr-6 pl-2 text-sm ",
-  years_dropdown: "cursor-inherit appearance-none bg-transparent pr-6 pl-2 text-sm",
+  months_dropdown: "cursor-inherit appearance-none bg-background pr-6 pl-2 text-sm ",
+  years_dropdown: "cursor-inherit appearance-none bg-background pr-6 pl-2 text-sm",
   nav: "flex items-center gap-1",
   button_previous: cn(
     buttonVariants({ variant: "outline" }),

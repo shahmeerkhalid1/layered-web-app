@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { getLayerStepTitle } from "@/lib/exercise-layer-labels";
 import { useFancybox } from "@/hooks/use-fancybox";
 import { ExercisePreText } from "@/components/exercises/exercise-pre-text";
+import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 
 const EXERCISE_DETAIL_IMAGE_GALLERY = "exercise-detail-images";
 
@@ -24,6 +25,8 @@ export default function ExerciseDetailPage() {
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [chain, setChain] = useState<ProgressionChainItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePending, setDeletePending] = useState(false);
 
   const imageGalleryFancyboxKey = useMemo(
     () => (exercise?.images ?? []).map((i) => i.id).join("|"),
@@ -51,12 +54,16 @@ export default function ExerciseDetailPage() {
   }, [params.id, router]);
 
   const handleDelete = async () => {
+    setDeletePending(true);
     try {
       await api.delete(`/exercises/${params.id}`);
       toast.success("Exercise deleted");
       router.push("/exercises");
     } catch {
       toast.error("Failed to delete");
+    } finally {
+      setDeletePending(false);
+      setDeleteOpen(false);
     }
   };
 
@@ -127,11 +134,22 @@ export default function ExerciseDetailPage() {
             Edit
           </Button>
         </Link>
-        <Button variant="destructive" size="sm" onClick={handleDelete}>
+        <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
           <Trash2 className="mr-2 size-4" />
           Delete
         </Button>
       </div>
+
+      <ConfirmDestructiveDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete exercise?"
+        description={`“${exercise.name}” will be removed from your library. It may still appear in past class plans and session notes.`}
+        confirmLabel="Delete"
+        confirmPendingLabel="Deleting…"
+        pending={deletePending}
+        onConfirm={handleDelete}
+      />
 
       <div className="grid min-w-0 gap-6 lg:grid-cols-3">
         <div className="min-w-0 space-y-6 lg:col-span-2">

@@ -34,7 +34,7 @@ export interface ClassPlanLibraryHeaderProps {
   selectedFolder: string | null;
   onSelectFolder: (folderId: string | null) => void;
   onEditFolder: (folder: ClassPlanFolder) => void;
-  onDeleteFolder: (folderId: string) => void;
+  onRequestDeleteFolder: (folder: ClassPlanFolder) => void;
   classTypeFilter: string;
   onClassTypeFilterChange: (value: string) => void;
   classStyleFilter: string;
@@ -60,7 +60,7 @@ export function ClassPlanLibraryHeader({
   selectedFolder,
   onSelectFolder,
   onEditFolder,
-  onDeleteFolder,
+  onRequestDeleteFolder,
   classTypeFilter,
   onClassTypeFilterChange,
   classStyleFilter,
@@ -246,7 +246,7 @@ export function ClassPlanLibraryHeader({
                 type="button"
                 variant="outline"
                 className="h-12 min-h-12 shrink-0 rounded-2xl border-border px-4 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => onDeleteFolder(selectedFolderRow.id)}
+                onClick={() => onRequestDeleteFolder(selectedFolderRow)}
                 aria-label={`Delete folder ${selectedFolderRow.name}`}
               >
                 <Trash2 className="mr-2 size-4" />

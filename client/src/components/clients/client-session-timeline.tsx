@@ -62,7 +62,7 @@ export function ClientSessionTimeline({ clientId }: ClientSessionTimelineProps) 
   }, [startDate, endDate]);
 
   const datePickerTriggerClass =
-    "h-11 w-full min-w-0 rounded-2xl border-input bg-background/80 px-3 shadow-none focus-visible:ring-ring/35";
+    "h-11 w-full min-w-0 rounded-2xl border-border bg-background/80 px-3 shadow-none focus-visible:ring-ring/35";
 
   function clearDateFilters() {
     setStartDate("");
