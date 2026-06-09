@@ -34,7 +34,7 @@ This document records the work done in a single development session on the **Pil
 |------|----------------|
 | **Exercise folders** | Duplicate folder names blocked per instructor (case-insensitive, trimmed). |
 | **Class plan folders** | Same as exercise folders. |
-| **Exercise names** | Duplicate exercise names blocked per instructor on create/update. |
+| **Exercise names** | Duplicate names blocked per instructor among **library** exercises (`savedToLibrary: true`) on create/update/promote. |
 | **Class plan templates** | Duplicate template titles blocked per instructor; duplicate copy names auto-suffixed. |
 | **Class plan sections** | Duplicate section names blocked within the same template or class instance. |
 | **Client unenroll (guard)** | Unenroll disabled when class has no upcoming scheduled instances. |
@@ -71,15 +71,18 @@ This document records the work done in a single development session on the **Pil
 
 ### 2.2 Exercise names
 
+**Scope:** Library exercises only (`savedToLibrary: true`). Plan-only exercises may reuse names; uniqueness applies when creating/updating library exercises and when promoting via save-to-library.
+
 **Server**
 
-- `assertUniqueExerciseName()` in `exercise.service.ts` — scoped to instructor, non-deleted exercises
-- Called on `createExercise` and `updateExercise` (when `name` is provided)
+- `assertUniqueExerciseName()` in `exercise.service.ts` — scoped to instructor, non-deleted **library** exercises
+- Called on `createExercise` when `savedToLibrary !== false`, on `updateExercise` when the exercise will remain or become library, and on `saveExerciseToLibrary`
 - Zod: `createExerciseSchema.name` → `.trim().min(1)`
 
 **Client**
 
-- `exercise-form.tsx` and `exercise-form-multistep.tsx` load full exercise list via `exerciseApi.getExercises()` on mount
+- `exercise-form.tsx` and `exercise-form-multistep.tsx` load library exercises via `exerciseApi.getExercises({ savedToLibrary: true })`
+- Class-plan embed form skips duplicate check unless “Save to library” is checked (or editing an exercise already in the library)
 - Inline duplicate error on name field; submit disabled when duplicate
 - `ApiError` surfaced in toast on save failure
 

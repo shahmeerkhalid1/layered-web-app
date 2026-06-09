@@ -126,6 +126,8 @@ export async function saveExerciseToLibrary(
     await assertExerciseFolderOwned(data.folderId, instructorId);
   }
 
+  await assertUniqueExerciseName(instructorId, exercise.name, id);
+
   return prisma.exercise.update({
     where: { id },
     data: {
@@ -151,6 +153,7 @@ async function assertUniqueExerciseName(
     where: {
       instructorId,
       ...activeFilter,
+      savedToLibrary: true,
       name: { equals: name, mode: "insensitive" },
       ...(excludeId ? { id: { not: excludeId } } : {}),
     },
@@ -165,7 +168,9 @@ export async function createExercise(
   data: CreateExerciseInput
 ) {
   const { layers, savedToLibrary, ...rest } = data;
-  await assertUniqueExerciseName(instructorId, rest.name);
+  if (savedToLibrary !== false) {
+    await assertUniqueExerciseName(instructorId, rest.name);
+  }
   return prisma.exercise.create({
     data: {
       ...rest,
@@ -197,16 +202,22 @@ export async function updateExercise(
   });
   if (!exercise) throw new NotFoundError("Exercise");
 
-  const { layers, ...rest } = data;
+  const { layers, savedToLibrary, ...rest } = data;
 
-  if (rest.name !== undefined) {
-    await assertUniqueExerciseName(instructorId, rest.name, id);
+  const willBeInLibrary =
+    savedToLibrary === true ||
+    (savedToLibrary !== false && exercise.savedToLibrary);
+
+  if (willBeInLibrary) {
+    const nameToCheck = rest.name ?? exercise.name;
+    await assertUniqueExerciseName(instructorId, nameToCheck, id);
   }
 
   return prisma.exercise.update({
     where: { id },
     data: {
       ...rest,
+      ...(savedToLibrary !== undefined && { savedToLibrary }),
       ...(layers !== undefined && {
         layers: {
           deleteMany: {},

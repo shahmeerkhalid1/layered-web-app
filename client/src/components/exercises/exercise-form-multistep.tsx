@@ -174,7 +174,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
   useEffect(() => {
     let cancelled = false;
     void exerciseApi
-      .getExercises()
+      .getExercises({ savedToLibrary: true })
       .then((list) => {
         if (!cancelled) {
           setExistingExercises(list.map((item) => ({ id: item.id, name: item.name })));

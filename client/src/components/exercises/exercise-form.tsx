@@ -110,7 +110,7 @@ export function ExerciseForm({
   useEffect(() => {
     let cancelled = false;
     void exerciseApi
-      .getExercises()
+      .getExercises({ savedToLibrary: true })
       .then((list) => {
         if (!cancelled) {
           setExistingExercises(list.map((item) => ({ id: item.id, name: item.name })));
@@ -121,6 +121,9 @@ export function ExerciseForm({
       cancelled = true;
     };
   }, []);
+
+  const enforceLibraryNameUniqueness =
+    !embedInClassPlan || saveToLibrary || exercise?.savedToLibrary === true;
 
   const {
     control,
@@ -174,11 +177,9 @@ export function ExerciseForm({
 
   const wTags = useWatch({ control, name: "tags" }) ?? [];
 
-  const duplicateExerciseName = isDuplicateDisplayName(
-    wName ?? "",
-    existingExercises,
-    exercise?.id
-  );
+  const duplicateExerciseName =
+    enforceLibraryNameUniqueness &&
+    isDuplicateDisplayName(wName ?? "", existingExercises, exercise?.id);
 
   const layersWatch = useWatch({ control, name: "layers" }) ?? [];
 
@@ -559,6 +560,7 @@ export function ExerciseForm({
 
   const onSubmit = handleSubmit(async (formValues) => {
     if (
+      enforceLibraryNameUniqueness &&
       isDuplicateDisplayName(formValues.name, existingExercises, exercise?.id)
     ) {
       toast.error(DUPLICATE_EXERCISE_NAME_MESSAGE);
