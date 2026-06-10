@@ -216,7 +216,7 @@ export function WeekOverviewPanel({
 
         {/* Day strip */}
         {!loading && !error ? (
-          <div className="mt-5 -mx-1 flex gap-1.5  pb-1">
+          <div className="mt-5 -mx-1 flex gap-1.5  pb-1 flex-wrap">
             {days.map((d) => {
               const ymd = formatYmdLocal(d);
               const count = grouped.get(ymd)?.length ?? 0;
