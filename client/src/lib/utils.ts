@@ -14,6 +14,38 @@ export function avatarDisplayUrl(url: string | null | undefined, version?: numbe
   return `${trimmed}${separator}v=${version}`;
 }
 
+/** Copy text to the clipboard; uses execCommand fallback on non-secure (HTTP) contexts. */
+export async function copyTextToClipboard(text: string): Promise<void> {
+  if (
+    typeof navigator !== "undefined" &&
+    navigator.clipboard?.writeText &&
+    window.isSecureContext
+  ) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch {
+      // Fall through to legacy copy on permission or API failures.
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  textarea.style.top = "0";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  try {
+    const ok = document.execCommand("copy");
+    if (!ok) throw new Error("execCommand copy failed");
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
 /** Two-letter initials from a display name (e.g. sidebar avatar after photo removal). */
 export function getDisplayInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);

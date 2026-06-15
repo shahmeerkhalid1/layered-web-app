@@ -11,7 +11,7 @@ import {
   buildInviteLink,
   type InvitationRow,
 } from "@/services/admin-api";
-import { cn } from "@/lib/utils";
+import { cn, copyTextToClipboard } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -114,6 +114,48 @@ export default function AdminUsersPage() {
 
   const prevDebouncedRef = useRef(debouncedSearch);
   const lastFetchKeyRef = useRef("");
+  const invitationSheetScrollRef = useRef<HTMLDivElement>(null);
+  const userSheetScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!detailsInvitation) return;
+
+    const resetScroll = () => {
+      const el = invitationSheetScrollRef.current;
+      if (!el) return;
+      el.scrollTop = 0;
+      el.focus({ preventScroll: true });
+    };
+
+    resetScroll();
+    const raf = requestAnimationFrame(resetScroll);
+    const timer = window.setTimeout(resetScroll, 0);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(timer);
+    };
+  }, [detailsInvitation?.id]);
+
+  useEffect(() => {
+    if (!detailsUser) return;
+
+    const resetScroll = () => {
+      const el = userSheetScrollRef.current;
+      if (!el) return;
+      el.scrollTop = 0;
+      el.focus({ preventScroll: true });
+    };
+
+    resetScroll();
+    const raf = requestAnimationFrame(resetScroll);
+    const timer = window.setTimeout(resetScroll, 0);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(timer);
+    };
+  }, [detailsUser?.id]);
 
   const loadDirectory = useCallback(
     async (pageForQuery: number) => {
@@ -209,7 +251,7 @@ export default function AdminUsersPage() {
 
   const copyLink = async (link: string) => {
     try {
-      await navigator.clipboard.writeText(link);
+      await copyTextToClipboard(link);
       toast.success("Link copied");
     } catch {
       toast.error("Could not copy to clipboard");
@@ -303,7 +345,7 @@ export default function AdminUsersPage() {
 
   const copyInvitationLink = async (invitation: InvitationRow) => {
     try {
-      await navigator.clipboard.writeText(buildInviteLink(invitation.token));
+      await copyTextToClipboard(buildInviteLink(invitation.token));
       toast.success("Invite link copied");
     } catch {
       toast.error("Could not copy to clipboard");
@@ -507,9 +549,9 @@ export default function AdminUsersPage() {
       >
         <SheetContent
           side="right"
-          className="border-border bg-background sm:max-w-md"
+          className="border-border bg-background sm:max-w-md gap-0 overflow-hidden py-4"
         >
-          <SheetHeader>
+          <SheetHeader className="shrink-0">
             <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
               Pending Invitation
             </p>
@@ -521,7 +563,12 @@ export default function AdminUsersPage() {
             </SheetDescription>
           </SheetHeader>
           {detailsInvitation && (
-            <dl className="grid gap-3 px-4 text-sm">
+            <div
+              ref={invitationSheetScrollRef}
+              tabIndex={-1}
+              className="min-h-0 flex-1 overflow-y-auto outline-none"
+            >
+            <dl className="grid gap-3 px-4 pb-4 text-sm">
               <div className="rounded-2xl border border-border bg-card/60 p-3">
                 <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   Email
@@ -593,6 +640,7 @@ export default function AdminUsersPage() {
                 </Button>
               </div>
             </dl>
+            </div>
           )}
         </SheetContent>
       </Sheet>
@@ -600,9 +648,9 @@ export default function AdminUsersPage() {
       <Sheet open={!!detailsUser} onOpenChange={(o) => !o && setDetailsUser(null)}>
         <SheetContent
           side="right"
-          className="border-border bg-background sm:max-w-md"
+          className="border-border bg-background sm:max-w-md gap-0 overflow-hidden py-4"
         >
-          <SheetHeader>
+          <SheetHeader className="shrink-0">
             <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
               Directory Record
             </p>
@@ -614,7 +662,12 @@ export default function AdminUsersPage() {
             </SheetDescription>
           </SheetHeader>
           {detailsUser && (
-            <dl className="grid gap-3 px-4 text-sm">
+            <div
+              ref={userSheetScrollRef}
+              tabIndex={-1}
+              className="min-h-0 flex-1 overflow-y-auto outline-none"
+            >
+            <dl className="grid gap-3 px-4 pb-4 text-sm">
               <div className="rounded-2xl border border-border bg-card/60 p-3">
                 <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   Name
@@ -676,6 +729,7 @@ export default function AdminUsersPage() {
                 </dd>
               </div>
             </dl>
+            </div>
           )}
         </SheetContent>
       </Sheet>

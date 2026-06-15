@@ -19,7 +19,7 @@ async function request<T>(
   options: FetchOptions = {}
 ): Promise<T> {
   const { params, ...fetchOptions } = options;
-  let url = `${API_BASE}${endpoint}`;
+  let url = `${API_BASE}/api${endpoint}`;
 
   if (params) {
     const searchParams = new URLSearchParams(params);
