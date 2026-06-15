@@ -10,6 +10,8 @@ export function avatarDisplayUrl(url: string | null | undefined, version?: numbe
   const trimmed = url?.trim();
   if (!trimmed) return null;
   if (version === undefined) return trimmed;
+  // Presigned S3 URLs break if extra query params are appended after signing.
+  if (trimmed.includes("X-Amz-Signature=")) return trimmed;
   const separator = trimmed.includes("?") ? "&" : "?";
   return `${trimmed}${separator}v=${version}`;
 }

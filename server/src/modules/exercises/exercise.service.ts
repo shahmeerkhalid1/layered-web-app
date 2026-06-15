@@ -1,6 +1,6 @@
 import { prisma } from "../../lib/prisma";
 import { ConflictError, NotFoundError } from "../../lib/errors";
-import { promoteImage, deleteImage } from "../../lib/cloudinary";
+import { deleteObject } from "../../lib/storage";
 import type {
   CreateExerciseInput,
   UpdateExerciseInput,
@@ -246,7 +246,7 @@ export async function deleteExercise(id: string, instructorId: string) {
 
   for (const img of exercise.images) {
     if (img.publicId) {
-      await deleteImage(img.publicId).catch(() => {});
+      await deleteObject(img.publicId).catch(() => {});
     }
   }
 
@@ -302,7 +302,6 @@ export async function getProgressionChain(id: string, instructorId: string) {
       forwardVisited.add(node.id);
       chain.push({ id: node.id, name: node.name, level });
       level++;
-      // need optimization here, will do later
       node = await prisma.exercise.findFirst({
         where: { progressionOfId: node.id, instructorId, ...activeFilter },
         select: { id: true, name: true, progressionOfId: true },
@@ -387,73 +386,12 @@ export async function deleteFolder(id: string, instructorId: string) {
   });
 }
 
-// ─── Temp image promotion ────────────────────────────────────────────────────
-
-export async function attachTempImagesToExercise(
-  exerciseId: string,
-  instructorId: string,
-  publicIds: string[]
-) {
-  const exercise = await prisma.exercise.findFirst({
-    where: { id: exerciseId, instructorId, ...activeFilter },
-    include: { images: true },
-  });
-  if (!exercise) throw new NotFoundError("Exercise");
-
-  const invalid = publicIds.filter((id) => !id.startsWith("temp/"));
-  if (invalid.length > 0) {
-    throw new Error("Only temp/ images can be promoted");
-  }
-
-  const currentCount = exercise.images.length;
-  if (currentCount + publicIds.length > 3) {
-    throw new Error(
-      `Maximum 3 images per exercise (currently ${currentCount})`
-    );
-  }
-
-  const promoted: { url: string; publicId: string }[] = [];
-
-  try {
-    for (const tempId of publicIds) {
-      const result = await promoteImage(tempId, exerciseId);
-      promoted.push(result);
-    }
-  } catch (err) {
-    for (const p of promoted) {
-      await deleteImage(p.publicId).catch(() => {});
-    }
-    throw err;
-  }
-
-  try {
-    await prisma.$transaction(
-      promoted.map((p, i) =>
-        prisma.exerciseImage.create({
-          data: {
-            exerciseId,
-            url: p.url,
-            publicId: p.publicId,
-            order: currentCount + i,
-          },
-        })
-      )
-    );
-  } catch (err) {
-    for (const p of promoted) {
-      await deleteImage(p.publicId).catch(() => {});
-    }
-    throw err;
-  }
-}
-
 // ─── Image operations ────────────────────────────────────────────────────────
 
 export async function addImage(
   exerciseId: string,
   instructorId: string,
-  url: string,
-  publicId: string
+  storageKey: string
 ) {
   const exercise = await prisma.exercise.findFirst({
     where: { id: exerciseId, instructorId, ...activeFilter },
@@ -467,8 +405,8 @@ export async function addImage(
   return prisma.exerciseImage.create({
     data: {
       exerciseId,
-      url,
-      publicId,
+      url: storageKey,
+      publicId: storageKey,
       order: exercise.images.length,
     },
   });

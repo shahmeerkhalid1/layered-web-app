@@ -106,12 +106,12 @@ export function AdminHome() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Banned</CardTitle>
+            <CardTitle className="text-sm font-medium">Inactive</CardTitle>
             <UserX className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.bannedInstructors ?? "—"}</div>
-            <p className="text-xs text-muted-foreground">Cannot sign in</p>
+            <p className="text-xs text-muted-foreground">Banned(Cannot sign in)</p>
           </CardContent>
         </Card>
 

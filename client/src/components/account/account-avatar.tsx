@@ -1,12 +1,13 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { avatarDisplayUrl, cn, getDisplayInitials } from "@/lib/utils";
+import { cn, avatarDisplayUrl, getDisplayInitials } from "@/lib/utils";
+import { useSignedAvatarUrl } from "@/hooks/use-signed-avatar-url";
 
 interface AccountAvatarProps {
   name: string;
   image?: string | null;
-  /** Bumps when the image file changes so Cloudinary/browser cache does not show a stale photo. */
+  /** Bumps when the image file changes so browser cache does not show a stale photo. */
   imageVersion?: number;
   size?: "default" | "sm" | "lg";
   className?: string;
@@ -22,7 +23,8 @@ export function AccountAvatar({
   fallbackClassName,
 }: AccountAvatarProps) {
   const initials = getDisplayInitials(name);
-  const src = avatarDisplayUrl(image, imageVersion);
+  const resolvedImage = useSignedAvatarUrl(image);
+  const src = avatarDisplayUrl(resolvedImage, imageVersion);
   const useCustomDimensions =
     className !== undefined && /\bsize-/.test(className);
   // Remount when photo is removed so Base UI resets imageLoadingStatus and shows fallback.

@@ -15,8 +15,13 @@ import { useDropzone, type FileRejection } from "react-dropzone";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
 import { exerciseApi } from "@/services/exercise-api";
-import type { TempUploadedImage } from "@/services/exercise-api";
-import type { DropdownOptionRow, Exercise, ExerciseFolder, ExerciseImage } from "@/lib/types";
+import type { DropdownOptionRow, Exercise, ExerciseFolder } from "@/lib/types";
+import {
+  exerciseFormImageKey,
+  exerciseFormImageUrl,
+  revokePendingImageUrls,
+  type ExerciseFormImageItem,
+} from "@/lib/exercise-form-images";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -69,13 +74,7 @@ const MAX_IMAGES = 3;
 const EXERCISE_FORM_IMAGE_GALLERY = "exercise-form-multistep-images";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-type ImageItem =
-  | { type: "saved"; data: ExerciseImage }
-  | { type: "temp"; data: TempUploadedImage };
-
-function imageKey(item: ImageItem): string {
-  return item.type === "saved" ? item.data.id : item.data.publicId;
-}
+type ImageItem = ExerciseFormImageItem;
 
 function optionalField(s: string): string | undefined {
   const t = s.trim();
@@ -255,7 +254,6 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
   const [blockedParentIds, setBlockedParentIds] = useState<Set<string>>(() =>
     exercise?.id ? new Set([exercise.id]) : new Set()
   );
-  const [uploading, setUploading] = useState(false);
   const [imageRemoveTarget, setImageRemoveTarget] = useState<ImageItem | null>(null);
   const [imageRemovePending, setImageRemovePending] = useState(false);
   const [images, setImages] = useState<ImageItem[]>(() => {
@@ -266,11 +264,18 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
     return saved;
   });
 
+  const imagesRef = useRef(images);
+  imagesRef.current = images;
+
+  useEffect(() => {
+    return () => revokePendingImageUrls(imagesRef.current);
+  }, []);
+
   const totalImages = images.length;
   const availableSlots = MAX_IMAGES - totalImages;
 
   const imageGalleryFancyboxKey = useMemo(
-    () => images.map(imageKey).join("|"),
+    () => images.map(exerciseFormImageKey).join("|"),
     [images]
   );
   const bindExerciseImageGallery = useFancybox(imageGalleryFancyboxKey);
@@ -514,7 +519,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
   };
 
   const onDrop = useCallback(
-    async (accepted: File[], rejections: FileRejection[]) => {
+    (accepted: File[], rejections: FileRejection[]) => {
       for (const r of rejections) {
         for (const err of r.errors) {
           if (err.code === "file-too-large") {
@@ -531,23 +536,16 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
 
       if (accepted.length === 0) return;
 
-      const formData = new FormData();
-      for (const file of accepted) {
-        formData.append("images", file);
-      }
-
-      setUploading(true);
-      try {
-        const res = await exerciseApi.uploadTempImages(formData);
-        setImages((prev) => [
-          ...prev,
-          ...res.images.map((img): ImageItem => ({ type: "temp", data: img })),
-        ]);
-      } catch {
-        toast.error("Failed to upload images");
-      } finally {
-        setUploading(false);
-      }
+      setImages((prev) => [
+        ...prev,
+        ...accepted.map(
+          (file): ImageItem => ({
+            type: "pending",
+            file,
+            previewUrl: URL.createObjectURL(file),
+          })
+        ),
+      ]);
     },
     [availableSlots]
   );
@@ -562,21 +560,21 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
     maxSize: MAX_FILE_SIZE,
     maxFiles: Math.max(availableSlots, 0),
     multiple: true,
-    disabled: uploading || availableSlots <= 0,
+    disabled: isSubmitting || availableSlots <= 0,
   });
 
   const removeImage = async (item: ImageItem) => {
-    if (item.type === "temp") {
-      try {
-        await exerciseApi.deleteTempImage(item.data.publicId);
-        setImages((prev) => prev.filter((i) => imageKey(i) !== imageKey(item)));
-      } catch {
-        toast.error("Failed to remove image — try again");
-      }
+    if (item.type === "pending") {
+      URL.revokeObjectURL(item.previewUrl);
+      setImages((prev) =>
+        prev.filter((i) => exerciseFormImageKey(i) !== exerciseFormImageKey(item))
+      );
     } else if (isEdit && exercise) {
       try {
         await exerciseApi.deleteImage(exercise.id, item.data.id);
-        setImages((prev) => prev.filter((i) => imageKey(i) !== imageKey(item)));
+        setImages((prev) =>
+          prev.filter((i) => exerciseFormImageKey(i) !== exerciseFormImageKey(item))
+        );
         toast.success("Image removed");
       } catch {
         toast.error("Failed to remove image — try again");
@@ -663,9 +661,9 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
       return;
     }
 
-    const tempPublicIds = images
-      .filter((i): i is ImageItem & { type: "temp" } => i.type === "temp")
-      .map((i) => i.data.publicId);
+    const pendingItems = images.filter(
+      (i): i is ImageItem & { type: "pending" } => i.type === "pending"
+    );
 
     const nextProgressionOfId =
       formValues.progressionOfId === "none" ? null : formValues.progressionOfId;
@@ -709,19 +707,40 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
           isFinisher: i === last ? r.isFinisher : false,
         }));
       })(),
-      ...(tempPublicIds.length > 0 ? { publicIds: tempPublicIds } : {}),
     };
 
     try {
+      let exerciseId: string;
       if (isEdit && exercise) {
-        const updated = await exerciseApi.updateExercise(exercise.id, body);
-        toast.success("Exercise updated");
-        router.push(`/exercises/${updated.id}`);
+        await exerciseApi.updateExercise(exercise.id, body);
+        exerciseId = exercise.id;
       } else {
         const created = await exerciseApi.createExercise(body);
-        toast.success("Exercise created");
-        router.push(`/exercises/${created.id}`);
+        exerciseId = created.id;
       }
+
+      if (pendingItems.length > 0) {
+        const uploadedIds: string[] = [];
+        for (const item of pendingItems) {
+          const formData = new FormData();
+          formData.append("image", item.file);
+          const uploaded = await exerciseApi.addImage(exerciseId, formData);
+          uploadedIds.push(uploaded.id);
+        }
+
+        let pendingIdx = 0;
+        const finalOrder = images.map((item) => {
+          if (item.type === "saved") return item.data.id;
+          return uploadedIds[pendingIdx++]!;
+        });
+
+        if (finalOrder.length > 1) {
+          await exerciseApi.reorderImages(exerciseId, finalOrder);
+        }
+      }
+
+      toast.success(isEdit ? "Exercise updated" : "Exercise created");
+      router.push(`/exercises/${exerciseId}`);
     } catch (e) {
       toast.error(
         e instanceof ApiError ? e.message : "Failed to save exercise"
@@ -937,7 +956,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                 <div ref={bindExerciseImageGallery} className="grid grid-cols-3 gap-3">
                   {images.map((item, index) => (
                     <div
-                      key={imageKey(item)}
+                      key={exerciseFormImageKey(item)}
                       draggable
                       onDragStart={() => handleDragStart(index)}
                       onDragOver={(e) => handleDragOver(e, index)}
@@ -951,12 +970,12 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                       )}
                     >
                       <a
-                        href={item.data.url}
+                        href={exerciseFormImageUrl(item)}
                         data-fancybox={EXERCISE_FORM_IMAGE_GALLERY}
                         data-caption={
                           (wName ?? "").trim().length > 0
-                            ? `${(wName ?? "").trim()} — Image ${index + 1}${item.type === "temp" ? " (unsaved)" : ""}`
-                            : `Image ${index + 1}${item.type === "temp" ? " (unsaved)" : ""}`
+                            ? `${(wName ?? "").trim()} — Image ${index + 1}${item.type === "pending" ? " (unsaved)" : ""}`
+                            : `Image ${index + 1}${item.type === "pending" ? " (unsaved)" : ""}`
                         }
                         title="View full size"
                         className="relative block size-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
@@ -965,7 +984,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element -- sortable preview + fancybox */}
                         <img
-                          src={item.data.url}
+                          src={exerciseFormImageUrl(item)}
                           alt=""
                           className="size-full object-cover"
                           draggable={false}
@@ -983,7 +1002,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                       >
                         <X className="size-3.5 text-white" />
                       </button>
-                      {item.type === "temp" && (
+                      {item.type === "pending" && (
                         <span className="pointer-events-none absolute bottom-1.5 left-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
                           New
                         </span>
@@ -1001,18 +1020,18 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                     isDragActive
                       ? "border-primary bg-primary/5"
                       : "border-input bg-background/70 hover:border-muted-foreground/40",
-                    uploading && "pointer-events-none opacity-60"
+                    isSubmitting && "pointer-events-none opacity-60"
                   )}
                 >
                   <input {...getInputProps()} />
-                  {uploading ? (
+                  {isSubmitting ? (
                     <Loader2 className="size-6 animate-spin text-muted-foreground" />
                   ) : (
                     <ImagePlus className="size-6 text-muted-foreground" />
                   )}
                   <p className="text-center text-sm text-muted-foreground">
-                    {uploading
-                      ? "Uploading..."
+                    {isSubmitting
+                      ? "Saving..."
                       : isDragActive
                         ? "Drop images here"
                         : `Drag & drop or click to add (max ${availableSlots} more)`}
@@ -1681,7 +1700,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                   <Button
                     type="button"
                     className="rounded-2xl"
-                    disabled={isSubmitting || uploading || duplicateExerciseName}
+                    disabled={isSubmitting || duplicateExerciseName}
                     onClick={() => void submitForm()}
                   >
                     {isSubmitting ? "Saving…" : isEdit ? "Update exercise" : "Create exercise"}

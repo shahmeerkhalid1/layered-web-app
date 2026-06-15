@@ -79,9 +79,9 @@ export function ProfilePhotoUpload({
 
       setUploading(true);
       try {
-        const { url } = await profileApi.uploadAvatar(file);
+        const { url, storageKey } = await profileApi.uploadAvatar(file);
         clearBlobPreview();
-        await syncSessionImage(url);
+        await syncSessionImage(storageKey);
         onAvatarChange?.(url);
         toast.success("Profile photo updated");
       } catch (e) {

@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import multer from "multer";
+import fs from "fs/promises";
 import { authenticate } from "../../middleware/auth.middleware";
 import { validate, validateQuery } from "../../middleware/validate.middleware";
 import * as exerciseService from "./exercise.service";
@@ -13,21 +14,24 @@ import {
   saveToLibrarySchema,
   type ListExercisesQuery,
 } from "./exercise.validation";
-import { uploadImage, deleteImage } from "../../lib/cloudinary";
+import { uploadExerciseImage, deleteObject } from "../../lib/storage";
+import { signExerciseImages, signExerciseListResult } from "../../lib/media-urls";
 
 const router = Router();
-const upload = multer({ dest: "uploads/" });
+const upload = multer({
+  dest: "uploads/",
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only JPEG, PNG, and WebP images are allowed"));
+    }
+  },
+});
 
 router.use(authenticate);
-
-function extractImagePublicIds(req: Request, _res: Response, next: () => void) {
-  const { publicIds, ...rest } = req.body ?? {};
-  if (Array.isArray(publicIds) && publicIds.every((id: unknown) => typeof id === "string")) {
-    req.imagePublicIds = publicIds as string[];
-  }
-  req.body = rest;
-  next();
-}
 
 // ─── Exercises ───────────────────────────────────────────────────────────────
 
@@ -39,7 +43,7 @@ router.get(
       req.user!.instructorId,
       req.query as unknown as ListExercisesQuery
     );
-    res.json(exercises);
+    res.json(await signExerciseListResult(exercises));
   }
 );
 
@@ -48,7 +52,7 @@ router.get("/:id", async (req: Request, res: Response) => {
     req.params.id as string,
     req.user!.instructorId
   );
-  res.json(exercise);
+  res.json(await signExerciseImages(exercise));
 });
 
 router.patch(
@@ -60,60 +64,32 @@ router.patch(
       req.user!.instructorId,
       req.body
     );
-    res.json(exercise);
+    res.json(await signExerciseImages(exercise));
   }
 );
 
 router.post(
   "/",
-  extractImagePublicIds,
   validate(createExerciseSchema),
   async (req: Request, res: Response) => {
     const exercise = await exerciseService.createExercise(
       req.user!.instructorId,
       req.body
     );
-
-    if (req.imagePublicIds?.length) {
-      await exerciseService.attachTempImagesToExercise(
-        exercise.id,
-        req.user!.instructorId,
-        req.imagePublicIds
-      );
-    }
-
-    const result = await exerciseService.getExercise(
-      exercise.id,
-      req.user!.instructorId
-    );
-    res.status(201).json(result);
+    res.status(201).json(await signExerciseImages(exercise));
   }
 );
 
 router.patch(
   "/:id",
-  extractImagePublicIds,
   validate(updateExerciseSchema),
   async (req: Request, res: Response) => {
-    await exerciseService.updateExercise(
+    const exercise = await exerciseService.updateExercise(
       req.params.id as string,
       req.user!.instructorId,
       req.body
     );
-
-    if (req.imagePublicIds?.length) {
-      await exerciseService.attachTempImagesToExercise(
-        req.params.id as string,
-        req.user!.instructorId,
-        req.imagePublicIds
-      );
-    }
-
-    const result = await exerciseService.getExercise(
-      req.params.id as string,
-      req.user!.instructorId
-    );
-    res.json(result);
+    res.json(await signExerciseImages(exercise));
   }
 );
 
@@ -155,14 +131,23 @@ router.post(
       res.status(400).json({ error: "No image file provided" });
       return;
     }
-    const { url, publicId } = await uploadImage(req.file.path);
-    const image = await exerciseService.addImage(
-      req.params.id as string,
-      req.user!.instructorId,
-      url,
-      publicId
-    );
-    res.status(201).json(image);
+
+    const exerciseId = req.params.id as string;
+    try {
+      const { storageKey } = await uploadExerciseImage(
+        req.file.path,
+        exerciseId
+      );
+      const image = await exerciseService.addImage(
+        exerciseId,
+        req.user!.instructorId,
+        storageKey
+      );
+      const signed = await signExerciseImages({ images: [image] });
+      res.status(201).json(signed.images![0]);
+    } finally {
+      await fs.unlink(req.file.path).catch(() => {});
+    }
   }
 );
 
@@ -175,7 +160,7 @@ router.delete(
       req.user!.instructorId
     );
     if (image.publicId) {
-      await deleteImage(image.publicId);
+      await deleteObject(image.publicId);
     }
     res.status(204).send();
   }
@@ -190,7 +175,8 @@ router.patch(
       req.user!.instructorId,
       req.body.imageIds
     );
-    res.json(images);
+    const signed = await signExerciseImages({ images });
+    res.json(signed.images);
   }
 );
 

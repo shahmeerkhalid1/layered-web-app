@@ -109,9 +109,9 @@ export async function isSignupEnabled(): Promise<boolean> {
 export async function getPlatformStats() {
   const [totalInstructors, activeInstructors, bannedInstructors] =
     await Promise.all([
-      prisma.instructor.count(),
-      prisma.instructor.count({ where: { banned: { not: true } } }),
-      prisma.instructor.count({ where: { banned: true } }),
+      prisma.instructor.count({where: {role: "INSTRUCTOR"}}),
+      prisma.instructor.count({ where: { role: "INSTRUCTOR", banned: { equals: false } } }),
+      prisma.instructor.count({ where: { role: "INSTRUCTOR", banned: { equals: true } } }),
     ]);
 
   return {

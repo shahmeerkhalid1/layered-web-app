@@ -58,14 +58,8 @@ export type SaveExerciseBody = {
   folderId?: string | null;
   progressionOfId?: string | null;
   layers?: ExerciseLayerInput[];
-  publicIds?: string[];
   /** Omit for default (true). Set false for exercises created inside a class plan. */
   savedToLibrary?: boolean;
-};
-
-export type TempUploadedImage = {
-  publicId: string;
-  url: string;
 };
 
 export const exerciseApi = {
@@ -114,11 +108,6 @@ export const exerciseApi = {
   updateFolder: (id: string, body: { name?: string }) =>
     api.patch<ExerciseFolder>(`/exercise-folders/${id}`, body),
   deleteFolder: (id: string) => api.delete<void>(`/exercise-folders/${id}`),
-
-  uploadTempImages: (formData: FormData) =>
-    api.post<{ images: TempUploadedImage[] }>("/uploads/temp", formData),
-  deleteTempImage: (publicId: string) =>
-    api.delete<void>(`/uploads/temp/${encodeURIComponent(publicId)}`),
 
   saveExerciseToLibrary: (id: string, body?: { folderId?: string | null }) =>
     api.patch<Exercise>(`/exercises/${encodeURIComponent(id)}/save-to-library`, body ?? {}),

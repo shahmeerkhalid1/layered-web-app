@@ -21,6 +21,11 @@ const upload = multer({
 
 router.use(authenticate);
 
+router.get("/avatar", async (req: Request, res: Response) => {
+  const result = await profileService.getProfileAvatarUrl(req.user!.instructorId);
+  res.json(result);
+});
+
 router.post(
   "/avatar",
   upload.single("image"),

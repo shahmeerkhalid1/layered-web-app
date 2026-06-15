@@ -15,7 +15,6 @@ import classPlanRoutes from "./modules/class-plans/class-plan.routes";
 import classRoutes from "./modules/scheduling/class.routes";
 import classInstanceRoutes from "./modules/scheduling/class-instance.routes";
 import quickScheduleRoutes from "./modules/scheduling/quick-schedule.routes";
-import uploadRoutes from "./modules/uploads/upload.routes";
 import dropdownRoutes from "./modules/dropdowns/dropdown.routes";
 import clientRoutes from "./modules/clients/client.routes";
 import sessionNoteRoutes from "./modules/session-notes/session-note.routes";
@@ -59,9 +58,6 @@ app.get("/api/invite/verify", async (req, res) => {
 
 // Admin routes (protected)
 app.use("/api/admin", authenticate, requireAdmin, adminRoutes);
-
-// Upload routes (temp images)
-app.use("/api/uploads", authenticate, uploadRoutes);
 
 // Exercise routes
 app.use("/api/exercises", exerciseRoutes);

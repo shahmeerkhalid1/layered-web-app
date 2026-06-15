@@ -1,5 +1,1 @@
-declare namespace Express {
-  interface Request {
-    imagePublicIds?: string[];
-  }
-}
+// Express type augmentation — extend here when needed.
