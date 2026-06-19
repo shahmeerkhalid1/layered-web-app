@@ -13,9 +13,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Layered.",
+  title: "Layered Planning",
   description:
-    "Layered. is a platform for managing your Pilates practice. It allows you to plan classes, manage clients, and grow your Pilates practice in one place.",
+    "Layered Planning is a platform for managing your Pilates practice. It allows you to plan classes, manage clients, and grow your Pilates practice in one place.",
 };
 
 export default function RootLayout({
