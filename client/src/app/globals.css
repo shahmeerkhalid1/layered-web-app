@@ -359,4 +359,13 @@
 
 input:-webkit-autofill{
   background-color: none !important;
+  -webkit-text-fill-color: var(--foreground) !important;
+  -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+  -webkit-transition: background-color 5000s ease-in-out 0s !important;
+  -moz-transition: background-color 5000s ease-in-out 0s !important;
+  -ms-transition: background-color 5000s ease-in-out 0s !important;
+  -o-transition: background-color 5000s ease-in-out 0s !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+  transition: background-color 5000s ease-in-out 0s !important;
 }
