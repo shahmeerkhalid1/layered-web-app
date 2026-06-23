@@ -17,15 +17,13 @@ import {
   AuthPageShell,
   AuthSubmitButton,
 } from "@/components/auth/auth-page-shell";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import {
   loginFormSchema,
   type LoginFormValues,
 } from "@/lib/validation/auth-schemas";
-
-const authInputClassName =
-  "h-11 rounded-xl ring-0 border-border bg-secondary/40 dark:bg-background shadow-none placeholder:text-muted-foreground dark:focus-visible:ring-white/70 dark:hover:ring-white/70 focus-visible:ring-ring/35 dark:hover:border-white/35 hover:ring-ring/35 hover:ring-2 focus-visible:ring-2 dark:focus-visible:border-white/35 focus-visible:border-border hover:border-border";
 
 export default function LoginPage() {
   return (
@@ -53,7 +51,7 @@ function LoginPageContent() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: "", password: "", rememberMe: true },
   });
 
   useEffect(() => {
@@ -72,7 +70,7 @@ function LoginPageContent() {
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      await login(values.email, values.password);
+      await login(values.email, values.password, values.rememberMe);
       router.replace("/");
       router.refresh();
     } catch (err) {
@@ -133,6 +131,11 @@ function LoginPageContent() {
               {...register("password")}
             />
           </AuthField>
+
+          <label className="flex cursor-pointer items-center gap-2.5 text-sm text-foreground">
+            <Checkbox id="rememberMe" {...register("rememberMe")} />
+            Remember me
+          </label>
 
           <AuthSubmitButton disabled={isSubmitting}>
             {isSubmitting ? "Signing in…" : "Sign In"}
