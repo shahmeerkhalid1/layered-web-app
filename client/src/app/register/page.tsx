@@ -5,7 +5,7 @@ import { useAuth } from "@/context/auth-context";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Lock, Mail, UserPlus } from "lucide-react";
+import { ArrowRight, Lock, Mail } from "lucide-react";
 
 import {
   AuthField,
@@ -14,9 +14,9 @@ import {
   AuthFormCard,
   AuthLoadingCard,
   AuthPageShell,
+  AuthSubmitButton,
 } from "@/components/auth/auth-page-shell";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { api } from "@/lib/api";
@@ -123,7 +123,7 @@ function RegisterPageContent() {
           }
           footer={<AuthFooterLink prompt="Already have an account?" linkLabel="Sign in" href="/login" />}
         >
-          <div className="flex flex-col items-center rounded-2xl border border-dashed border-border/80 bg-muted/15 px-6 py-10 text-center">
+          <div className="flex flex-col items-center rounded-xl border border-dashed border-border/80 bg-muted/15 px-6 py-10 text-center">
             <div className="flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
               <Mail className="size-6" aria-hidden />
             </div>
@@ -148,7 +148,7 @@ function RegisterPageContent() {
   });
 
   const inviteBadge = invite ? (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center justify-center gap-2">
       <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs font-medium">
         Invitation
       </Badge>
@@ -161,11 +161,10 @@ function RegisterPageContent() {
   return (
     <AuthPageShell>
       <AuthFormCard
-        title="Create your account"
         description={
           invite
             ? "You're joining Layered. via invitation — finish setting up your profile."
-            : "Get started with Layered. and organize your teaching in one place."
+            : "Create your account and organize your teaching in one place."
         }
         badge={inviteBadge}
         footer={
@@ -179,10 +178,9 @@ function RegisterPageContent() {
             <Input
               id="name"
               type="text"
-              placeholder="Jane Smith"
               autoComplete="name"
               aria-invalid={errors.name ? true : undefined}
-              className={cn(errors.name && "border-destructive")}
+              className={cn("h-11 rounded-xl", errors.name && "border-destructive")}
               {...register("name")}
             />
           </AuthField>
@@ -203,11 +201,11 @@ function RegisterPageContent() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
                 autoComplete="email"
                 readOnly={!!invite}
                 aria-invalid={errors.email ? true : undefined}
                 className={cn(
+                  "h-11 rounded-xl",
                   invite && "bg-muted/40 pl-9",
                   errors.email && "border-destructive"
                 )}
@@ -224,22 +222,17 @@ function RegisterPageContent() {
           >
             <PasswordInput
               id="password"
-              placeholder="Create a secure password"
               autoComplete="new-password"
               aria-invalid={errors.password ? true : undefined}
-              className={cn(errors.password && "border-destructive")}
+              className={cn("h-11 rounded-xl", errors.password && "border-destructive")}
               {...register("password")}
             />
           </AuthField>
 
-          <Button
-            type="submit"
-            className="h-10 w-full gap-2 rounded-full"
-            disabled={isSubmitting}
-          >
-            <UserPlus className="size-4" aria-hidden />
-            {isSubmitting ? "Creating account…" : "Create account"}
-          </Button>
+          <AuthSubmitButton disabled={isSubmitting}>
+            {isSubmitting ? "Creating account…" : "Create Account"}
+            {!isSubmitting ? <ArrowRight className="size-4" aria-hidden /> : null}
+          </AuthSubmitButton>
         </form>
       </AuthFormCard>
     </AuthPageShell>

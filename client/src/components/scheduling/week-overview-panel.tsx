@@ -14,6 +14,12 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { CalendarClassInstance } from "@/lib/types";
 import {
+  instanceStatusLabel,
+  weekOverviewCardStatusClasses,
+  weekOverviewTimePillStatusClasses,
+  weekOverviewTitleStatusClasses,
+} from "@/lib/calendar-instance-status-styles";
+import {
   addDays,
   formatYmdLocal,
   startOfWeekMonday,
@@ -30,6 +36,7 @@ function WeekClassCard({
   const start = new Date(instance.time);
   const durationMin = instance.class.durationMinutes ?? 60;
   const isGroup = instance.class.type === "GROUP";
+  const statusLabel = instanceStatusLabel(instance.status);
   const classTypeLabel = instance.classType?.trim();
   const classStyleLabel = instance.classStyle?.trim();
   const timeLabel = start.toLocaleTimeString(undefined, {
@@ -43,25 +50,33 @@ function WeekClassCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        "group flex w-full gap-3 rounded-2xl border px-3 py-3 text-left transition-all",
+        "group flex w-full cursor-pointer gap-3 rounded-2xl border px-3 py-3 text-left transition-all",
         "hover:-translate-y-px hover:shadow-md focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-         "border-secondary/25 bg-secondary/80 hover:border-secondary/40 hover:bg-secondary dark:border-border/80 dark:bg-background/60 dark:hover:border-border dark:hover:bg-muted/30 cursor-pointer"
+        weekOverviewCardStatusClasses(instance.status)
       )}
     >
       <div
         className={cn(
           "flex min-w-14 shrink-0 flex-col items-center justify-center rounded-xl px-2 py-1.5 tabular-nums",
-          "bg-secondary/20 text-secondary-foreground"
+          weekOverviewTimePillStatusClasses(instance.status)
         )}
       >
         <span className="text-center text-xs font-semibold leading-tight">{timeLabel}</span>
-        <span className="mt-0.5 text-[10px] text-muted-foreground">{durationMin}m</span>
+        <span className="mt-0.5 text-[10px] opacity-80">{durationMin}m</span>
       </div>
       <div className="min-w-0 flex-1 space-y-1.5">
-        <p className="line-clamp-2 font-medium leading-snug text-foreground group-hover:text-foreground">
+        <p className={cn("line-clamp-2 font-medium leading-snug", weekOverviewTitleStatusClasses(instance.status))}>
           {instance.class.title}
         </p>
         <div className="flex flex-wrap items-center gap-1.5">
+          {statusLabel ? (
+            <Badge
+              variant={instance.status === "CANCELLED" ? "destructive" : "secondary"}
+              className="h-5 rounded-sm px-2 text-[10px] font-semibold uppercase tracking-wide"
+            >
+              {statusLabel}
+            </Badge>
+          ) : null}
           <Badge
             variant={isGroup ? "outline" : "default"}
             className="h-5 rounded-sm px-2 text-[10px] font-semibold uppercase tracking-wide"
@@ -147,16 +162,16 @@ export function WeekOverviewPanel({
   };
 
   return (
-    <div className="rounded-3xl border border-border bg-card shadow-lg">
+    <div className="px-4">
       {/* Header */}
-      <div className="border-b border-border/70 px-4 py-5 md:px-6 md:py-6">
+      <div className="border-b border-border/70 px-4 py-5 md:px-6 md:py-6 rounded-3xl bg-card ">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-secondary/80 text-secondary-foreground">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
               <CalendarDays className="size-5" aria-hidden />
             </div>
             <div className="min-w-0 space-y-1">
-              <h1 className="font-heading text-xl font-semibold tracking-[-0.02em] text-foreground md:text-2xl">
+              <h1 className="font-heading text-xl font-semibold tracking-[-0.02em] text-foreground md:text-lg uppercase">
                 Week overview
               </h1>
               <p className="text-sm text-muted-foreground">
@@ -262,7 +277,7 @@ export function WeekOverviewPanel({
       </div>
 
       {/* Body */}
-      <div className="px-4 py-5 md:px-6 md:py-6">
+      <div className=" py-5 md:py-6">
         {loading ? (
           <div className="space-y-4" aria-busy aria-label="Loading week">
             <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
@@ -318,11 +333,11 @@ export function WeekOverviewPanel({
                 <li
                   key={ymd}
                   id={`week-day-${ymd}`}
-                  className="scroll-mt-24"
+                  className="scroll-mt-24 bg-card rounded-3xl p-4"
                 >
                   <article
                     className={cn(
-                      "overflow-hidden rounded-2xl border transition-colors",
+                      "overflow-hidden rounded-2xl border transition-colors ",
                       isToday
                         ? "border-primary/25 bg-primary/3 shadow-sm"
                         : "border-border/80 bg-muted/15"

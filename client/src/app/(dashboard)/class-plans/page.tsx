@@ -49,7 +49,7 @@ export default function ClassPlansPage() {
     library.totalTemplateCount > 0;
 
   return (
-    <div className="space-y-6 rounded-[2rem] bg-background px-2 pb-6  sm:px-4">
+    <div className="space-y-6 rounded-[2rem] px-2 pb-6 sm:px-4">
       <ClassPlanLibraryHeader
         totalPlans={
           library.listTotalCount ?? library.totalTemplateCount

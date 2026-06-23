@@ -519,6 +519,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
                             templateId={planId}
                             sectionId={section.id}
                             row={row}
+                            classPlanClassType={plan.classType}
                             disabled={pending}
                             canMoveUp={exIndex > 0}
                             canMoveDown={exIndex < exSorted.length - 1}
@@ -710,6 +711,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
         mode="template"
         templateId={planId}
         sectionId={pickerSectionId ?? ""}
+        classPlanClassType={plan?.classType}
         onExerciseAdded={() => void refreshAfterMutation()}
       />
     </div>

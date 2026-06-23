@@ -15,6 +15,13 @@ export function dateToHm(date: Date): string {
   return `${hh}:${mm}`;
 }
 
+/** Compare two 24-hour `HH:mm` values. Negative when `a` is earlier than `b`. */
+export function compareHm(a: string, b: string): number {
+  const [ah, am] = a.split(":").map(Number);
+  const [bh, bm] = b.split(":").map(Number);
+  return ah * 60 + am - (bh * 60 + bm);
+}
+
 /** Display label for `HH:mm` (12-hour with AM/PM, like native time input). */
 export function formatHmLabel12(hm: string, placeholder = "Pick a time"): string {
   const trimmed = hm.trim();

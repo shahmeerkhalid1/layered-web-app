@@ -37,8 +37,9 @@ export function CalendarPanel({
   children,
 }: CalendarPanelProps) {
   return (
-    <div className="rounded-3xl border border-border bg-card shadow-lg">
-      <div className="border-b border-border/70 px-4 py-5 md:px-6 md:py-6">
+    <div >
+    {/* <div className="rounded-3xl border border-border bg-card shadow-lg"> */}
+      <div className="border-border/70 px-4 py-5 md:px-6 md:py-6">
         <CalendarHeader
           mode={mode}
           onModeChange={onModeChange}

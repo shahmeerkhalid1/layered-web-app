@@ -23,6 +23,7 @@ export interface SectionExerciseRowProps {
   templateId: string;
   sectionId: string;
   row: PlanSectionExerciseRow;
+  classPlanClassType?: string | null;
   disabled?: boolean;
   canMoveUp: boolean;
   canMoveDown: boolean;
@@ -35,6 +36,7 @@ export function SectionExerciseRow({
   templateId,
   sectionId,
   row,
+  classPlanClassType,
   disabled = false,
   canMoveUp,
   canMoveDown,
@@ -185,6 +187,7 @@ export function SectionExerciseRow({
         open={editOpen}
         onOpenChange={setEditOpen}
         exerciseId={editOpen && isDraftExercise ? row.exercise.id : null}
+        classPlanClassType={classPlanClassType}
         onSaved={onUpdated}
       />
     </>

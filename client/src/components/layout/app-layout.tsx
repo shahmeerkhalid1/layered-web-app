@@ -4,6 +4,7 @@ import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { PageBackgroundContent } from "./page-background";
 import { Sidebar } from "./sidebar";
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -33,8 +34,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <div className="flex h-screen overflow-hidden">
         <Sidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
-          <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 pt-14 md:p-6 md:pt-4">
-            {children}
+          <main className="flex-1 overflow-y-auto overflow-x-hidden">
+            <PageBackgroundContent className="p-4 pt-14 md:p-6 md:pt-4">
+              {children}
+            </PageBackgroundContent>
           </main>
         </div>
       </div>

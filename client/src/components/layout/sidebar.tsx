@@ -243,13 +243,23 @@ export function Sidebar() {
                 className="size-9 rounded-xl"
               />
             ) : (
-              <Image
-                src="/layered-logo.png"
-                alt="Layered. Logo"
-                width={607}
-                height={115}
-                style={{ width: 120, height: "auto" }}
-              />
+             <>
+             <Image
+            src="/layered-dark-logo.png"
+            alt="Layered."
+            width={180}
+            height={100}
+            className="h-auto w-[180px] ms-2 dark:hidden"
+            priority
+          />
+          <Image
+            src="/layered-light-logo.png"
+            alt="Layered."
+            width={180}
+            height={100}
+            className="hidden h-auto w-[180px]  ms-2 dark:block"
+            priority
+          /></>
             )}
           </Link>
           {isMobileDrawer ? (

@@ -17,6 +17,7 @@ import {
   revokePendingImageUrls,
   type ExerciseFormImageItem,
 } from "@/lib/exercise-form-images";
+import { showMachineSetupForClassPlanType } from "@/lib/class-plan-exercise-field-visibility";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -79,6 +80,8 @@ interface ExerciseFormProps {
   exercise?: Exercise;
   /** Create flow inside class plan: omit redirect; optional save-to-library toggle. */
   embedInClassPlan?: boolean;
+  /** Parent template `classType` — limits apparatus-specific fields when embedded. */
+  classPlanClassType?: string | null;
   onEmbedCreateSuccess?: (exercise: Exercise) => void | Promise<void>;
   /** Edit flow inside class plan: omit redirect after update. */
   onEmbedEditSuccess?: (exercise: Exercise) => void | Promise<void>;
@@ -88,6 +91,7 @@ interface ExerciseFormProps {
 export function ExerciseForm({
   exercise,
   embedInClassPlan = false,
+  classPlanClassType,
   onEmbedCreateSuccess,
   onEmbedEditSuccess,
   onEmbedCancel,
@@ -122,6 +126,9 @@ export function ExerciseForm({
 
   const enforceLibraryNameUniqueness =
     !embedInClassPlan || saveToLibrary || exercise?.savedToLibrary === true;
+
+  const showMachineSetupField =
+    !embedInClassPlan || showMachineSetupForClassPlanType(classPlanClassType);
 
   const {
     control,
@@ -585,8 +592,13 @@ export function ExerciseForm({
         formValues.movementType === "none" ? null : formValues.movementType,
       springs: optionalField(formValues.springs) ?? null,
       equipment: formValues.equipment,
-      machineSetup:
-        formValues.machineSetup === "none" ? null : formValues.machineSetup,
+      machineSetup: showMachineSetupField
+        ? formValues.machineSetup === "none"
+          ? null
+          : formValues.machineSetup
+        : isEdit
+          ? (exercise?.machineSetup ?? null)
+          : null,
       transitionCues: optionalField(formValues.transitionCues) ?? null,
       cueing: optionalField(formValues.cueing) ?? null,
       spinalMovement: formValues.spinalMovement,
@@ -1068,67 +1080,69 @@ export function ExerciseForm({
                 </fieldset>
               </div>
 
-              <div className="space-y-2">
-                <Label
-                  htmlFor="exercise-machine-setup"
-                  className="pl-1.5 text-sm font-medium text-foreground"
-                >
-                  Machine Setup
-                </Label>
-                <Controller
-                  control={control}
-                  name="machineSetup"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value}
-                      onValueChange={(v) => field.onChange(v ?? "none")}
-                      disabled={
-                        machineSetupDd.loading && machineSetupDd.options.length === 0
-                      }
-                    >
-                      <SelectTrigger
-                        id="exercise-machine-setup"
-                        className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+              {showMachineSetupField && (
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="exercise-machine-setup"
+                    className="pl-1.5 text-sm font-medium text-foreground"
+                  >
+                    Machine Setup
+                  </Label>
+                  <Controller
+                    control={control}
+                    name="machineSetup"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={(v) => field.onChange(v ?? "none")}
+                        disabled={
+                          machineSetupDd.loading && machineSetupDd.options.length === 0
+                        }
                       >
-                        <SelectValue placeholder="Select setup">
-                          <span
-                            className={
-                              field.value === "none" ||
-                              (machineSetupDd.loading &&
-                                machineSetupDd.options.length === 0)
-                                ? "text-muted-foreground"
-                                : undefined
-                            }
-                          >
-                            {machineSetupLabel}
-                          </span>
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent
-                        align="start"
-                        sideOffset={6}
-                        className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
-                      >
-                        <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
-                          <span className="text-muted-foreground">Select setup</span>
-                        </SelectItem>
-                        {machineSetupDd.options.length > 0 && (
-                          <SelectSeparator className="mx-1 bg-border/70" />
-                        )}
-                        {machineSetupDd.options.map((o) => (
-                          <SelectItem
-                            key={o.id}
-                            value={o.value}
-                            className="rounded-xl py-2.5 pl-3"
-                          >
-                            {o.label}
+                        <SelectTrigger
+                          id="exercise-machine-setup"
+                          className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+                        >
+                          <SelectValue placeholder="Select setup">
+                            <span
+                              className={
+                                field.value === "none" ||
+                                (machineSetupDd.loading &&
+                                  machineSetupDd.options.length === 0)
+                                  ? "text-muted-foreground"
+                                  : undefined
+                              }
+                            >
+                              {machineSetupLabel}
+                            </span>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent
+                          align="start"
+                          sideOffset={6}
+                          className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                        >
+                          <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+                            <span className="text-muted-foreground">Select setup</span>
                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
+                          {machineSetupDd.options.length > 0 && (
+                            <SelectSeparator className="mx-1 bg-border/70" />
+                          )}
+                          {machineSetupDd.options.map((o) => (
+                            <SelectItem
+                              key={o.id}
+                              value={o.value}
+                              className="rounded-xl py-2.5 pl-3"
+                            >
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              )}
           </div>
 
           <div className="space-y-3">

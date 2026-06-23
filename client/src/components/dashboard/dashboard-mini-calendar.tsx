@@ -8,18 +8,19 @@ import {
   addDays,
   calendarDayHref,
   formatYmdLocal,
+  instanceLocalDayKey,
   startOfMonth,
   startOfWeekMonday,
 } from "@/lib/calendar-utils";
+import {
+  CalendarDayStatusDots,
+  CalendarStatusLegend,
+} from "@/components/scheduling/calendar-day-status-dots";
 import type { CalendarClassInstance } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { schedulingApi } from "@/services/scheduling-api";
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-function instanceYmd(inst: CalendarClassInstance): string {
-  return inst.date.slice(0, 10);
-}
 
 export function DashboardMiniCalendar() {
   const [instances, setInstances] = useState<CalendarClassInstance[]>([]);
@@ -62,7 +63,7 @@ export function DashboardMiniCalendar() {
   const byDay = useMemo(() => {
     const map = new Map<string, CalendarClassInstance[]>();
     for (const inst of instances) {
-      const ymd = instanceYmd(inst);
+      const ymd = instanceLocalDayKey(inst);
       const list = map.get(ymd) ?? [];
       list.push(inst);
       map.set(ymd, list);
@@ -101,8 +102,7 @@ export function DashboardMiniCalendar() {
           const inMonth = day.getMonth() === anchor.getMonth();
           const isToday = ymd === todayYmd;
           const dayInstances = byDay.get(ymd) ?? [];
-          const hasScheduled = dayInstances.some((i) => i.status === "SCHEDULED");
-          const hasCompleted = dayInstances.some((i) => i.status === "COMPLETED");
+          const hasClasses = dayInstances.length > 0;
 
           return (
             <Link
@@ -117,18 +117,8 @@ export function DashboardMiniCalendar() {
               aria-label={`${ymd}${dayInstances.length ? `, ${dayInstances.length} classes` : ""}`}
             >
               <span>{day.getDate()}</span>
-              {dayInstances.length > 0 ? (
-                <span className="mt-0.5 flex gap-0.5">
-                  {hasScheduled ? (
-                    <span className="size-1.5 rounded-full bg-primary" aria-hidden />
-                  ) : null}
-                  {hasCompleted && !hasScheduled ? (
-                    <span className="size-1.5 rounded-full bg-muted-foreground/50" aria-hidden />
-                  ) : null}
-                  {hasCompleted && hasScheduled ? (
-                    <span className="size-1.5 rounded-full bg-muted-foreground/50" aria-hidden />
-                  ) : null}
-                </span>
+              {hasClasses ? (
+                <CalendarDayStatusDots instances={dayInstances} className="mt-0.5" />
               ) : loading ? (
                 <span className="mt-0.5 size-1.5 rounded-full bg-muted/60" aria-hidden />
               ) : null}
@@ -137,16 +127,9 @@ export function DashboardMiniCalendar() {
         })}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="size-2 rounded-full bg-primary" aria-hidden />
-          Scheduled
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="size-2 rounded-full bg-muted-foreground/50" aria-hidden />
-          Completed
-        </span>
-        <Calendar className="ml-auto size-3.5 opacity-60" aria-hidden />
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <CalendarStatusLegend />
+        <Calendar className="ml-auto size-3.5 text-muted-foreground opacity-60" aria-hidden />
       </div>
     </div>
   );

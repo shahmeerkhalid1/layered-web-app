@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mail } from "lucide-react";
 import Link from "next/link";
 
 import {
@@ -12,8 +12,9 @@ import {
   AuthFormAlert,
   AuthFormCard,
   AuthPageShell,
+  AuthSubmitButton,
 } from "@/components/auth/auth-page-shell";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api";
 import { authApi } from "@/services/auth-api";
@@ -61,7 +62,7 @@ export default function ForgotPasswordPage() {
           description="We sent a link to reset your password."
           footer={<AuthFooterLink prompt="Remember your password?" linkLabel="Sign in" href="/login" />}
         >
-          <div className="flex flex-col items-center rounded-2xl border border-dashed border-border/80 bg-muted/15 px-6 py-10 text-center">
+          <div className="flex flex-col items-center rounded-xl border border-dashed border-border/80 bg-muted/15 px-6 py-10 text-center">
             <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <Mail className="size-6" aria-hidden />
             </div>
@@ -72,7 +73,7 @@ export default function ForgotPasswordPage() {
               href="/login"
               className={cn(
                 buttonVariants({ variant: "outline" }),
-                "mt-6 h-10 w-full rounded-full"
+                "mt-6 h-11 w-full rounded-full"
               )}
             >
               Back to sign in
@@ -86,7 +87,6 @@ export default function ForgotPasswordPage() {
   return (
     <AuthPageShell>
       <AuthFormCard
-        title="Forgot password"
         description="Enter the email on your Layered. account and we will send you a reset link."
         footer={<AuthFooterLink prompt="Remember your password?" linkLabel="Sign in" href="/login" />}
       >
@@ -97,28 +97,23 @@ export default function ForgotPasswordPage() {
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com"
               autoComplete="email"
               aria-invalid={errors.email ? true : undefined}
-              className={cn(errors.email && "border-destructive")}
+              className={cn("h-11 rounded-xl", errors.email && "border-destructive")}
               {...register("email")}
             />
           </AuthField>
 
-          <Button
-            type="submit"
-            className="h-10 w-full gap-2 rounded-full"
-            disabled={isSubmitting}
-          >
-            <Mail className="size-4" aria-hidden />
+          <AuthSubmitButton disabled={isSubmitting}>
             {isSubmitting ? "Sending link…" : "Send reset link"}
-          </Button>
+            {!isSubmitting ? <ArrowRight className="size-4" aria-hidden /> : null}
+          </AuthSubmitButton>
 
           <Link
             href="/login"
             className={cn(
               buttonVariants({ variant: "ghost" }),
-              "h-10 w-full gap-2 rounded-full"
+              "h-11 w-full gap-2 rounded-full"
             )}
           >
             <ArrowLeft className="size-4" aria-hidden />

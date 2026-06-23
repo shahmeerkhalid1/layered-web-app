@@ -35,13 +35,14 @@ export function CalendarHeader({
       : `${classCount} class${classCount === 1 ? "" : "es"} scheduled`;
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between rounded-3xl border border-border px-4 py-5 md:px-6 md:py-6 bg-card shadow-lg">
+      
       <div className="flex min-w-0 items-start gap-3">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-secondary/80 text-secondary-foreground">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
           <Calendar className="size-5" aria-hidden />
         </div>
         <div className="min-w-0 space-y-1">
-          <h1 className="font-heading text-xl font-semibold tracking-[-0.02em] text-foreground md:text-2xl">
+          <h1 className="font-heading text-xl font-semibold tracking-[-0.02em] text-foreground md:text-lg uppercase">
             Calendar
           </h1>
           <p className="text-sm text-muted-foreground">{title}</p>

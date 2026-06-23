@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { KeyRound } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 import {
@@ -14,8 +14,9 @@ import {
   AuthFormCard,
   AuthLoadingCard,
   AuthPageShell,
+  AuthSubmitButton,
 } from "@/components/auth/auth-page-shell";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { formatAuthRequestError } from "@/lib/auth-errors";
 import { authClient } from "@/lib/auth-client";
@@ -76,7 +77,7 @@ function ResetPasswordPageContent() {
           </AuthFormAlert>
           <Link
             href="/forgot-password"
-            className={cn(buttonVariants(), "mt-5 h-10 w-full rounded-full")}
+            className={cn(buttonVariants(), "mt-5 h-11 w-full rounded-full")}
           >
             Request new link
           </Link>
@@ -108,8 +109,7 @@ function ResetPasswordPageContent() {
   return (
     <AuthPageShell>
       <AuthFormCard
-        title="Choose a new password"
-        description="Enter a new password for your Layered. account."
+        description="Choose a new password for your Layered. account."
         footer={<AuthFooterLink prompt="Remember your password?" linkLabel="Sign in" href="/login" />}
       >
         <form onSubmit={onSubmit} className="space-y-5">
@@ -123,10 +123,9 @@ function ResetPasswordPageContent() {
           >
             <PasswordInput
               id="password"
-              placeholder="Create a secure password"
               autoComplete="new-password"
               aria-invalid={errors.password ? true : undefined}
-              className={cn(errors.password && "border-destructive")}
+              className={cn("h-11 rounded-xl", errors.password && "border-destructive")}
               {...register("password")}
             />
           </AuthField>
@@ -138,22 +137,17 @@ function ResetPasswordPageContent() {
           >
             <PasswordInput
               id="confirmPassword"
-              placeholder="Re-enter your password"
               autoComplete="new-password"
               aria-invalid={errors.confirmPassword ? true : undefined}
-              className={cn(errors.confirmPassword && "border-destructive")}
+              className={cn("h-11 rounded-xl", errors.confirmPassword && "border-destructive")}
               {...register("confirmPassword")}
             />
           </AuthField>
 
-          <Button
-            type="submit"
-            className="h-10 w-full gap-2 rounded-full"
-            disabled={isSubmitting}
-          >
-            <KeyRound className="size-4" aria-hidden />
-            {isSubmitting ? "Updating password…" : "Update password"}
-          </Button>
+          <AuthSubmitButton disabled={isSubmitting}>
+            {isSubmitting ? "Setting password…" : "Set Password"}
+            {!isSubmitting ? <ArrowRight className="size-4" aria-hidden /> : null}
+          </AuthSubmitButton>
         </form>
       </AuthFormCard>
     </AuthPageShell>

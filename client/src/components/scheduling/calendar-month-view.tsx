@@ -4,16 +4,17 @@ import type { CalendarClassInstance } from "@/lib/types";
 import {
   addDays,
   formatYmdLocal,
+  instanceLocalDayKey,
   isSameLocalDay,
   startOfMonth,
   startOfWeekMonday,
 } from "@/lib/calendar-utils";
+import {
+  CalendarDayStatusDots,
+  CalendarStatusLegend,
+} from "@/components/scheduling/calendar-day-status-dots";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-function instanceDayKey(inst: CalendarClassInstance): string {
-  return inst.date.slice(0, 10);
-}
 
 export interface CalendarMonthViewProps {
   /** Any date within the month (local). */
@@ -28,16 +29,18 @@ export function CalendarMonthView({ anchor, instances, onSelectDay }: CalendarMo
   const cells = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
   const today = new Date();
 
-  const counts = new Map<string, number>();
+  const byDay = new Map<string, CalendarClassInstance[]>();
   for (const inst of instances) {
-    const k = instanceDayKey(inst);
-    counts.set(k, (counts.get(k) ?? 0) + 1);
+    const k = instanceLocalDayKey(inst);
+    const list = byDay.get(k) ?? [];
+    list.push(inst);
+    byDay.set(k, list);
   }
 
   const inMonth = (d: Date) => d.getMonth() === anchor.getMonth();
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/80 bg-muted/10 shadow-inner">
+    <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-inner">
       <div className="grid grid-cols-7 gap-px border-b border-border/70 bg-muted/25 text-center text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
           <div key={d} className="py-2.5">
@@ -48,7 +51,7 @@ export function CalendarMonthView({ anchor, instances, onSelectDay }: CalendarMo
       <div className="grid grid-cols-7 gap-1 p-2 md:gap-1.5 md:p-3">
         {cells.map((d) => {
           const ymd = formatYmdLocal(d);
-          const n = counts.get(ymd) ?? 0;
+          const dayInstances = byDay.get(ymd) ?? [];
           const isToday = isSameLocalDay(d, today);
           const outside = !inMonth(d);
 
@@ -65,6 +68,7 @@ export function CalendarMonthView({ anchor, instances, onSelectDay }: CalendarMo
                   ? "border-primary/40 bg-primary/10 text-foreground hover:border-primary/50 hover:bg-primary/15"
                   : "bg-background/60 text-muted-foreground hover:text-foreground"
               )}
+              aria-label={`${ymd}${dayInstances.length ? `, ${dayInstances.length} classes` : ""}`}
             >
               <span
                 className={cn(
@@ -74,23 +78,13 @@ export function CalendarMonthView({ anchor, instances, onSelectDay }: CalendarMo
               >
                 {d.getDate()}
               </span>
-              {n > 0 ? (
-                <span
-                  className={cn(
-                    "rounded-full px-2 py-0.5 text-[10px] font-medium tabular-nums",
-                    isToday
-                      ? "bg-primary/20 text-primary"
-                      : "bg-primary/15 text-primary"
-                  )}
-                >
-                  {n}
-                </span>
-              ) : (
-                <span className="text-[10px] text-muted-foreground/50">—</span>
-              )}
+              <CalendarDayStatusDots instances={dayInstances} className="min-h-[6px]" />
             </Button>
           );
         })}
+      </div>
+      <div className="border-t border-border/70 bg-muted/15 px-3 py-3 md:px-4">
+        <CalendarStatusLegend />
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
-import { ChevronDown, FolderPlus, ListFilter, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, FolderPlus, ListFilter, Pencil, FileText, Plus, Trash2 } from "lucide-react";
 import type { ClassPlanFolder } from "@/lib/types";
 import { ClassPlanFilterBar } from "@/components/class-plans/class-plan-filter-bar";
 import { ExerciseSearch } from "@/components/exercises/exercise-search";
@@ -115,9 +115,14 @@ export function ClassPlanLibraryHeader({
     <div className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
         <div className="min-w-0 max-w-2xl space-y-2">
-          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-card-foreground sm:text-3xl">
+        <div className="flex items-center gap-3">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
+              <FileText className="size-5" aria-hidden />
+            </div>
+          <h2 className="text-xl font-semibold tracking-[-0.03em] text-card-foreground sm:text-lg uppercase">
             Class Plans
           </h2>
+          </div>
           <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground" aria-live="polite">
             {!totalKnown && loading && <span>Loading library…</span>}
             {totalKnown && (

@@ -16,7 +16,14 @@ import {
   SCHEDULING_MAX_DURATION_MINUTES,
 } from "@/lib/validation/duration-minutes-form-schema";
 import { localDateAndTimeToUtcIso, localYmdToUtcIsoMidday } from "@/lib/datetime-local";
-import { todayYmd } from "@/lib/calendar-utils";
+import {
+  isPastCalendarHourSlot,
+  todayYmd,
+  currentHm,
+} from "@/lib/calendar-utils";
+import {
+  validateScheduleDateTime,
+} from "@/lib/validation/scheduling-past-guard";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -92,6 +99,8 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
 
   const isRecurring = useWatch({ control, name: "isRecurring", defaultValue: false });
   const classType = useWatch({ control, name: "type", defaultValue: "GROUP" });
+  const startDate = useWatch({ control, name: "startDate", defaultValue: "" });
+  const minTime = startDate === todayYmd() ? currentHm() : undefined;
 
   useEffect(() => {
     if (!open) return;
@@ -144,6 +153,18 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
     if (values.isRecurring && !validateRecurringExtras()) {
       return;
     }
+
+    const pastTimeError = validateScheduleDateTime(
+      values.startDate,
+      values.clockTime,
+      values.isRecurring,
+      daySet
+    );
+    if (pastTimeError) {
+      setError("clockTime", { type: "manual", message: pastTimeError });
+      return;
+    }
+
     try {
       const timeIso = localDateAndTimeToUtcIso(values.startDate, values.clockTime);
       const startIso = localYmdToUtcIsoMidday(values.startDate);
@@ -273,6 +294,7 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
                     id="cc-clock"
                     value={field.value}
                     onChange={field.onChange}
+                    minTime={minTime}
                     aria-invalid={!!errors.clockTime}
                   />
                 )}

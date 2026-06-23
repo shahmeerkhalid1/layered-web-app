@@ -17,6 +17,7 @@ export interface EditClassPlanExerciseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   exerciseId: string | null;
+  classPlanClassType?: string | null;
   onSaved: () => void | Promise<void>;
 }
 
@@ -28,6 +29,7 @@ export function EditClassPlanExerciseDialog({
   open,
   onOpenChange,
   exerciseId,
+  classPlanClassType,
   onSaved,
 }: EditClassPlanExerciseDialogProps) {
   const [exercise, setExercise] = useState<Exercise | null>(null);
@@ -102,6 +104,7 @@ export function EditClassPlanExerciseDialog({
               key={formKey}
               exercise={exercise}
               embedInClassPlan
+              classPlanClassType={classPlanClassType}
               onEmbedCancel={() => onOpenChange(false)}
               onEmbedEditSuccess={async () => {
                 onOpenChange(false);

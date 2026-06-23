@@ -39,7 +39,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { localDateAndTimeToUtcIso } from "@/lib/datetime-local";
-import { isBeforeToday, todayYmd } from "@/lib/calendar-utils";
+import { currentHm, isBeforeToday, isPastScheduleDateTime, todayYmd } from "@/lib/calendar-utils";
+import {
+  PAST_SCHEDULE_TIME_MESSAGE,
+} from "@/lib/validation/scheduling-past-guard";
 import { cn } from "@/lib/utils";
 import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 
@@ -122,6 +125,7 @@ export function ClassInstanceDrawer({
   const [scopeOpen, setScopeOpen] = useState(false);
   const pendingRef = useRef<{ anchorYmd: string; newIso: string; newDateStr: string } | null>(null);
   const [reschedule, setReschedule] = useState({ date: "", time: "" });
+  const [rescheduleTimeError, setRescheduleTimeError] = useState<string | null>(null);
   const [attendanceRefreshKey, setAttendanceRefreshKey] = useState(0);
 
   const load = useCallback(async () => {
@@ -137,6 +141,7 @@ export function ClassInstanceDrawer({
         date: d.date.slice(0, 10),
         time: `${hh}:${mm}`,
       });
+      setRescheduleTimeError(null);
     } catch {
       toast.error("Could not load class");
       setDetail(null);
@@ -205,6 +210,7 @@ export function ClassInstanceDrawer({
   const isOpen = detail?.status === "SCHEDULED";
   const isPast = detail ? isBeforeToday(new Date(detail.date)) : false;
   const canEditPlanAndSchedule = isOpen && !isPast;
+  const rescheduleMinTime = reschedule.date === todayYmd() ? currentHm() : undefined;
 
   const sortedInstanceSections = useMemo(
     () => sortSections(detail?.sections ?? []),
@@ -354,6 +360,12 @@ export function ClassInstanceDrawer({
       toast.error("Cannot reschedule to a past date");
       return;
     }
+    if (isPastScheduleDateTime(reschedule.date, reschedule.time)) {
+      setRescheduleTimeError(PAST_SCHEDULE_TIME_MESSAGE);
+      toast.error(PAST_SCHEDULE_TIME_MESSAGE);
+      return;
+    }
+    setRescheduleTimeError(null);
     const newIso = localDateAndTimeToUtcIso(reschedule.date, reschedule.time);
     if (!detail.class.isRecurring) {
       setPending(true);
@@ -834,7 +846,10 @@ export function ClassInstanceDrawer({
                       <DatePicker
                         id="rs-date"
                         value={reschedule.date}
-                        onChange={(date) => setReschedule((r) => ({ ...r, date }))}
+                        onChange={(date) => {
+                          setRescheduleTimeError(null);
+                          setReschedule((r) => ({ ...r, date }));
+                        }}
                         minDate={todayYmd()}
                         disabled={pending || !canEditPlanAndSchedule}
                         className="mt-1"
@@ -847,10 +862,18 @@ export function ClassInstanceDrawer({
                       <TimePicker
                         id="rs-time"
                         value={reschedule.time}
-                        onChange={(time) => setReschedule((r) => ({ ...r, time }))}
+                        onChange={(time) => {
+                          setRescheduleTimeError(null);
+                          setReschedule((r) => ({ ...r, time }));
+                        }}
+                        minTime={rescheduleMinTime}
                         disabled={pending || !canEditPlanAndSchedule}
+                        aria-invalid={!!rescheduleTimeError}
                         className="mt-1"
                       />
+                      {rescheduleTimeError && (
+                        <p className="mt-1 text-xs text-destructive">{rescheduleTimeError}</p>
+                      )}
                     </div>
                   </div>
                   <Button

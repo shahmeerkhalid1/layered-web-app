@@ -106,14 +106,20 @@ function CalendarPageContent() {
 
   useEffect(() => {
     if (!instanceFromUrl) return;
-    setDrawerId(instanceFromUrl);
-    setDrawerOpen(true);
+    const id = window.setTimeout(() => {
+      setDrawerId(instanceFromUrl);
+      setDrawerOpen(true);
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [instanceFromUrl]);
 
   useEffect(() => {
     if (!dateFromUrl) return;
-    setCursor(parseYmdLocal(dateFromUrl));
-    setMode("week");
+    const id = window.setTimeout(() => {
+      setCursor(parseYmdLocal(dateFromUrl));
+      setMode("week");
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [dateFromUrl]);
 
   const handleDrawerOpenChange = useCallback(

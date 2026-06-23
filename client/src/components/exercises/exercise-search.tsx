@@ -16,7 +16,7 @@ export function ExerciseSearch({
   placeholder = "Search by exercise name or description…",
 }: ExerciseSearchProps) {
   return (
-    <div className="relative rounded-2xl border border-border bg-background shadow-none transition-[box-shadow,border-color] duration-150 hover:border-ring/70 hover:ring-3 hover:ring-ring/30 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 has-[input:not(:placeholder-shown)]:bg-(--field-filled)/30">
+    <div className="relative rounded-2xl border border-border bg-background shadow-none transition-[box-shadow,border-color] duration-150 hover:border-ring/70 hover:ring-2 hover:ring-ring/30 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50 has-[input:not(:placeholder-shown)]:bg-(--field-filled)/30">
       <Search className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         id={id}

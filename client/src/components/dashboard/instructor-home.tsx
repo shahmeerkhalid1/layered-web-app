@@ -476,14 +476,14 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
         <div className="border-b border-border/70 px-4 py-5 md:px-6 md:py-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex min-w-0 items-start gap-3">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-secondary/80 text-secondary-foreground">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
                 <LayoutDashboard className="size-5" aria-hidden />
               </div>
               <div className="min-w-0 space-y-1">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {greeting}
                 </p>
-                <h1 className="font-heading text-xl font-semibold tracking-[-0.02em] text-foreground md:text-2xl">
+                <h1 className="font-heading text-xl font-semibold tracking-[-0.02em] text-foreground md:text-2xl uppercase">
                   {firstName ? (
                     <>
                       Welcome back, <span className="text-primary">{firstName}</span>

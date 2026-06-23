@@ -23,6 +23,74 @@ function isYmdBeforeTodayUtc(ymd: string): boolean {
   return parseYmdUtc(ymd) < todayUtcCalendarDate();
 }
 
+function isPastInstant(d: Date): boolean {
+  return d.getTime() < Date.now();
+}
+
+/** ISO weekday: Monday = 1 … Sunday = 7 */
+function utcIsoWeekday(d: Date): number {
+  const w = d.getUTCDay();
+  return w === 0 ? 7 : w;
+}
+
+function applyUTCTimeToDay(day: Date, clock: Date): Date {
+  return new Date(
+    Date.UTC(
+      day.getUTCFullYear(),
+      day.getUTCMonth(),
+      day.getUTCDate(),
+      clock.getUTCHours(),
+      clock.getUTCMinutes(),
+      clock.getUTCSeconds(),
+      clock.getUTCMilliseconds()
+    )
+  );
+}
+
+function parseScheduleUtc(dateYmd: string, timeHm: string): Date {
+  const parts = timeHm.split(":");
+  const h = Number(parts[0] ?? 0);
+  const mi = Number(parts[1] ?? 0);
+  const [y, mo, day] = dateYmd.split("-").map(Number);
+  return new Date(Date.UTC(y, mo - 1, day, h, mi, 0, 0));
+}
+
+function assertStartTimeNotPast(
+  data: {
+    isRecurring: boolean;
+    startDate: Date;
+    time: Date;
+    recurrenceRule?: { daysOfWeek?: number[] } | null;
+  },
+  ctx: z.RefinementCtx
+): void {
+  if (!data.isRecurring) {
+    if (isPastInstant(data.time)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Start time cannot be in the past",
+        path: ["time"],
+      });
+    }
+    return;
+  }
+
+  const days = data.recurrenceRule?.daysOfWeek ?? [];
+  if (days.length === 0) return;
+
+  const startDay = utcCalendarDateFromDate(data.startDate);
+  if (!days.includes(utcIsoWeekday(startDay))) return;
+
+  const slotTime = applyUTCTimeToDay(startDay, data.time);
+  if (isPastInstant(slotTime)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Start time cannot be in the past",
+      path: ["time"],
+    });
+  }
+}
+
 export const recurrenceRuleSchema = z.object({
   daysOfWeek: z.array(z.number().int().min(1).max(7)).min(1),
 });
@@ -86,6 +154,7 @@ export const createClassSchema = z
         path: ["startDate"],
       });
     }
+    assertStartTimeNotPast(data, ctx);
   });
 
 export const updateClassSchema = z
@@ -123,7 +192,27 @@ export const updateClassSchema = z
       d.regenerateFutureInstancesFrom !== undefined ||
       d.rescheduleToDate !== undefined,
     { message: "At least one field is required" }
-  );
+  )
+  .superRefine((data, ctx) => {
+    if (data.rescheduleToDate !== undefined && isYmdBeforeTodayUtc(data.rescheduleToDate)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Cannot reschedule to a past date",
+        path: ["rescheduleToDate"],
+      });
+    }
+    if (
+      data.rescheduleToDate !== undefined &&
+      data.time !== undefined &&
+      isPastInstant(data.time)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Start time cannot be in the past",
+        path: ["time"],
+      });
+    }
+  });
 
 export const listClassInstancesQuerySchema = z.object({
   start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -148,6 +237,13 @@ export const updateClassInstanceSchema = z
         code: "custom",
         message: "Cannot reschedule to a past date",
         path: ["date"],
+      });
+    }
+    if (data.time !== undefined && isPastInstant(data.time)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Start time cannot be in the past",
+        path: ["time"],
       });
     }
   });
@@ -177,6 +273,16 @@ export const quickScheduleSchema = z
         code: "custom",
         message: "Date cannot be in the past",
         path: ["date"],
+      });
+    }
+    const startAt = data.time.includes("T")
+      ? new Date(data.time)
+      : parseScheduleUtc(data.date, data.time);
+    if (isPastInstant(startAt)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Start time cannot be in the past",
+        path: ["time"],
       });
     }
   });

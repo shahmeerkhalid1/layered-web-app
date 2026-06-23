@@ -587,6 +587,12 @@ export async function deleteClass(classId: string, instructorId: string) {
   return { message: "Class deleted" };
 }
 
+function addUtcCalendarDays(d: Date, days: number): Date {
+  const x = new Date(d);
+  x.setUTCDate(x.getUTCDate() + days);
+  return x;
+}
+
 export async function listClassInstancesForCalendar(
   instructorId: string,
   query: ListClassInstancesQuery
@@ -598,7 +604,12 @@ export async function listClassInstancesForCalendar(
   const where: Prisma.ClassInstanceWhereInput = {
     instructorId,
     ...active,
-    date: { gte: toDateOnlyUTC(start), lte: toDateOnlyUTC(end) },
+    // Widen by one UTC calendar day each side so early-morning local times are not dropped
+    // when `date` (UTC) falls outside the requested local YMD range.
+    date: {
+      gte: toDateOnlyUTC(addUtcCalendarDays(start, -1)),
+      lte: toDateOnlyUTC(addUtcCalendarDays(end, 1)),
+    },
     class: { ...active },
   };
   if (query.status) where.status = query.status;

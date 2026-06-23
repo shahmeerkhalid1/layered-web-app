@@ -19,7 +19,8 @@ import {
   SCHEDULING_MAX_DURATION_MINUTES,
 } from "@/lib/validation/duration-minutes-form-schema";
 import { localDateAndTimeToUtcIso, localYmdToUtcIsoMidday } from "@/lib/datetime-local";
-import { todayYmd } from "@/lib/calendar-utils";
+import { todayYmd, currentHm } from "@/lib/calendar-utils";
+import { validateScheduleDateTime } from "@/lib/validation/scheduling-past-guard";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -124,6 +125,14 @@ export function QuickScheduleDialog({
     const prefillDate = slotPrefill?.date ?? "";
     const scheduleDate =
       prefillDate && prefillDate >= todayYmd() ? prefillDate : prefillDate ? todayYmd() : "";
+    let prefillTime = slotPrefill?.time ?? "";
+    if (
+      scheduleDate &&
+      prefillTime &&
+      validateScheduleDateTime(scheduleDate, prefillTime, false)
+    ) {
+      prefillTime = "";
+    }
     reset({
       title: templatePrefill?.name ?? "",
       type: "GROUP",
@@ -132,7 +141,7 @@ export function QuickScheduleDialog({
           ? String(templatePrefill.durationMinutes)
           : "60",
       date: scheduleDate,
-      time: slotPrefill?.time ?? "",
+      time: prefillTime,
       isRecurring: false,
       endDate: "",
     });
@@ -177,6 +186,8 @@ export function QuickScheduleDialog({
 
   const typeVal = useWatch({ control, name: "type", defaultValue: "GROUP" });
   const isRecurring = useWatch({ control, name: "isRecurring", defaultValue: false });
+  const scheduleDate = useWatch({ control, name: "date", defaultValue: "" });
+  const minTime = scheduleDate === todayYmd() ? currentHm() : undefined;
 
   const toggleDay = (v: number) => {
     setDaySet((prev) => {
@@ -190,6 +201,17 @@ export function QuickScheduleDialog({
 
   const onSubmit = async (values: QuickScheduleFormValues) => {
     if (!validateSubmitExtras()) {
+      return;
+    }
+
+    const pastTimeError = validateScheduleDateTime(
+      values.date.trim(),
+      values.time.trim(),
+      values.isRecurring,
+      daySet
+    );
+    if (pastTimeError) {
+      setError("time", { type: "manual", message: pastTimeError });
       return;
     }
 
@@ -377,6 +399,7 @@ export function QuickScheduleDialog({
                     id="qs-time"
                     value={field.value}
                     onChange={field.onChange}
+                    minTime={minTime}
                     disabled={isSubmitting}
                     aria-invalid={!!errors.time}
                   />

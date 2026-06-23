@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { LogIn } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import {
   AuthField,
@@ -15,15 +15,17 @@ import {
   AuthFormCard,
   AuthLoadingCard,
   AuthPageShell,
+  AuthSubmitButton,
 } from "@/components/auth/auth-page-shell";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import {
   loginFormSchema,
   type LoginFormValues,
 } from "@/lib/validation/auth-schemas";
-import { cn } from "@/lib/utils";
+
+const authInputClassName =
+  "h-11 rounded-xl ring-0 border-border bg-secondary/40 dark:bg-background shadow-none placeholder:text-muted-foreground dark:focus-visible:ring-white/70 dark:hover:ring-white/70 focus-visible:ring-ring/35 dark:hover:border-white/35 hover:ring-ring/35 hover:ring-2 focus-visible:ring-2 dark:focus-visible:border-white/35 focus-visible:border-border hover:border-border";
 
 export default function LoginPage() {
   return (
@@ -83,8 +85,7 @@ function LoginPageContent() {
   return (
     <AuthPageShell>
       <AuthFormCard
-        title="Sign in"
-        description="Welcome back — enter your credentials to open your workspace."
+        description="Welcome Back — enter your credentials to open your workspace."
         footer={
           <AuthFooterLink prompt="Don't have an account?" linkLabel="Create one" href="/register" />
         }
@@ -93,7 +94,7 @@ function LoginPageContent() {
           {passwordResetSuccess ? (
             <div
               role="status"
-              className="rounded-2xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm text-foreground"
+              className="rounded-xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm text-foreground"
             >
               Your password was updated. Sign in with your new password.
             </div>
@@ -104,10 +105,9 @@ function LoginPageContent() {
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com"
               autoComplete="email"
               aria-invalid={errors.email ? true : undefined}
-              className={cn(errors.email && "border-destructive")}
+              className={`h-11 rounded-xl`}
               {...register("email")}
             />
           </AuthField>
@@ -118,31 +118,26 @@ function LoginPageContent() {
             labelEnd={
               <Link
                 href="/forgot-password"
-                className="text-xs font-medium text-primary underline-offset-4 transition-colors hover:underline"
+                className="text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
               >
-                Forgot password?
+                Forgot Password
               </Link>
             }
             error={errors.password?.message}
           >
             <PasswordInput
               id="password"
-              placeholder="Enter your password"
               autoComplete="current-password"
               aria-invalid={errors.password ? true : undefined}
-              className={cn(errors.password && "border-destructive")}
+              className={`h-11 rounded-xl`}
               {...register("password")}
             />
           </AuthField>
 
-          <Button
-            type="submit"
-            className="h-10 w-full gap-2 rounded-full"
-            disabled={isSubmitting}
-          >
-            <LogIn className="size-4" aria-hidden />
-            {isSubmitting ? "Signing in…" : "Sign in"}
-          </Button>
+          <AuthSubmitButton disabled={isSubmitting}>
+            {isSubmitting ? "Signing in…" : "Sign In"}
+            {!isSubmitting ? <ArrowRight className="size-4" aria-hidden /> : null}
+          </AuthSubmitButton>
         </form>
       </AuthFormCard>
     </AuthPageShell>

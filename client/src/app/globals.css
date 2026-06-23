@@ -100,7 +100,7 @@
   --popover-foreground:     oklch(0.18 0.015 65);
 
   /* Brand */
-  --primary:                oklch(0.48 0.18 255);   /* Nice vibrant blue */
+  --primary:                oklch(0.3971 0.1597 265.04);   /* Nice vibrant blue */
   --primary-foreground:     oklch(0.98 0.01 260);
 
   /* Secondary surfaces */
@@ -122,7 +122,7 @@
   /* Inputs & Borders */
   --border:                 oklch(0.89 0.018 85);
   --input:                  oklch(0.97 0.01 85);
-  --ring:                   oklch(0.55 0.18 255);
+  --ring:                   oklch(0.3971 0.1597 265.04);
 
   /* Charts */
   --chart-1:                oklch(0.68 0.15 240);
@@ -135,14 +135,14 @@
   --sidebar:                oklch(0.975 0.01 85);
   --sidebar-foreground:     oklch(0.135 0.015 65);
 
-  --sidebar-primary:        oklch(0.48 0.18 255);
+  --sidebar-primary:        oklch(0.3971 0.1597 265.04);
   --sidebar-primary-foreground: oklch(0.98 0.01 260);
 
   --sidebar-accent:         oklch(0.94 0.015 85);
   --sidebar-accent-foreground: oklch(0.135 0.015 65);
 
   --sidebar-border:         oklch(0.89 0.018 85);
-  --sidebar-ring:           oklch(0.55 0.18 255);
+  --sidebar-ring:           oklch(0.3971 0.1597 265.04);
 
   /* Form fields */
   --field-empty:            oklch(0.985 0.008 85);
@@ -165,7 +165,7 @@
   --popover-foreground:     oklch(0.98 0.005 260);
 
   /* Brand */
-  --primary:                #004aad;
+  --primary:                oklch(0.3971 0.1597 265.04);
   --primary-foreground:     #ffffff;
 
   /* Secondary surfaces */
@@ -187,7 +187,7 @@
   /* Inputs & Borders */
   --border:                 oklch(0.3 0.01 260);
   --input:                  oklch(0.3 0.01 260);
-  --ring:                   #2563eb;
+  --ring:                   oklch(1 0 0);
 
   /* Charts */
   --chart-1:                oklch(0.62 0.18 255);
@@ -200,14 +200,14 @@
   --sidebar:                oklch(0.16 0.01 260);
   --sidebar-foreground:     oklch(0.98 0.005 260);
 
-  --sidebar-primary:        #004aad;
+  --sidebar-primary:        oklch(0.3971 0.1597 265.04);
   --sidebar-primary-foreground: #ffffff;
 
   --sidebar-accent:         oklch(0.24 0.012 260);
   --sidebar-accent-foreground: oklch(0.98 0.005 260);
 
   --sidebar-border:         oklch(0.28 0.01 260);
-  --sidebar-ring:           #2563eb;
+  --sidebar-ring:           oklch(0.3971 0.1597 265.04);
 
   /* Form fields */
   --field-empty:            oklch(0.14 0.01 260);
@@ -355,4 +355,8 @@
   h6 {
     @apply font-heading;
   }
+}
+
+input:-webkit-autofill{
+  background-color: none !important;
 }

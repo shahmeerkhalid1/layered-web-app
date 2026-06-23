@@ -5,7 +5,7 @@ import { Clock, X } from "lucide-react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TimePickerPanel } from "@/components/ui/time-picker-panel";
-import { formatHmLabel12 } from "@/lib/datetime-local";
+import { formatHmLabel12, compareHm } from "@/lib/datetime-local";
 import { formControlPickerTriggerClasses } from "@/lib/form-control-styles";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,8 @@ export interface TimePickerProps {
   /** 24-hour `HH:mm` value (stored format for API/forms). */
   value: string;
   onChange: (value: string) => void;
+  /** Earliest selectable 24-hour `HH:mm` (local). */
+  minTime?: string;
   id?: string;
   disabled?: boolean;
   placeholder?: string;
@@ -27,6 +29,7 @@ export interface TimePickerProps {
 export function TimePicker({
   value,
   onChange,
+  minTime,
   id,
   disabled,
   placeholder = "Pick a time",
@@ -100,7 +103,17 @@ export function TimePicker({
         }
         collisionPadding={16}
       >
-        <TimePickerPanel value={value} onChange={onChange} />
+        <TimePickerPanel
+          value={value}
+          onChange={(next) => {
+            if (minTime && next && compareHm(next, minTime) < 0) {
+              onChange(minTime);
+              return;
+            }
+            onChange(next);
+          }}
+          minTime={minTime}
+        />
       </PopoverContent>
     </Popover>
   );

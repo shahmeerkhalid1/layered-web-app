@@ -1,8 +1,10 @@
 import { z } from "zod";
+import { isPastScheduleDateTime } from "@/lib/calendar-utils";
 import {
   parseDurationMinutesStr,
   schedulingDurationMinutesStrSchema,
 } from "@/lib/validation/duration-minutes-form-schema";
+import { PAST_SCHEDULE_TIME_MESSAGE } from "@/lib/validation/scheduling-past-guard";
 
 export const RECURRING_END_DATE_MESSAGE = "End date is required for recurring classes";
 export const RECURRING_DAYS_OF_WEEK_MESSAGE =
@@ -40,6 +42,16 @@ export const quickScheduleFormSchema = z
   .refine((data) => !data.isRecurring || data.endDate.trim().length > 0, {
     message: RECURRING_END_DATE_MESSAGE,
     path: ["endDate"],
+  })
+  .superRefine((data, ctx) => {
+    if (data.isRecurring) return;
+    if (isPastScheduleDateTime(data.date.trim(), data.time.trim())) {
+      ctx.addIssue({
+        code: "custom",
+        message: PAST_SCHEDULE_TIME_MESSAGE,
+        path: ["time"],
+      });
+    }
   });
 
 export type QuickScheduleFormValues = z.infer<typeof quickScheduleFormSchema>;

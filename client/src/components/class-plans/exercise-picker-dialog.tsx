@@ -22,11 +22,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 
+const PANEL_MOUNT_DELAY_MS = 100;
+
+function ExercisePickerPanelPlaceholder() {
+  return (
+    <div className="flex justify-center py-16">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    </div>
+  );
+}
 type ExercisePickerDialogBaseProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sectionId: string;
   onExerciseAdded: () => void | Promise<void>;
+  /** Template `classType` — forwarded to embedded exercise create form. */
+  classPlanClassType?: string | null;
 };
 
 export type ExercisePickerDialogProps = ExercisePickerDialogBaseProps &
@@ -36,15 +47,16 @@ export type ExercisePickerDialogProps = ExercisePickerDialogBaseProps &
   );
 
 export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
-  const { open, onOpenChange, sectionId, onExerciseAdded } = props;
-  const [tab, setTab] = useState("library");
+  const { open, onOpenChange, sectionId, onExerciseAdded, classPlanClassType } = props;
+  const [tab, setTab] = useState("create");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [library, setLibrary] = useState<Exercise[]>([]);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [isAdding, setIsAdding] = useState(false);
-  const [formKey, setFormKey] = useState(0);
+  const [panelReady, setPanelReady] = useState(false);
+  const [formInstanceKey, setFormInstanceKey] = useState(0);
 
   const addExerciseToSection = async (exerciseId: string) => {
     if (props.mode === "template") {
@@ -88,14 +100,28 @@ export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
   }, [open, tab, loadLibrary]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      const t = window.setTimeout(() => {
+        setTab("create");
+        setSearch("");
+        setSelectedIds(new Set());
+        setPanelReady(false);
+      }, 0);
+      return () => window.clearTimeout(t);
+    }
+
+    let cancelled = false;
     const t = window.setTimeout(() => {
-      setTab("library");
-      setSearch("");
-      setSelectedIds(new Set());
-      setFormKey((k) => k + 1);
-    }, 0);
-    return () => window.clearTimeout(t);
+      if (cancelled) return;
+      setFormInstanceKey((k) => k + 1);
+      setPanelReady(true);
+    }, PANEL_MOUNT_DELAY_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+      setPanelReady(false);
+    };
   }, [open, sectionId]);
 
   const toggleSelected = (exerciseId: string) => {
@@ -150,7 +176,7 @@ export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
             Add exercise to section
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Pick from your library or create a new exercise for this plan.
+            Create a new exercise or pick from your library for this plan.
           </DialogDescription>
         </DialogHeader>
 
@@ -166,16 +192,40 @@ export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
             className="flex flex-col gap-0"
           >
             <TabsList className="mb-4 w-full max-w-xl mx-auto shrink-0">
-              <TabsTrigger value="library" className={`flex-1 ${tab === 'library' ? 'bg-primary!' : ''}`}>
-                Pick from library
-              </TabsTrigger>
-              <TabsTrigger value="create" className={`flex-1 ${tab === 'create' ? 'bg-primary!' : ''}`}>
+              <TabsTrigger value="create" className={`flex-1 ${tab === "create" ? "bg-primary!" : ""}`}>
                 Create new
+              </TabsTrigger>
+              <TabsTrigger value="library" className={`flex-1 ${tab === "library" ? "bg-primary!" : ""}`}>
+                Pick from library
               </TabsTrigger>
             </TabsList>
 
+            <TabsContent value="create" className="mt-0">
+              {!panelReady ? (
+                <ExercisePickerPanelPlaceholder />
+              ) : (
+                <ExerciseForm
+                  key={formInstanceKey}
+                  embedInClassPlan
+                  classPlanClassType={classPlanClassType}
+                  onEmbedCancel={() => onOpenChange(false)}
+                  onEmbedCreateSuccess={async (created: Exercise) => {
+                    try {
+                      await addExerciseToSection(created.id);
+                      toast.success("Exercise added to section");
+                      onOpenChange(false);
+                      await onExerciseAdded();
+                    } catch {
+                      toast.error("Exercise was created but could not be added to this section");
+                    }
+                  }}
+                />
+              )}
+            </TabsContent>
+
             <TabsContent value="library" className="mt-0">
-              <div className="flex flex-col gap-3">
+              {tab === "library" ? (
+                <div className="flex flex-col gap-3">
                 <div className="shrink-0 p-2 w-full max-w-full">
                   <ExerciseSearch
                     id="exercise-picker-search"
@@ -245,24 +295,7 @@ export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
                   )}
                 </div>
               </div>
-            </TabsContent>
-
-            <TabsContent value="create" className="mt-0">
-              <ExerciseForm
-                key={formKey}
-                embedInClassPlan
-                onEmbedCancel={() => onOpenChange(false)}
-                onEmbedCreateSuccess={async (created: Exercise) => {
-                  try {
-                    await addExerciseToSection(created.id);
-                    toast.success("Exercise added to section");
-                    onOpenChange(false);
-                    await onExerciseAdded();
-                  } catch {
-                    toast.error("Exercise was created but could not be added to this section");
-                  }
-                }}
-              />
+              ) : null}
             </TabsContent>
           </Tabs>
         </div>

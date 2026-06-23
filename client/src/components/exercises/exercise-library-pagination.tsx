@@ -7,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 const NAV_CLASS =
-  "flex flex-col items-center justify-between gap-4 border-t border-border pt-6 sm:flex-row sm:gap-6";
+  "flex flex-col items-center justify-between gap-4 border-t border-black/40 dark:border-white/50 pt-6 sm:flex-row sm:gap-6";
 
 const MAX_PAGE_BUTTONS = 5;
 
@@ -143,16 +143,16 @@ export function ExerciseLibraryPagination(
 
   return (
     <nav aria-label={ariaLabel} className={NAV_CLASS}>
-      <p className="order-2 text-sm text-muted-foreground sm:order-1">
-        Page <span className="font-medium text-foreground">{safePage}</span> of{" "}
-        <span className="font-medium text-foreground">{safeTotalPages}</span>
+      <p className="order-2 text-sm text-muted/80 dark:text-muted-foreground sm:order-1">
+        Page <span className="font-medium text-muted dark:text-foreground">{safePage}</span> of{" "}
+        <span className="font-medium text-muted dark:text-foreground">{safeTotalPages}</span>
       </p>
 
       <div className="order-1 flex flex-wrap items-center justify-center gap-1 sm:order-2">
         <Button
           type="button"
           size="icon-sm"
-          variant="outline"
+          variant="filled"
           disabled={busy || safePage <= 1}
           aria-label="First page"
           onClick={() => onPageChange(1)}
@@ -162,7 +162,7 @@ export function ExerciseLibraryPagination(
         <Button
           type="button"
           size="icon-sm"
-          variant="outline"
+          variant="filled"
           disabled={busy || safePage <= 1}
           aria-label="Previous page"
           onClick={() => onPageChange(safePage - 1)}
@@ -176,7 +176,7 @@ export function ExerciseLibraryPagination(
               key={n}
               type="button"
               size="sm"
-              variant={n === safePage ? "default" : "outline"}
+              variant={n === safePage ? "default" : "filled"}
               disabled={busy}
               aria-label={`Page ${n}`}
               aria-current={n === safePage ? "page" : undefined}
@@ -190,7 +190,7 @@ export function ExerciseLibraryPagination(
         <Button
           type="button"
           size="icon-sm"
-          variant="outline"
+          variant="filled"
           disabled={busy || safePage >= safeTotalPages}
           aria-label="Next page"
           onClick={() => onPageChange(safePage + 1)}
@@ -200,7 +200,7 @@ export function ExerciseLibraryPagination(
         <Button
           type="button"
           size="icon-sm"
-          variant="outline"
+          variant="filled"
           disabled={busy || safePage >= safeTotalPages}
           aria-label="Last page"
           onClick={() => onPageChange(safeTotalPages)}

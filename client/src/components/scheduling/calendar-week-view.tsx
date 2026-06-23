@@ -9,28 +9,32 @@ import {
 } from "@/components/ui/tooltip";
 import type { CalendarClassInstance } from "@/lib/types";
 import {
+  instanceStatusLabel,
+  weekGridEventStatusClasses,
+} from "@/lib/calendar-instance-status-styles";
+import {
+  CALENDAR_DAY_END_HOUR,
   CALENDAR_DAY_START_HOUR,
+  calendarDayColumnHeightPx,
+  formatCalendarHourLabel,
   formatYmdLocal,
   hourSlots,
-  isBeforeToday,
+  instanceLocalDayKey,
+  isPastCalendarHourSlot,
   isSameLocalDay,
   minutesFromDayStart,
   totalCalendarMinutes,
 } from "@/lib/calendar-utils";
 import { cn } from "@/lib/utils";
 
-/** Matches day column `minHeight` in this file — used to map % height → px for layout and radius. */
-const CALENDAR_DAY_COLUMN_MIN_HEIGHT_PX = 1200;
+/** Matches day column `height` — used to map % height → px for layout and radius. */
+const CALENDAR_DAY_COLUMN_HEIGHT_PX = calendarDayColumnHeightPx();
 
 /** Floor height so short classes stay readable (may overlap following non-overlapping events slightly). */
 const MIN_EVENT_HEIGHT_PX = 36;
 
 const LANE_INSET_PX = 4;
 const LANE_GAP_PX = 2;
-
-function instanceDayKey(inst: CalendarClassInstance): string {
-  return inst.date.slice(0, 10);
-}
 
 export type CalendarEventLayout = {
   top: number;
@@ -68,7 +72,7 @@ function layoutDayInstances(
     greedyCol.set(n.id, c);
   }
 
-  const minHPct = (MIN_EVENT_HEIGHT_PX / CALENDAR_DAY_COLUMN_MIN_HEIGHT_PX) * 100;
+  const minHPct = (MIN_EVENT_HEIGHT_PX / CALENDAR_DAY_COLUMN_HEIGHT_PX) * 100;
   const out = new Map<string, CalendarEventLayout>();
 
   for (const n of nodes) {
@@ -117,6 +121,7 @@ function CalendarEventTooltipContent({
   typeStyle: string;
 }) {
   const isGroup = instance.class.type === "GROUP";
+  const statusLabel = instanceStatusLabel(instance.status);
 
   return (
     <div className="space-y-2 text-left">
@@ -130,6 +135,18 @@ function CalendarEventTooltipContent({
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
+        {statusLabel ? (
+          <span
+            className={cn(
+              "inline-flex h-5 items-center rounded-full px-2 text-[10px] font-semibold uppercase tracking-wide",
+              instance.status === "CANCELLED"
+                ? "bg-destructive/25 text-background"
+                : "bg-background/25 text-background/90"
+            )}
+          >
+            {statusLabel}
+          </span>
+        ) : null}
         <span
           className={cn(
             "inline-flex h-5 items-center rounded-full px-2 text-[10px] font-semibold uppercase tracking-wide",
@@ -152,7 +169,7 @@ export function CalendarEventBlock({ instance, onSelect, layout }: CalendarEvent
   const durationMin = instance.class.durationMinutes ?? 60;
   const { top, heightPct, col, cols } = layout;
 
-  const approxHeightPx = (heightPct / 100) * CALENDAR_DAY_COLUMN_MIN_HEIGHT_PX;
+  const approxHeightPx = (heightPct / 100) * CALENDAR_DAY_COLUMN_HEIGHT_PX;
   const borderRadiusPx = Math.min(Math.max(approxHeightPx * 0.22, 3), 12);
 
   const veryTight = approxHeightPx < 42;
@@ -160,11 +177,19 @@ export function CalendarEventBlock({ instance, onSelect, layout }: CalendarEvent
 
   const label = instance.class.title;
   const isGroup = instance.class.type === "GROUP";
+  const statusLabel = instanceStatusLabel(instance.status);
   const timeStr = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", hour12: true });
   const typeStyle = [instance.classType, instance.classStyle].filter(Boolean).join(" · ");
-  const ariaLabel = typeStyle
-    ? `${label}, ${timeStr}, ${durationMin} minutes, ${instance.class.type}, ${typeStyle}`
-    : `${label}, ${timeStr}, ${durationMin} minutes, ${instance.class.type}`;
+  const ariaLabel = [
+    label,
+    timeStr,
+    `${durationMin} minutes`,
+    instance.class.type,
+    statusLabel,
+    typeStyle,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   const seg =
     cols > 1
@@ -199,20 +224,27 @@ export function CalendarEventBlock({ instance, onSelect, layout }: CalendarEvent
       : compact
         ? "flex min-h-0 flex-col justify-start gap-0.5 px-1.5 py-0.5"
         : "flex min-h-0 flex-col gap-0.5 px-2 py-1 text-[11px]",
-    isGroup
-      ? "border-l-primary border-primary/25 bg-primary/12 text-primary hover:bg-primary/18"
-      : "border-l-secondary border-secondary/30 bg-secondary/50 text-secondary-foreground hover:bg-secondary/22 hover:ring-secondary/100"
+    weekGridEventStatusClasses(instance.status, isGroup)
   );
 
+  const titleClassName =
+    instance.status === "CANCELLED"
+      ? "line-through decoration-destructive/50"
+      : instance.status === "COMPLETED"
+        ? "opacity-85"
+        : undefined;
+
   const blockContent = veryTight ? (
-    <span className="min-w-0 truncate text-[10px] leading-tight font-medium">
+    <span className={cn("min-w-0 truncate text-[10px] leading-tight font-medium", titleClassName)}>
       <span className="tabular-nums opacity-90">{timeStr}</span>
       <span className="opacity-50"> · </span>
       {label}
     </span>
   ) : compact ? (
     <>
-      <span className="line-clamp-1 min-w-0 text-[10px] leading-tight font-semibold">{label}</span>
+      <span className={cn("line-clamp-1 min-w-0 text-[10px] leading-tight font-semibold", titleClassName)}>
+        {label}
+      </span>
       {typeStyle ? (
         <span className="line-clamp-1 min-w-0 text-[9px] leading-tight opacity-75">{typeStyle}</span>
       ) : null}
@@ -222,7 +254,7 @@ export function CalendarEventBlock({ instance, onSelect, layout }: CalendarEvent
     </>
   ) : (
     <>
-      <span className="line-clamp-2 min-w-0 font-semibold leading-snug">{label}</span>
+      <span className={cn("line-clamp-2 min-w-0 font-semibold leading-snug", titleClassName)}>{label}</span>
       {typeStyle ? (
         <span className="line-clamp-1 min-w-0 text-[10px] leading-tight opacity-75">{typeStyle}</span>
       ) : null}
@@ -292,7 +324,7 @@ export function CalendarWeekView({
 
   const instancesByDay = new Map<string, CalendarClassInstance[]>();
   for (const inst of instances) {
-    const key = instanceDayKey(inst);
+    const key = instanceLocalDayKey(inst);
     const arr = instancesByDay.get(key) ?? [];
     arr.push(inst);
     instancesByDay.set(key, arr);
@@ -301,7 +333,7 @@ export function CalendarWeekView({
   const today = new Date();
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border/80 bg-muted/10 shadow-inner">
+    <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-inner">
       <div className="grid min-w-[760px] grid-cols-[3.5rem_repeat(7,minmax(0,1fr))]">
         <div className="border-b border-border/70 bg-muted/25 p-2" />
         {days.map((d) => {
@@ -334,16 +366,28 @@ export function CalendarWeekView({
           );
         })}
 
-        <div className="relative border-r border-border/70 bg-muted/15">
+        <div
+          className="relative border-r border-border/70 bg-muted/15"
+          style={{ height: `${CALENDAR_DAY_COLUMN_HEIGHT_PX}px` }}
+        >
           {hours.map((h) => {
             const top = ((h - CALENDAR_DAY_START_HOUR) * 60) / total;
+            const isFirst = h === CALENDAR_DAY_START_HOUR;
+            const isLast = h === CALENDAR_DAY_END_HOUR;
             return (
               <div
                 key={h}
-                className="absolute right-1 left-0 text-right text-[10px] text-muted-foreground tabular-nums"
-                style={{ top: `${top * 100}%` }}
+                className="absolute right-1 left-0 text-right text-[10px] leading-none text-muted-foreground tabular-nums"
+                style={{
+                  top: `${top * 100}%`,
+                  transform: isFirst
+                    ? "translateY(0)"
+                    : isLast
+                      ? "translateY(-100%)"
+                      : "translateY(-50%)",
+                }}
               >
-                {h === 12 ? "12 PM" : h > 12 ? `${h - 12} PM` : `${h} AM`}
+                {formatCalendarHourLabel(h)}
               </div>
             );
           })}
@@ -352,7 +396,6 @@ export function CalendarWeekView({
         {days.map((d) => {
           const ymd = formatYmdLocal(d);
           const isToday = isSameLocalDay(d, today);
-          const isPastDay = isBeforeToday(d);
           const dayInstances = instancesByDay.get(ymd) ?? [];
           const layout = layoutDayInstances(d, dayInstances, total);
           return (
@@ -362,28 +405,29 @@ export function CalendarWeekView({
                 "relative border-l border-border/70",
                 isToday ? "bg-primary/2" : "bg-background/40"
               )}
-              style={{ minHeight: `${CALENDAR_DAY_COLUMN_MIN_HEIGHT_PX}px` }}
+              style={{ height: `${CALENDAR_DAY_COLUMN_HEIGHT_PX}px` }}
             >
               {hours.map((h) => {
                 const top = ((h - CALENDAR_DAY_START_HOUR) * 60) / total;
+                const isPastSlot = isPastCalendarHourSlot(d, h);
                 return (
                   <button
                     key={h}
                     type="button"
-                    disabled={isPastDay}
+                    disabled={isPastSlot}
                     aria-label={
-                      isPastDay
+                      isPastSlot
                         ? `Cannot schedule in the past (${ymd} ${h}:00)`
                         : `Schedule at ${h}:00 on ${ymd}`
                     }
                     className={cn(
                       "absolute right-0 left-0 border-t border-border/35 transition-colors",
-                      isPastDay
+                      isPastSlot
                         ? "cursor-default opacity-40"
                         : "cursor-pointer hover:bg-muted/25 hover:ring-1 hover:ring-inset hover:ring-ring/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50"
                     )}
                     style={{ top: `${top * 100}%`, height: `${(60 / total) * 100}%` }}
-                    onClick={isPastDay ? undefined : () => onSelectSlot(d, h)}
+                    onClick={isPastSlot ? undefined : () => onSelectSlot(d, h)}
                   />
                 );
               })}

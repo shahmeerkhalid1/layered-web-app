@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { FolderPlus, Pencil, Plus, Trash2 } from "lucide-react";
+import { Dumbbell, FolderPlus, Pencil, Plus, Trash2 } from "lucide-react";
 import type { ExerciseFolder } from "@/lib/types";
 import { ExerciseSearch } from "@/components/exercises/exercise-search";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -84,9 +84,14 @@ export function ExerciseLibraryHeader({
     <div className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
         <div className="min-w-0 max-w-2xl space-y-2">
-          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-card-foreground sm:text-3xl">
+          <div className="flex items-center gap-3">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
+              <Dumbbell className="size-5" aria-hidden />
+            </div>
+          <h2 className="text-xl font-semibold tracking-[-0.03em] text-card-foreground sm:text-lg uppercase">
             Exercise Library
           </h2>
+          </div>
           <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground" aria-live="polite">
             {!totalKnown && loading && <span>Loading library…</span>}
             {totalKnown && (

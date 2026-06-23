@@ -4,18 +4,18 @@ import { cn } from "@/lib/utils";
 const formControlInteraction = [
   "border border-input outline-none transition-[color,box-shadow,background-color,border-color] duration-150",
   "bg-field-empty",
-  "hover:border-ring/70 hover:ring-3 hover:ring-ring/30",
-  "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+  "hover:border-ring/70 hover:ring-2 hover:ring-ring/30",
+  "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50",
   "disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50",
-  "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/30",
-  "aria-invalid:hover:border-destructive aria-invalid:hover:ring-3 aria-invalid:hover:ring-destructive/40",
-  "aria-invalid:focus-visible:border-destructive aria-invalid:focus-visible:ring-3 aria-invalid:focus-visible:ring-destructive/50",
+  "aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/30",
+  "aria-invalid:hover:border-destructive aria-invalid:hover:ring-2 aria-invalid:hover:ring-destructive/40",
+  "aria-invalid:focus-visible:border-destructive aria-invalid:focus-visible:ring-2 aria-invalid:focus-visible:ring-destructive/50",
   "dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/45",
   "dark:aria-invalid:hover:ring-destructive/50 dark:aria-invalid:focus-visible:ring-destructive/55",
 ] as const;
 
 /** Filled state when the control has a value (Input/Textarea set `data-filled`). */
-const formControlFilled = [
+export const formControlFilled = [
   "data-filled:bg-field-filled data-filled:border-input/90",
   "data-filled:aria-invalid:border-destructive",
   "data-filled:aria-invalid:hover:border-destructive",
@@ -78,10 +78,10 @@ export const formControlPickerTriggerClasses = cn(
 export const checkboxIndicatorClasses = cn(
   "pointer-events-none flex size-4.5 shrink-0 items-center justify-center rounded-[6px] border-2 border-input bg-field-empty",
   "transition-[box-shadow,background-color,border-color] duration-150",
-  "peer-[&:not(:disabled):hover]:border-ring/70 peer-[&:not(:disabled):hover]:ring-3 peer-[&:not(:disabled):hover]:ring-ring/30",
-  "peer-[&:not(:disabled):focus-visible]:border-ring peer-[&:not(:disabled):focus-visible]:ring-3 peer-[&:not(:disabled):focus-visible]:ring-ring/50",
+  "peer-[&:not(:disabled):hover]:border-ring/70 peer-[&:not(:disabled):hover]:ring-2 peer-[&:not(:disabled):hover]:ring-ring/30",
+  "peer-[&:not(:disabled):focus-visible]:border-ring peer-[&:not(:disabled):focus-visible]:ring-2 peer-[&:not(:disabled):focus-visible]:ring-ring/50",
   "peer-checked:border-primary peer-checked:bg-primary",
-  "peer-checked:peer-[&:not(:disabled):hover]:ring-3 peer-checked:peer-[&:not(:disabled):hover]:ring-primary/30",
+  "peer-checked:peer-[&:not(:disabled):hover]:ring-2 peer-checked:peer-[&:not(:disabled):hover]:ring-primary/30",
   "peer-disabled:opacity-50",
   "peer-[&:not(:disabled):not(:checked):hover]:[&_svg]:opacity-40",
   "peer-[&:not(:disabled):not(:checked):hover]:[&_svg]:text-primary",

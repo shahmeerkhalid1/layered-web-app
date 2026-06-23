@@ -8,6 +8,7 @@ import type { CalendarClassInstance } from "@/lib/types";
 import {
   addDays,
   formatYmdLocal,
+  instanceLocalDayKey,
   startOfWeekMonday,
 } from "@/lib/calendar-utils";
 
@@ -29,7 +30,7 @@ export default function WeekOverviewPage() {
   const grouped = useMemo(() => {
     const map = new Map<string, CalendarClassInstance[]>();
     for (const row of data) {
-      const k = row.date.slice(0, 10);
+      const k = instanceLocalDayKey(row);
       const arr = map.get(k) ?? [];
       arr.push(row);
       map.set(k, arr);
