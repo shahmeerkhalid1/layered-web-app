@@ -13,6 +13,7 @@ const PAGE_BACKGROUND_PATHS = new Set([
   "/exercises",
   "/clients",
   "/calendar",
+  "/admin/users",
 ]);
 
 export function usePageBackground(): boolean {

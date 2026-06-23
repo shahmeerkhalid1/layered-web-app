@@ -16,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Users, UserCheck, UserX, Mail, ArrowRight } from "lucide-react";
+import { Users, UserCheck, UserX, Mail, ArrowRight, UsersRound } from "lucide-react";
 
 export function AdminHome() {
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -59,13 +59,18 @@ export function AdminHome() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Admin</h2>
-          <p className="text-muted-foreground">
+    <div className="space-y-6 rounded-3xl border border-border bg-card shadow-lg p-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-border bg-card shadow-lg p-4">
+        <div className="min-w-0 max-w-2xl space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
+              <UsersRound className="size-5" aria-hidden />
+            </div>
+          <h2 className="text-xl font-semibold tracking-[-0.03em] text-card-foreground sm:text-lg uppercase">Admin</h2>
+          <p className="text-xs text-muted-foreground">
             Platform overview and quick access to management tools.
           </p>
+        </div>
         </div>
         {error && (
           <div className="flex flex-wrap items-center gap-2">

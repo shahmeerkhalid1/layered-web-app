@@ -32,11 +32,11 @@ export function AdminUserLibraryHeader({
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
         <div className="min-w-0 max-w-2xl space-y-2">
           <div className="flex items-center gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
               <UsersRound className="size-5" aria-hidden />
             </div>
             <div>
-              <h2 className="font-heading text-2xl font-semibold tracking-[-0.03em] text-card-foreground sm:text-3xl">
+              <h2 className="font-heading text-xl font-semibold tracking-[-0.03em] text-card-foreground sm:text-lg uppercase">
                 User management
               </h2>
               <p

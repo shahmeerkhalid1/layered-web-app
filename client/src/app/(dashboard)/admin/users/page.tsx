@@ -371,7 +371,7 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="space-y-6 rounded-[2rem] bg-background px-2 pb-6 sm:px-4">
+    <div className="space-y-6 px-2 pb-6 sm:px-4">
       <AdminUserLibraryHeader
         totalUsers={loading ? undefined : directoryTotal}
         visibleUserCount={visibleCount}
