@@ -39,7 +39,15 @@ type StatCardProps = {
   loading?: boolean;
 };
 
-function StatCard({ title, value, hint, href, icon: Icon, accent, loading }: StatCardProps) {
+function StatCard({
+  title,
+  value,
+  hint,
+  href,
+  icon: Icon,
+  accent,
+  loading,
+}: StatCardProps) {
   const accentStyles = {
     primary: {
       icon: "dark:bg-primary dark:text-secondary-foreground dark:border-border dark:group-hover:bg-primary/100",
@@ -60,7 +68,7 @@ function StatCard({ title, value, hint, href, icon: Icon, accent, loading }: Sta
     accentStyles[accent].card,
     href &&
       "hover:border-border hover:shadow-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-    !href && "opacity-95"
+    !href && "opacity-95",
   );
 
   const displayValue = loading ? "—" : (value ?? 0);
@@ -71,7 +79,7 @@ function StatCard({ title, value, hint, href, icon: Icon, accent, loading }: Sta
         <div
           className={cn(
             "flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors",
-            accentStyles[accent].icon
+            accentStyles[accent].icon,
           )}
         >
           <Icon className="size-4.5" aria-hidden />
@@ -113,14 +121,19 @@ type QuickActionProps = {
   icon: ComponentType<{ className?: string }>;
 };
 
-function QuickAction({ href, title, description, icon: Icon }: QuickActionProps) {
+function QuickAction({
+  href,
+  title,
+  description,
+  icon: Icon,
+}: QuickActionProps) {
   return (
     <Link
       href={href}
       className={cn(
         "group flex items-center gap-3 rounded-2xl border border-border/70 bg-background/60 px-4 py-3.5 transition-all",
         "hover:border-border hover:bg-muted/30 hover:shadow-sm",
-        "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
       )}
     >
       <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground transition-colors group-hover:bg-secondary/100">
@@ -152,10 +165,12 @@ function NotificationCard({
   tone: "warning" | "info" | "success" | "muted";
 }) {
   const toneStyles = {
-    warning: "border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300",
+    warning:
+      "border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300",
     info: "border-primary/25 bg-primary/30 text-secondary-foreground",
     success: "border-border/80 bg-muted/15 text-foreground",
-    muted: "border-border/80 bg-background/60 hover:bg-muted/30 text-foreground",
+    muted:
+      "border-border/80 bg-background/60 hover:bg-muted/30 text-foreground",
   } as const;
 
   return (
@@ -164,7 +179,7 @@ function NotificationCard({
       className={cn(
         "flex items-start gap-3 rounded-2xl border px-4 py-3 transition-all",
         "hover:-translate-y-px hover:shadow-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-        toneStyles[tone]
+        toneStyles[tone],
       )}
     >
       <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -188,7 +203,11 @@ function formatNotificationWhen(item: DashboardNotificationItem): string {
   });
 }
 
-function NeedsClosureNotificationsGroup({ items }: { items: DashboardNotificationItem[] }) {
+function NeedsClosureNotificationsGroup({
+  items,
+}: {
+  items: DashboardNotificationItem[];
+}) {
   const [expanded, setExpanded] = useState(false);
 
   const title =
@@ -203,8 +222,8 @@ function NeedsClosureNotificationsGroup({ items }: { items: DashboardNotificatio
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium">{title}</p>
           <p className="mt-0.5 text-xs opacity-80">
-            These classes are past their scheduled date. Mark complete if they happened, or cancel
-            if they did not.
+            These classes are past their scheduled date. Mark complete if they
+            happened, or cancel if they did not.
           </p>
         </div>
         <Button
@@ -238,7 +257,7 @@ function NeedsClosureNotificationsGroup({ items }: { items: DashboardNotificatio
                 className={cn(
                   "flex items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-background/60 px-3 py-2.5 transition-all",
                   "hover:border-amber-500/35 hover:bg-muted/30 hover:shadow-sm",
-                  "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                  "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
                 )}
               >
                 <div className="min-w-0">
@@ -253,7 +272,10 @@ function NeedsClosureNotificationsGroup({ items }: { items: DashboardNotificatio
                   <Badge variant="outline" className="rounded-full text-[10px]">
                     {item.classType === "GROUP" ? "Group" : "Private"}
                   </Badge>
-                  <ArrowRight className="size-3.5 text-muted-foreground/50" aria-hidden />
+                  <ArrowRight
+                    className="size-3.5 text-muted-foreground/50"
+                    aria-hidden
+                  />
                 </div>
               </Link>
             </li>
@@ -264,11 +286,17 @@ function NeedsClosureNotificationsGroup({ items }: { items: DashboardNotificatio
   );
 }
 
-function NoPlanNotificationsGroup({ items }: { items: DashboardNotificationItem[] }) {
+function NoPlanNotificationsGroup({
+  items,
+}: {
+  items: DashboardNotificationItem[];
+}) {
   const [expanded, setExpanded] = useState(false);
 
   const title =
-    items.length === 1 ? "1 class needs a plan" : `${items.length} classes need a plan`;
+    items.length === 1
+      ? "1 class needs a plan"
+      : `${items.length} classes need a plan`;
 
   return (
     <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 text-amber-900 dark:text-amber-100">
@@ -311,7 +339,7 @@ function NoPlanNotificationsGroup({ items }: { items: DashboardNotificationItem[
                 className={cn(
                   "flex items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-background/60 px-3 py-2.5 transition-all",
                   "hover:border-amber-500/35 hover:bg-muted/30 hover:shadow-sm",
-                  "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                  "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
                 )}
               >
                 <div className="min-w-0">
@@ -326,7 +354,10 @@ function NoPlanNotificationsGroup({ items }: { items: DashboardNotificationItem[
                   <Badge variant="outline" className="rounded-full text-[10px]">
                     {item.classType === "GROUP" ? "Group" : "Private"}
                   </Badge>
-                  <ArrowRight className="size-3.5 text-muted-foreground/50" aria-hidden />
+                  <ArrowRight
+                    className="size-3.5 text-muted-foreground/50"
+                    aria-hidden
+                  />
                 </div>
               </Link>
             </li>
@@ -356,17 +387,21 @@ function NotificationsSection({
   const needsClosure = data?.needsClosure ?? [];
   const missingNotes = data?.missingNotes ?? [];
   const upcoming = data?.upcoming ?? [];
-  const total = noPlan.length + needsClosure.length + missingNotes.length + upcoming.length;
+  const total =
+    noPlan.length + needsClosure.length + missingNotes.length + upcoming.length;
 
   if (total === 0) {
     return (
       <div className="flex items-start gap-3 rounded-2xl border border-border/80 bg-muted/15 px-4 py-4">
-        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+        <CheckCircle2
+          className="mt-0.5 size-4 shrink-0 text-primary"
+          aria-hidden
+        />
         <div>
           <p className="text-sm font-medium text-foreground">All caught up</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            No open past sessions, plans to attach, notes to write, or upcoming reminders right
-            now.
+            No open past sessions, plans to attach, notes to write, or upcoming
+            reminders right now.
           </p>
         </div>
       </div>
@@ -409,9 +444,8 @@ export interface InstructorHomeProps {
 
 export function InstructorHome({ firstName }: InstructorHomeProps) {
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [notifications, setNotifications] = useState<DashboardNotificationsResponse | null>(
-    null
-  );
+  const [notifications, setNotifications] =
+    useState<DashboardNotificationsResponse | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
 
@@ -472,9 +506,18 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
 
   return (
     <div className="space-y-6">
+      <h1 className="font-heading text-xl font-semibold tracking-[-0.02em] text-foreground md:text-3xl uppercase mt-40">
+        {firstName ? (
+          <>
+            Welcome back, <span className="text-primary">{firstName}</span>
+          </>
+        ) : (
+          "Welcome back"
+        )}
+      </h1>
       <div className="rounded-3xl border border-border bg-card shadow-lg">
         <div className="border-b border-border/70 px-4 py-5 md:px-6 md:py-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          {/* <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex min-w-0 items-start gap-3">
               <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
                 <LayoutDashboard className="size-5" aria-hidden />
@@ -495,14 +538,16 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
                 <p className="text-sm text-muted-foreground">{dateLabel}</p>
               </div>
             </div>
-          </div>
+          </div> */}
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               title="Today's classes"
               value={todayCount}
               hint={
-                todayCount === 0 ? "Nothing on the calendar yet" : "Scheduled for today"
+                todayCount === 0
+                  ? "Nothing on the calendar yet"
+                  : "Scheduled for today"
               }
               href="/calendar"
               icon={Calendar}
@@ -596,10 +641,14 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
           Notifications
         </h2>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Open past sessions, plans to attach, notes to write, and what&apos;s coming up
+          Open past sessions, plans to attach, notes to write, and what&apos;s
+          coming up
         </p>
         <div className="mt-5">
-          <NotificationsSection data={notifications} loading={loadingNotifications} />
+          <NotificationsSection
+            data={notifications}
+            loading={loadingNotifications}
+          />
         </div>
       </div>
     </div>

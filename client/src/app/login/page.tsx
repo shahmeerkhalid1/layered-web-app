@@ -82,8 +82,9 @@ function LoginPageContent() {
 
   return (
     <AuthPageShell>
+      {/* <p className="text-sm text-muted-foreground text-center w-72 mx-auto"></p> */}
       <AuthFormCard
-        description="Welcome Back — enter your credentials to open your workspace."
+      description="Welcome Back — enter your credentials to open your workspace."
         footer={
           <AuthFooterLink prompt="Don't have an account?" linkLabel="Create one" href="/register" />
         }

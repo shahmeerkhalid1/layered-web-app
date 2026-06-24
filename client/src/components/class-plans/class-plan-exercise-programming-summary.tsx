@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { showSpringsForClassPlanType } from "@/lib/class-plan-exercise-field-visibility";
 
 /** Exercise fields surfaced on class plans (per client spec: programming tags at a glance). */
 export interface ClassPlanExerciseProgrammingFields {
@@ -29,6 +30,8 @@ function nonEmpty(values: string[] | null | undefined): string[] {
 
 export interface ClassPlanExerciseProgrammingSummaryProps {
   exercise: ClassPlanExerciseProgrammingFields;
+  /** When set (e.g. Mat), apparatus-only fields are omitted from the summary. */
+  classPlanClassType?: string | null;
   className?: string;
 }
 
@@ -60,12 +63,14 @@ function AnalysisBadgeGroup({ values }: { values: string[] }) {
  */
 export function ClassPlanExerciseProgrammingSummary({
   exercise,
+  classPlanClassType,
   className,
 }: ClassPlanExerciseProgrammingSummaryProps) {
   const orientation = trim(exercise.orientation);
   const directionFaced = trim(exercise.directionFaced);
   const movementType = trim(exercise.movementType);
-  const springs = trim(exercise.springs);
+  const showSprings = showSpringsForClassPlanType(classPlanClassType);
+  const springs = showSprings ? trim(exercise.springs) : null;
   const machineSetup = trim(exercise.machineSetup);
   const equipment = nonEmpty(exercise.equipment);
   const spinalMovement = nonEmpty(exercise.spinalMovement);

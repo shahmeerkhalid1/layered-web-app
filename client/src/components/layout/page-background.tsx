@@ -41,7 +41,7 @@ export function PageBackgroundContent({
     >
       {showBackground ? (
         <div
-          className="pointer-events-none absolute inset-0 bg-background/20 dark:bg-background/40"
+          className="pointer-events-none absolute inset-0 bg-background/20 dark:bg-background/20"
           aria-hidden
         />
       ) : null}

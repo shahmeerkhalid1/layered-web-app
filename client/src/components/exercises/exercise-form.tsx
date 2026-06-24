@@ -17,7 +17,7 @@ import {
   revokePendingImageUrls,
   type ExerciseFormImageItem,
 } from "@/lib/exercise-form-images";
-import { showMachineSetupForClassPlanType } from "@/lib/class-plan-exercise-field-visibility";
+import { showMachineSetupForClassPlanType, showSpringsForClassPlanType } from "@/lib/class-plan-exercise-field-visibility";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -129,6 +129,9 @@ export function ExerciseForm({
 
   const showMachineSetupField =
     !embedInClassPlan || showMachineSetupForClassPlanType(classPlanClassType);
+
+  const showSpringsField =
+    !embedInClassPlan || showSpringsForClassPlanType(classPlanClassType);
 
   const {
     control,
@@ -590,7 +593,11 @@ export function ExerciseForm({
         formValues.directionFaced === "none" ? null : formValues.directionFaced,
       movementType:
         formValues.movementType === "none" ? null : formValues.movementType,
-      springs: optionalField(formValues.springs) ?? null,
+      springs: showSpringsField
+        ? optionalField(formValues.springs) ?? null
+        : isEdit
+          ? (exercise?.springs ?? null)
+          : null,
       equipment: formValues.equipment,
       machineSetup: showMachineSetupField
         ? formValues.machineSetup === "none"
@@ -963,6 +970,7 @@ export function ExerciseForm({
                 )}
               </div>
 
+              {showSpringsField && (
               <div className="space-y-2">
                 <Label htmlFor="springs" className="pl-1.5 text-sm font-medium text-foreground">
                   Springs
@@ -990,6 +998,7 @@ export function ExerciseForm({
                   </Button>
                 </div>
               </div>
+              )}
 
               <div className="space-y-2">
                 <Label

@@ -7,8 +7,6 @@ import { Copyright } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-const BRAND_HEADLINE = "Scribbles become sequences. Thoughts become flows.";
-
 const BRAND_DESCRIPTION =
   "Layered is your digital studio notebook, helping you plan with intention, teach with clarity and bring intention to every class you teach. Built by an instructor, for instructors, Layered turns your ideas into intentional class plans that move seamlessly.";
 
@@ -24,7 +22,7 @@ export function AuthPageShell({ children, className }: AuthPageShellProps) {
     <div className="grid min-h-screen lg:grid-cols-2">
       <aside className="relative hidden min-h-screen flex-col justify-end overflow-hidden lg:flex">
         <Image
-          src="/background-image.png"
+          src="/public-background-image.jpeg"
           alt=""
           fill
           priority
@@ -36,8 +34,9 @@ export function AuthPageShell({ children, className }: AuthPageShellProps) {
           aria-hidden
         />
         <div className="relative z-10 px-10 py-12 xl:px-14 xl:py-14">
-          <h2 className="max-w-lg font-heading text-2xl font-semibold leading-snug tracking-[-0.02em] text-white xl:text-[1.75rem]">
-            {BRAND_HEADLINE}
+          <h2 className="max-w-lg font-heading text-2xl font-semibold leading-none tracking-[-0.02em] text-white xl:text-[1.75rem]">
+            <span className="block">Scribbles become sequences.</span>
+            <span className="mt-0 block">Thoughts become flows.</span>
           </h2>
           <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/75">{BRAND_DESCRIPTION}</p>
           <p className="mt-10 flex items-center gap-2 text-xs text-white/50">
@@ -59,7 +58,7 @@ export function AuthPageShell({ children, className }: AuthPageShellProps) {
             alt="Layered."
             width={400}
             height={100}
-            className="h-auto w-[350px] dark:hidden"
+            className="h-auto w-[280px] dark:hidden"
             priority
           />
           <Image
@@ -67,7 +66,7 @@ export function AuthPageShell({ children, className }: AuthPageShellProps) {
             alt="Layered."
             width={400}
             height={100}
-            className="hidden h-auto w-[350px] dark:block"
+            className="hidden h-auto w-[280px] dark:block"
             priority
           />
         </div>
@@ -95,7 +94,7 @@ export function AuthFormCard({ title, description, children, badge, footer }: Au
             {title}
           </h1>
         ) : null}
-        <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+        <p className="text-sm leading-relaxed text-muted-foreground w-72 mx-auto text-center">{description}</p>
       </div>
       <div className="mt-8">{children}</div>
       {footer ? <div className="mt-8">{footer}</div> : null}

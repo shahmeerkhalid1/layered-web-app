@@ -285,6 +285,7 @@ export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
                                 <ClassPlanExerciseProgrammingSummary
                                   className="mt-2"
                                   exercise={ex}
+                                  classPlanClassType={classPlanClassType}
                                 />
                               </div>
                             </div>

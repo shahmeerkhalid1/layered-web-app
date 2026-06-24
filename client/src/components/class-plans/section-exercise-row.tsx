@@ -77,7 +77,10 @@ export function SectionExerciseRow({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1 space-y-1.5">
             <p className="font-medium leading-snug text-foreground">{row.exercise.name}</p>
-            <ClassPlanExerciseProgrammingSummary exercise={row.exercise} />
+            <ClassPlanExerciseProgrammingSummary
+              exercise={row.exercise}
+              classPlanClassType={classPlanClassType}
+            />
           </div>
 
           <div

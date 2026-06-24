@@ -249,7 +249,7 @@ export function Sidebar() {
             alt="Layered."
             width={180}
             height={100}
-            className="h-auto w-[180px] ms-2 dark:hidden"
+            className="ms-2 h-auto w-[155px] dark:hidden"
             priority
           />
           <Image
@@ -257,7 +257,7 @@ export function Sidebar() {
             alt="Layered."
             width={180}
             height={100}
-            className="hidden h-auto w-[180px]  ms-2 dark:block"
+            className="ms-2 hidden h-auto w-[155px] dark:block"
             priority
           /></>
             )}
