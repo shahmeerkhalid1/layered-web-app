@@ -15,7 +15,7 @@ This document summarizes work done across five development sessions on the **Pil
 3. [Branding & theme](#3-branding--theme)
 4. [Auth pages redesign](#4-auth-pages-redesign)
 5. [Dashboard page backgrounds](#5-dashboard-page-backgrounds)
-6. [Calendar — full 24-hour grid](#6-calendar--full-24-hour-grid)
+6. [Calendar — default 4 AM–9 PM grid (dynamic range)](#6-calendar--default-4-am9-pm-grid-dynamic-range)
 7. [Calendar — timezone day grouping fix](#7-calendar--timezone-day-grouping-fix)
 8. [Calendar — status dots & styling](#8-calendar--status-dots--styling)
 9. [Past date/time scheduling guards](#9-past-datetime-scheduling-guards)
@@ -37,7 +37,7 @@ This batch of work delivered:
 - A **brand refresh** — new logos, background image, updated primary color tokens, and refreshed app icons/manifest
 - A **split-screen auth redesign** (login, register, forgot-password, reset-password) with theme-aware logos
 - **Fixed cover backgrounds** on main dashboard routes so cards float over the brand image
-- A **full 24-hour calendar week grid** with correct edge hour labels and timezone-safe instance grouping
+- A **compact calendar week grid** (default **4 AM–9 PM**, expanding only when classes fall outside that window) with correct edge hour labels and timezone-safe instance grouping
 - **Status-aware calendar UI** — scheduled/completed/cancelled dots in month and mini calendar; distinct styling in week grid and week overview
 - **Past time validation** — cannot create, quick-schedule, or reschedule a class to a past date/time (client + server)
 - **Class-type field scoping** — Machine Setup hidden in embedded exercise forms unless the parent plan is Reformer
@@ -54,6 +54,7 @@ This batch of work delivered:
 | [Exercise picker](6cbe15ae-4eb2-4cdc-9101-8c6e313a4ddd) | Class plans | Default to Create tab; fix dialog open animation stutter |
 | [Calendar UX](fddd21b4-4eb8-4dd5-a536-8b961e74a2d1) | Scheduling | Fix hidden 6 AM / 10 PM labels; full day hours; 3 AM class visibility; status dots; completed/cancelled styling; private vs completed color distinction |
 | [Past-time guards](caba834f-fe68-47c7-b3b1-4efa1048f41d) | Scheduling | Block past hours on create; extend to class drawer reschedule; remove duplicate 12 AM label |
+| Calendar time range | Scheduling | Default week grid **4 AM–9 PM**; extend range only when a class starts earlier or ends later |
 
 ---
 
@@ -156,35 +157,44 @@ This batch of work delivered:
 
 ---
 
-## 6. Calendar — full 24-hour grid
+## 6. Calendar — default 4 AM–9 PM grid (dynamic range)
 
-**Conversation:** Calendar UX session  
+**Conversation:** Calendar UX session; refined in follow-up  
 **Files:** `calendar-utils.ts`, `calendar-week-view.tsx`
 
-### Problem
+### Problem (initial)
 
 - Week grid only showed hours **6 AM – 10 PM**
 - Edge hour labels (6 AM, 10 PM) clipped or hidden due to collapsed time gutter and `overflow` clipping
 - Early-morning and late-night classes could not be scheduled or seen
 
-### Solution
+### Interim solution (full day)
+
+The grid was expanded to **midnight–11 PM** (24 hours, `1728px` at 72px/hour) so any class time was visible. That fixed clipping and early/late scheduling but left a lot of empty space when most classes run during typical studio hours.
+
+### Current solution (compact default + smart expansion)
 
 **`calendar-utils.ts`**
 
 | Constant / helper | Value / behavior |
 |-------------------|------------------|
-| `CALENDAR_DAY_START_HOUR` | `0` (was `6`) |
-| `CALENDAR_DAY_END_HOUR` | `23` (was `22`) |
+| `CALENDAR_DEFAULT_DAY_START_HOUR` | `4` (4 AM) |
+| `CALENDAR_DEFAULT_DAY_END_HOUR` | `21` (9 PM) |
 | `CALENDAR_HOUR_HEIGHT_PX` | `72` |
-| `calendarDayColumnHeightPx()` | `24 × 72 = 1728px` |
+| `computeCalendarHourRange(instances)` | Starts at 4–21; expands **start** if any instance starts before 4 AM; expands **end** if any instance ends after 9 PM (duration-aware) |
+| `CalendarHourRange` | `{ startHour, endHour }` passed to `hourSlots`, `totalCalendarMinutes`, `calendarDayColumnHeightPx` |
+| `minutesFromGridStart(day, instant, gridStartHour)` | Positions events relative to the active range (not always midnight) |
 | `formatCalendarHourLabel(h)` | Correct `12 AM`, `12 PM`, etc. |
+
+Default column height: **18 × 72 = 1296px** (4 AM through 9 PM). Grows only when the week’s instances require earlier or later hours.
 
 **`calendar-week-view.tsx`**
 
+- `useMemo` computes `hourRange` from week `instances` via `computeCalendarHourRange`
+- Day columns and time gutter height follow the active range (`calendarDayColumnHeightPx(hourRange)`)
+- Event layout (`layoutDayInstances`) and `CalendarEventBlock` receive dynamic `gridStartHour` / `columnHeightPx`
 - Day columns and time gutter use fixed **`height`** (not `minHeight`) for reliable percentage positioning
 - Hour labels use edge-safe transforms: first hour top-aligned, middle centered (`translateY(-50%)`), last hour bottom-aligned (`translateY(-100%)`)
-- Outer shell `overflow-visible` so labels are not clipped by rounded border
-- Duplicate bottom **12 AM** label removed (top `12 AM` already marks day start; last row is **11 PM**)
 
 ### Past slot disabling (later session)
 
@@ -512,7 +522,8 @@ export function showMachineSetupForClassPlanType(classType: string | null | unde
 
 ### Calendar
 
-- [ ] Week grid shows 12 AM through 11 PM; scroll to top/bottom for early/late hours
+- [ ] Week grid defaults to **4 AM–9 PM** (~1296px); no empty midnight–4 AM rows when no early classes
+- [ ] Schedule a class before 4 AM or after 9 PM — grid expands to include those hours; event visible and positioned correctly
 - [ ] Schedule a class at 3 AM (or other early hour) — appears on correct day column
 - [ ] Month view and mini calendar show correct status dots (scheduled / completed / cancelled)
 - [ ] Week grid: group (blue), private (accent), completed (muted), cancelled (red/strikethrough) are visually distinct
@@ -538,7 +549,7 @@ export function showMachineSetupForClassPlanType(classType: string | null | unde
 ## 17. Follow-ups & notes
 
 - **Remember Me:** Can be re-added when Better Auth server is configured to accept `rememberMe` on `signIn.email`
-- **Auto-scroll:** Week grid is ~1728px tall; optional enhancement to scroll to current hour (or ~6 AM) on load
+- **Auto-scroll:** Week grid is ~1296px tall by default (4 AM–9 PM); optional enhancement to scroll to current hour on load
 - **Background on detail pages:** `/exercises/[id]`, `/class-plans/[id]`, etc. do not show the brand background by design
 - **Other class-type fields:** Only Machine Setup was scoped; equipment, springs, and other apparatus fields are unchanged
 - **Edit class dialog:** Past-time guards apply to create, quick-schedule, and drawer reschedule — verify edit-class-dialog if rescheduling is added there later

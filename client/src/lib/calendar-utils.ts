@@ -47,25 +47,59 @@ export function startOfNextMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth() + 1, 1, 0, 0, 0, 0);
 }
 
-/** Inclusive local-hour range shown in the week grid (0 = midnight … 23 = 11 PM). */
-export const CALENDAR_DAY_START_HOUR = 0;
-export const CALENDAR_DAY_END_HOUR = 23;
+/** Default inclusive local-hour range for the week grid (expanded when classes fall outside). */
+export const CALENDAR_DEFAULT_DAY_START_HOUR = 4;
+export const CALENDAR_DEFAULT_DAY_END_HOUR = 21; // 9 PM
+
+export type CalendarHourRange = {
+  startHour: number;
+  endHour: number;
+};
 
 /** Pixel height per hour row in the week grid (drives column `height`). */
 export const CALENDAR_HOUR_HEIGHT_PX = 72;
 
-export function calendarHourCount(): number {
-  return CALENDAR_DAY_END_HOUR - CALENDAR_DAY_START_HOUR + 1;
+export function calendarHourCount(range: CalendarHourRange): number {
+  return range.endHour - range.startHour + 1;
 }
 
-export function calendarDayColumnHeightPx(): number {
-  return calendarHourCount() * CALENDAR_HOUR_HEIGHT_PX;
+export function calendarDayColumnHeightPx(range: CalendarHourRange): number {
+  return calendarHourCount(range) * CALENDAR_HOUR_HEIGHT_PX;
 }
 
-export function hourSlots(): number[] {
+export function hourSlots(range: CalendarHourRange): number[] {
   const out: number[] = [];
-  for (let h = CALENDAR_DAY_START_HOUR; h <= CALENDAR_DAY_END_HOUR; h++) out.push(h);
+  for (let h = range.startHour; h <= range.endHour; h++) out.push(h);
   return out;
+}
+
+/**
+ * Week grid hour bounds: default 4 AM–9 PM, extended when any instance starts earlier
+ * or ends later (duration-aware).
+ */
+export function computeCalendarHourRange(
+  instances: { time: string; class: { durationMinutes?: number | null } }[]
+): CalendarHourRange {
+  let startHour = CALENDAR_DEFAULT_DAY_START_HOUR;
+  let endHour = CALENDAR_DEFAULT_DAY_END_HOUR;
+
+  for (const inst of instances) {
+    const start = new Date(inst.time);
+    const dur = inst.class.durationMinutes ?? 60;
+    const instStartHour = start.getHours();
+    const endInstant = new Date(start.getTime() + dur * 60_000);
+    const lastOccupiedMinute = new Date(endInstant.getTime() - 1);
+    const instEndHour = lastOccupiedMinute.getHours();
+
+    if (instStartHour < CALENDAR_DEFAULT_DAY_START_HOUR) {
+      startHour = Math.min(startHour, instStartHour);
+    }
+    if (instEndHour > CALENDAR_DEFAULT_DAY_END_HOUR) {
+      endHour = Math.max(endHour, instEndHour);
+    }
+  }
+
+  return { startHour, endHour };
 }
 
 /** 12-hour label for a week-grid hour index (0–23). */
@@ -76,15 +110,15 @@ export function formatCalendarHourLabel(hour: number): string {
   return `${hour} AM`;
 }
 
-/** Minutes from CALENDAR_DAY_START_HOUR local on `day` to `instant` (local). */
-export function minutesFromDayStart(day: Date, instant: Date): number {
+/** Minutes from `gridStartHour` local on `day` to `instant` (local). */
+export function minutesFromGridStart(day: Date, instant: Date, gridStartHour: number): number {
   const start = new Date(day);
-  start.setHours(CALENDAR_DAY_START_HOUR, 0, 0, 0);
+  start.setHours(gridStartHour, 0, 0, 0);
   return Math.round((instant.getTime() - start.getTime()) / 60000);
 }
 
-export function totalCalendarMinutes(): number {
-  return calendarHourCount() * 60;
+export function totalCalendarMinutes(range: CalendarHourRange): number {
+  return calendarHourCount(range) * 60;
 }
 
 export function isSameLocalDay(a: Date, b: Date): boolean {

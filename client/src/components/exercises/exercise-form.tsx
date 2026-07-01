@@ -1257,6 +1257,58 @@ export function ExerciseForm({
           </div>
 
           <div className="space-y-2">
+            <Controller
+              control={control}
+              name="progressionNotes"
+              render={({ field }) => (
+                <BulletTextarea
+                bulletsEnabled={false}
+                  id="progressionNotes"
+                  label={
+                    <Label
+                      htmlFor="progressionNotes"
+                      className="pl-1.5 text-sm font-medium text-foreground"
+                    >
+                      Progression notes
+                    </Label>
+                  }
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="How to make this exercise harder (load, range, tempo, props…)"
+                  rows={3}
+                  className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                />
+              )}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Controller
+              control={control}
+              name="regressionNotes"
+              render={({ field }) => (
+                <BulletTextarea
+                bulletsEnabled={false}
+                  id="regressionNotes"
+                  label={
+                    <Label
+                      htmlFor="regressionNotes"
+                      className="pl-1.5 text-sm font-medium text-foreground"
+                    >
+                      Regression notes
+                    </Label>
+                  }
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="How to make this exercise easier (modifications, support, range…)"
+                  rows={3}
+                  className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                />
+              )}
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="transitionCues" className="pl-1.5 text-sm font-medium text-foreground">
               Transition Cues
             </Label>
@@ -1491,57 +1543,7 @@ export function ExerciseForm({
             </p>
           </div> */}
 
-          <div className="space-y-2">
-            <Controller
-              control={control}
-              name="progressionNotes"
-              render={({ field }) => (
-                <BulletTextarea
-                bulletsEnabled={false}
-                  id="progressionNotes"
-                  label={
-                    <Label
-                      htmlFor="progressionNotes"
-                      className="pl-1.5 text-sm font-medium text-foreground"
-                    >
-                      Progression notes
-                    </Label>
-                  }
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  placeholder="How to make this exercise harder (load, range, tempo, props…)"
-                  rows={3}
-                  className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
-                />
-              )}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Controller
-              control={control}
-              name="regressionNotes"
-              render={({ field }) => (
-                <BulletTextarea
-                bulletsEnabled={false}
-                  id="regressionNotes"
-                  label={
-                    <Label
-                      htmlFor="regressionNotes"
-                      className="pl-1.5 text-sm font-medium text-foreground"
-                    >
-                      Regression notes
-                    </Label>
-                  }
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  placeholder="How to make this exercise easier (modifications, support, range…)"
-                  rows={3}
-                  className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
-                />
-              )}
-            />
-          </div>
+        
 
           <div className="space-y-2">
             <Label className="pl-1.5 text-sm font-medium text-foreground">

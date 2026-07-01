@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Clock } from "lucide-react";
 
 import {
@@ -13,22 +14,18 @@ import {
   weekGridEventStatusClasses,
 } from "@/lib/calendar-instance-status-styles";
 import {
-  CALENDAR_DAY_END_HOUR,
-  CALENDAR_DAY_START_HOUR,
   calendarDayColumnHeightPx,
+  computeCalendarHourRange,
   formatCalendarHourLabel,
   formatYmdLocal,
   hourSlots,
   instanceLocalDayKey,
   isPastCalendarHourSlot,
   isSameLocalDay,
-  minutesFromDayStart,
+  minutesFromGridStart,
   totalCalendarMinutes,
 } from "@/lib/calendar-utils";
 import { cn } from "@/lib/utils";
-
-/** Matches day column `height` — used to map % height → px for layout and radius. */
-const CALENDAR_DAY_COLUMN_HEIGHT_PX = calendarDayColumnHeightPx();
 
 /** Floor height so short classes stay readable (may overlap following non-overlapping events slightly). */
 const MIN_EVENT_HEIGHT_PX = 36;
@@ -50,11 +47,13 @@ export type CalendarEventLayout = {
 function layoutDayInstances(
   day: Date,
   instances: CalendarClassInstance[],
-  totalMin: number
+  totalMin: number,
+  gridStartHour: number,
+  columnHeightPx: number
 ): Map<string, CalendarEventLayout> {
   type Node = { id: string; inst: CalendarClassInstance; start: number; end: number };
   const nodes: Node[] = instances.map((inst) => {
-    const rawStart = minutesFromDayStart(day, new Date(inst.time));
+    const rawStart = minutesFromGridStart(day, new Date(inst.time), gridStartHour);
     const dur = inst.class.durationMinutes ?? 60;
     const start = Math.max(0, Math.min(rawStart, totalMin - 1));
     const end = Math.min(Math.max(start + dur, start + 1), totalMin);
@@ -72,7 +71,7 @@ function layoutDayInstances(
     greedyCol.set(n.id, c);
   }
 
-  const minHPct = (MIN_EVENT_HEIGHT_PX / CALENDAR_DAY_COLUMN_HEIGHT_PX) * 100;
+  const minHPct = (MIN_EVENT_HEIGHT_PX / columnHeightPx) * 100;
   const out = new Map<string, CalendarEventLayout>();
 
   for (const n of nodes) {
@@ -107,6 +106,7 @@ export interface CalendarEventBlockProps {
   instance: CalendarClassInstance;
   onSelect: (id: string) => void;
   layout: CalendarEventLayout;
+  columnHeightPx: number;
 }
 
 function CalendarEventTooltipContent({
@@ -164,12 +164,12 @@ function CalendarEventTooltipContent({
   );
 }
 
-export function CalendarEventBlock({ instance, onSelect, layout }: CalendarEventBlockProps) {
+export function CalendarEventBlock({ instance, onSelect, layout, columnHeightPx }: CalendarEventBlockProps) {
   const start = new Date(instance.time);
   const durationMin = instance.class.durationMinutes ?? 60;
   const { top, heightPct, col, cols } = layout;
 
-  const approxHeightPx = (heightPct / 100) * CALENDAR_DAY_COLUMN_HEIGHT_PX;
+  const approxHeightPx = (heightPct / 100) * columnHeightPx;
   const borderRadiusPx = Math.min(Math.max(approxHeightPx * 0.22, 3), 12);
 
   const veryTight = approxHeightPx < 42;
@@ -319,8 +319,14 @@ export function CalendarWeekView({
     return startOfLocalDay(d);
   });
 
-  const hours = hourSlots();
-  const total = totalCalendarMinutes();
+  const hourRange = useMemo(() => computeCalendarHourRange(instances), [instances]);
+  const hours = useMemo(() => hourSlots(hourRange), [hourRange]);
+  const total = useMemo(() => totalCalendarMinutes(hourRange), [hourRange]);
+  const columnHeightPx = useMemo(
+    () => calendarDayColumnHeightPx(hourRange),
+    [hourRange]
+  );
+  const { startHour: gridStartHour, endHour: gridEndHour } = hourRange;
 
   const instancesByDay = new Map<string, CalendarClassInstance[]>();
   for (const inst of instances) {
@@ -368,12 +374,12 @@ export function CalendarWeekView({
 
         <div
           className="relative border-r border-border/70 bg-muted/15"
-          style={{ height: `${CALENDAR_DAY_COLUMN_HEIGHT_PX}px` }}
+          style={{ height: `${columnHeightPx}px` }}
         >
           {hours.map((h) => {
-            const top = ((h - CALENDAR_DAY_START_HOUR) * 60) / total;
-            const isFirst = h === CALENDAR_DAY_START_HOUR;
-            const isLast = h === CALENDAR_DAY_END_HOUR;
+            const top = ((h - gridStartHour) * 60) / total;
+            const isFirst = h === gridStartHour;
+            const isLast = h === gridEndHour;
             return (
               <div
                 key={h}
@@ -397,7 +403,7 @@ export function CalendarWeekView({
           const ymd = formatYmdLocal(d);
           const isToday = isSameLocalDay(d, today);
           const dayInstances = instancesByDay.get(ymd) ?? [];
-          const layout = layoutDayInstances(d, dayInstances, total);
+          const layout = layoutDayInstances(d, dayInstances, total, gridStartHour, columnHeightPx);
           return (
             <div
               key={ymd}
@@ -405,10 +411,10 @@ export function CalendarWeekView({
                 "relative border-l border-border/70",
                 isToday ? "bg-primary/2" : "bg-background/40"
               )}
-              style={{ height: `${CALENDAR_DAY_COLUMN_HEIGHT_PX}px` }}
+              style={{ height: `${columnHeightPx}px` }}
             >
               {hours.map((h) => {
-                const top = ((h - CALENDAR_DAY_START_HOUR) * 60) / total;
+                const top = ((h - gridStartHour) * 60) / total;
                 const isPastSlot = isPastCalendarHourSlot(d, h);
                 return (
                   <button
@@ -440,6 +446,7 @@ export function CalendarWeekView({
                     instance={inst}
                     onSelect={onSelectInstance}
                     layout={L}
+                    columnHeightPx={columnHeightPx}
                   />
                 );
               })}

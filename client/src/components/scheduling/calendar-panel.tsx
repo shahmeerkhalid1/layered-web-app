@@ -75,7 +75,7 @@ export function CalendarPanel({
         ) : null}
 
         {!loading && !error && classCount === 0 ? (
-          <div className="mb-5 flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/15 px-6 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div className="mb-5 flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-background px-6 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
             <div className="flex flex-col items-center sm:flex-row sm:items-center sm:gap-3">
               <CalendarDays className="size-8 text-muted-foreground/50" aria-hidden />
               <div>

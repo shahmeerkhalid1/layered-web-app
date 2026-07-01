@@ -300,7 +300,7 @@ export function WeekOverviewPanel({
         ) : null}
 
         {!loading && !error && stats.totalClasses === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/15 px-6 py-14 text-center">
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-background px-6 py-14 text-center">
             <CalendarDays className="size-10 text-muted-foreground/50" aria-hidden />
             <p className="mt-4 font-medium text-foreground">Nothing scheduled this week</p>
             <p className="mt-1 max-w-sm text-sm text-muted-foreground">

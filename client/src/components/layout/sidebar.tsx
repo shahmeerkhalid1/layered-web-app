@@ -235,18 +235,19 @@ export function Sidebar() {
             className={cn("cursor-pointer", collapsed && "flex justify-center")}
           >
             {collapsed ? (
-              <Image
-                src="/web-app-manifest-192x192.png"
-                alt="Layered."
-                width={36}
-                height={36}
-                className="size-9 rounded-xl"
-              />
+              // <Image
+              //   src="/web-app-manifest-192x192.png"
+              //   alt="Layered."
+              //   width={36}
+              //   height={36}
+              //   className="size-9 rounded-xl"
+              // />
+              <div className="w-8 h-8 bg-[#1b3c9b] rounded-full"></div>
             ) : (
              <>
              <Image
             src="/layered-dark-logo.png"
-            alt="Layered."
+            alt="Layered Planning Logo"
             width={180}
             height={100}
             className="ms-2 h-auto w-[155px] dark:hidden"
@@ -254,12 +255,14 @@ export function Sidebar() {
           />
           <Image
             src="/layered-light-logo.png"
-            alt="Layered."
+            alt="Layered Planning Logo"
             width={180}
             height={100}
             className="ms-2 hidden h-auto w-[155px] dark:block"
             priority
-          /></>
+          />
+          
+          </>
             )}
           </Link>
           {isMobileDrawer ? (
