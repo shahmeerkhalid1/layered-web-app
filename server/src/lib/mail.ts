@@ -63,9 +63,9 @@ export async function sendInviteEmail(input: SendInviteEmailInput): Promise<Send
   }
 
   const roleLabel = formatRoleLabel(input.role);
-  const subject = "You're invited to Pilates Platform";
+  const subject = "You're invited to join Layered Planning";
   const text = [
-    `You've been invited to join Pilates Platform with the role: ${roleLabel}.`,
+    `You've been invited to join Layered Planning with the role: ${roleLabel}.`,
     "",
     "Register using this link (valid for 7 days):",
     input.inviteLink,
@@ -74,13 +74,22 @@ export async function sendInviteEmail(input: SendInviteEmailInput): Promise<Send
   ].join("\n");
 
   const hrefAttr = input.inviteLink.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-  const roleHtml = roleLabel.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const html = `
-    <p>You've been invited to join <strong>Pilates Platform</strong> with the role: <strong>${roleHtml}</strong>.</p>
-    <p><a href="${hrefAttr}">Complete your registration</a></p>
-    <p>This link expires in 7 days.</p>
-    <p style="color:#666;font-size:12px;">If you did not expect this email, you can ignore it.</p>
-  `.trim();
+  const roleHtml = escapeHtml(roleLabel);
+  const body = `
+    <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#111827;">You're invited!</h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#6b7280;">Join Layered Planning as an ${roleHtml}</p>
+    <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6;">You've been invited to join <strong>Layered Planning</strong> — the platform for managing your Pilates practice, classes, and clients.</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+      <tr>
+        <td style="background-color:#1b3c9b;border-radius:9999px;padding:14px 32px;">
+          <a href="${hrefAttr}" style="color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;display:inline-block;">Complete Registration</a>
+        </td>
+      </tr>
+    </table>
+    <p style="margin:0 0 4px;font-size:13px;color:#9ca3af;">This invitation expires in 7 days.</p>
+    <p style="margin:0;font-size:13px;color:#9ca3af;">If you did not expect this email, you can safely ignore it.</p>
+  `;
+  const html = emailLayout(body);
 
   try {
     const transport = createTransport();
@@ -106,7 +115,7 @@ export async function sendPasswordResetEmail(
     return { ok: false, message: "SMTP is not configured" };
   }
 
-  const subject = "Reset your Layered. password";
+  const subject = "Password Reset Request";
   const text = [
     "We received a request to reset your password.",
     "",
@@ -117,12 +126,21 @@ export async function sendPasswordResetEmail(
   ].join("\n");
 
   const hrefAttr = input.resetLink.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-  const html = `
-    <p>We received a request to reset your password for <strong>Layered.</strong></p>
-    <p><a href="${hrefAttr}">Choose a new password</a></p>
-    <p>This link expires in 1 hour.</p>
-    <p style="color:#666;font-size:12px;">If you did not request this, you can ignore this email.</p>
-  `.trim();
+  const body = `
+    <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#111827;">Reset your password</h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#6b7280;">We received a request to reset your password</p>
+    <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6;">Click the button below to choose a new password for your Layered Planning account. If you didn't request this, you can safely ignore this email.</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+      <tr>
+        <td style="background-color:#1b3c9b;border-radius:9999px;padding:14px 32px;">
+          <a href="${hrefAttr}" style="color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;display:inline-block;">Choose New Password</a>
+        </td>
+      </tr>
+    </table>
+    <p style="margin:0 0 4px;font-size:13px;color:#9ca3af;">This link expires in 1 hour.</p>
+    <p style="margin:0;font-size:13px;color:#9ca3af;">If you did not request a password reset, no action is needed.</p>
+  `;
+  const html = emailLayout(body);
 
   try {
     const transport = createTransport();
@@ -153,8 +171,47 @@ function contentToHtmlParagraphs(content: string): string {
   if (!escaped) return "";
   return escaped
     .split(/\n/)
-    .map((line) => `<p style="margin:0 0 8px;">${line || "&nbsp;"}</p>`)
+    .map((line) => `<p style="margin:0 0 8px;color:#374151;line-height:1.6;">${line || "&nbsp;"}</p>`)
     .join("");
+}
+
+function emailLayout(body: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Layered Planning</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f3f4f6;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+          <!-- Header -->
+          <tr>
+            <td style="padding:32px 40px 24px;border-bottom:1px solid #f0f0f0;">
+              <p style="margin:0;font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#111827;">Layered Planning</p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px 40px 40px;">
+              ${body}
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 40px;background-color:#f9fafb;border-top:1px solid #f0f0f0;">
+              <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.5;">This email was sent by Layered Planning. If you have questions, reply to this email or contact your instructor.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 }
 
 export type SendSessionNoteEmailInput = {
@@ -193,7 +250,7 @@ export async function sendSessionNoteEmail(
     input.content.trim(),
     ...exerciseLines,
     "",
-    "— Layered.",
+    "— Layered Planning",
   ].join("\n");
 
   const instructorHtml = escapeHtml(input.instructorName);
@@ -203,16 +260,29 @@ export async function sendSessionNoteEmail(
   const bodyHtml = contentToHtmlParagraphs(input.content);
   const exercisesHtml =
     input.exercises.length > 0
-      ? `<p style="margin:16px 0 8px;font-weight:600;">Exercises covered</p><ul style="margin:0;padding-left:20px;">${input.exercises.map((name) => `<li>${escapeHtml(name)}</li>`).join("")}</ul>`
+      ? `
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 0;background-color:#f9fafb;border-radius:12px;padding:20px 24px;">
+          <tr>
+            <td>
+              <p style="margin:0 0 12px;font-size:14px;font-weight:600;color:#374151;">Exercises covered</p>
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                ${input.exercises.map((name) => `<tr><td style="padding:4px 0;font-size:14px;color:#4b5563;"><span style="color:#1b3c9b;margin-right:8px;font-size:16px;font-weight:600;">&#8226;</span>${escapeHtml(name)}</td></tr>`).join("")}
+              </table>
+            </td>
+          </tr>
+        </table>`
       : "";
 
-  const html = `
-    <p>Hi ${firstNameHtml},</p>
-    <p>Here is a summary from your session with <strong>${instructorHtml}</strong> on <strong>${dateHtml}</strong> (${titleHtml}).</p>
-    ${bodyHtml}
+  const body = `
+    <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#111827;">Session Summary</h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#6b7280;">${titleHtml} &middot; ${dateHtml}</p>
+    <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">Hi ${firstNameHtml}, here's a summary from your session with <strong>${instructorHtml}</strong>.</p>
+    <div style="border-left:3px solid #1b3c9b;padding-left:16px;margin:0 0 4px;">
+      ${bodyHtml}
+    </div>
     ${exercisesHtml}
-    <p style="color:#666;font-size:12px;margin-top:24px;">— Layered.</p>
-  `.trim();
+  `;
+  const html = emailLayout(body);
 
   try {
     const transport = createTransport();

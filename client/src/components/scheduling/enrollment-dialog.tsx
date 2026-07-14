@@ -268,8 +268,9 @@ export function EnrollmentDialog({
       }
       setSelectedAddIds(new Set());
       setSelectedPrivateClientId(null);
-      await load();
+      // await load();
       onUpdated?.();
+      onOpenChange(false);
     } catch {
       toast.error(isPrivate ? "Failed to assign client" : "Failed to enroll client");
     } finally {

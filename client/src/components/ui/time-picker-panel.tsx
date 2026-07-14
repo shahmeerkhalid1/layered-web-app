@@ -56,7 +56,13 @@ function TimeSelectField({
         >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
-        <SelectContent className="max-h-56">
+        <SelectContent
+          className="max-h-56"
+          align="start"
+          side="bottom"
+          sideOffset={4}
+          alignItemWithTrigger={false}
+        >
           {items.map((item) => (
             <SelectItem
               key={item}
@@ -115,24 +121,43 @@ export interface TimePickerPanelProps {
 
 export function TimePickerPanel({ value, onChange, minTime }: TimePickerPanelProps) {
   const hasValue = Boolean(value?.trim());
-  const date = hasValue ? hmToDate(value) : null;
-  const hour12 = date ? getDateByType(date, "12hours") : undefined;
-  const minute = date ? getDateByType(date, "minutes") : undefined;
-  const period: Period | undefined = date
-    ? date.getHours() >= 12
+  // When empty but minTime is set (e.g. today), show minTime in the panel as a
+  // starting point so the first partial selection does not default to 12:00 AM
+  // and get clamped to "now".
+  const baselineDate = hasValue
+    ? hmToDate(value)
+    : minTime
+      ? hmToDate(minTime)
+      : null;
+  const hour12 = baselineDate ? getDateByType(baselineDate, "12hours") : undefined;
+  const minute = baselineDate ? getDateByType(baselineDate, "minutes") : undefined;
+  const period: Period | undefined = baselineDate
+    ? baselineDate.getHours() >= 12
       ? "PM"
       : "AM"
     : undefined;
+
+  const fallbackParts = (): { hour12: string; minute: string; period: Period } => {
+    if (baselineDate) {
+      return {
+        hour12: getDateByType(baselineDate, "12hours"),
+        minute: getDateByType(baselineDate, "minutes"),
+        period: baselineDate.getHours() >= 12 ? "PM" : "AM",
+      };
+    }
+    return { hour12: "12", minute: "00", period: "AM" };
+  };
 
   const update = (
     nextHour?: string,
     nextMinute?: string,
     nextPeriod?: Period
   ) => {
+    const defaults = fallbackParts();
     const result = applyTimeParts(
-      nextHour ?? hour12 ?? "12",
-      nextMinute ?? minute ?? "00",
-      nextPeriod ?? period ?? "AM"
+      nextHour ?? hour12 ?? defaults.hour12,
+      nextMinute ?? minute ?? defaults.minute,
+      nextPeriod ?? period ?? defaults.period
     );
     if (minTime && compareHm(result, minTime) < 0) {
       onChange(minTime);
@@ -159,7 +184,7 @@ export function TimePickerPanel({ value, onChange, minTime }: TimePickerPanelPro
 
   return (
     <div
-      key={hasValue ? value : "empty"}
+      key={hasValue ? "filled" : "empty"}
       className="grid grid-cols-[1fr_auto_1fr_1fr] items-end gap-2 p-3"
     >
       <TimeSelectField
