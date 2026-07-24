@@ -63,7 +63,7 @@ export function ExerciseLibraryPagination(
   if (!props || !("onPageChange" in props) || !props.onPageChange) {
     return (
       <nav aria-label={previewAriaLabel} className={NAV_CLASS}>
-        <p className="order-2 text-sm text-muted-foreground sm:order-1">
+        <p className="order-2 text-sm text-muted-foreground sm:order-1 bg-primary p-2 rounded-md">
           Page <span className="font-medium text-foreground">1</span> of{" "}
           <span className="font-medium text-foreground">10</span>
         </p>
@@ -143,7 +143,7 @@ export function ExerciseLibraryPagination(
 
   return (
     <nav aria-label={ariaLabel} className={NAV_CLASS}>
-      <p className="order-2 text-sm text-muted/80 dark:text-muted-foreground sm:order-1">
+      <p className="order-2 text-sm text-muted/80 dark:text-muted-foreground sm:order-1 bg-primary p-2 rounded-md">
         Page <span className="font-medium text-muted dark:text-foreground">{safePage}</span> of{" "}
         <span className="font-medium text-muted dark:text-foreground">{safeTotalPages}</span>
       </p>

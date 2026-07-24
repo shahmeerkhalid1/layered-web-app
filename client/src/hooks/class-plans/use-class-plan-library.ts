@@ -1,13 +1,16 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api";
 import { classPlanApi } from "@/services/class-plan-api";
 import { useExerciseSearch } from "@/hooks/exercises/use-exercise-search";
 import { useClassPlanFolders } from "@/hooks/class-plans/use-class-plan-folders";
 import { useClassPlanList } from "@/hooks/class-plans/use-class-plan-list";
 
 export function useClassPlanLibrary() {
+  const router = useRouter();
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [classTypeFilter, setClassTypeFilter] = useState("");
   const [classStyleFilter, setClassStyleFilter] = useState("");
@@ -53,11 +56,20 @@ export function useClassPlanLibrary() {
           templateList.refreshTemplates(),
           folderState.refreshFolders(),
         ]);
-      } catch {
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 403) {
+          toast.error(err.message, {
+            action: {
+              label: "Upgrade",
+              onClick: () => router.push("/billing"),
+            },
+          });
+          return;
+        }
         toast.error("Failed to duplicate class plan");
       }
     },
-    [folderState, templateList]
+    [folderState, templateList, router]
   );
 
   return {

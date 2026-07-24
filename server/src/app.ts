@@ -21,6 +21,8 @@ import sessionNoteRoutes from "./modules/session-notes/session-note.routes";
 import profileRoutes from "./modules/profile/profile.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 import passwordResetRoutes from "./modules/auth/password-reset.routes";
+import subscriptionRoutes from "./modules/subscriptions/subscription.routes";
+import { stripeWebhookHandler } from "./modules/subscriptions/subscription.webhook";
 
 const app = express();
 
@@ -32,6 +34,12 @@ app.use(
 );
 
 app.all("/api/auth/*", toNodeHandler(auth));
+
+app.post(
+  "/api/webhooks/stripe",
+  express.raw({ type: "application/json" }),
+  stripeWebhookHandler
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -71,6 +79,7 @@ app.use("/api/clients", clientRoutes);
 app.use("/api/session-notes", sessionNoteRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/dropdowns", authenticate, dropdownRoutes);
 app.use(errorHandler);
 

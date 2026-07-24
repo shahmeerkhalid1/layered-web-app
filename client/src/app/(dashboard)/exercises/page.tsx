@@ -1,20 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Exercise, ExerciseFolder } from "@/lib/types";
+import { SubscriptionUpgradeBanner } from "@/components/billing/subscription-upgrade-banner";
 import { ExerciseLibraryHeader } from "@/components/exercises/exercise-library-header";
 import { ExerciseLibraryPagination } from "@/components/exercises/exercise-library-pagination";
 import { ExerciseList } from "@/components/exercises/exercise-list";
 import { FolderDialog } from "@/components/exercises/folder-dialog";
 import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 import { useExerciseLibrary } from "@/hooks/exercises/use-exercise-library";
+import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 
 export default function ExercisesPage() {
+  const router = useRouter();
   const library = useExerciseLibrary();
+  const { status: subscriptionStatus, exerciseQuotaReached } =
+    useSubscriptionStatus();
   const { folderDialog } = library;
   const [deleteExerciseTarget, setDeleteExerciseTarget] = useState<Exercise | null>(null);
   const [deleteFolderTarget, setDeleteFolderTarget] = useState<ExerciseFolder | null>(null);
   const [deletePending, setDeletePending] = useState(false);
+
+  const openNewExercise = useCallback(() => {
+    if (exerciseQuotaReached) {
+      router.push("/billing");
+      return;
+    }
+    router.push("/exercises/new");
+  }, [exerciseQuotaReached, router]);
+
+  const exerciseLimit = subscriptionStatus?.exerciseLimit ?? 5;
+  const exerciseCount =
+    subscriptionStatus?.exerciseCount ?? library.totalExerciseCount ?? 0;
 
   const hasActiveFilters =
     library.selectedFolder !== null || library.search.trim().length > 0;
@@ -29,6 +47,14 @@ export default function ExercisesPage() {
 
   return (
     <div className="space-y-6 rounded-[2rem] px-2 pb-6 sm:px-4">
+      {exerciseQuotaReached ? (
+        <SubscriptionUpgradeBanner
+          resourceLabel="exercises"
+          count={exerciseCount}
+          limit={exerciseLimit}
+        />
+      ) : null}
+
       <ExerciseLibraryHeader
         totalExercises={library.listTotalCount ?? library.totalExerciseCount}
         folderCount={library.folders.length}
@@ -44,6 +70,8 @@ export default function ExercisesPage() {
         onSelectFolder={library.setSelectedFolder}
         onEditFolder={folderDialog.openEdit}
         onRequestDeleteFolder={setDeleteFolderTarget}
+        onNewExercise={openNewExercise}
+        createDisabled={exerciseQuotaReached}
       />
 
       <ExerciseList

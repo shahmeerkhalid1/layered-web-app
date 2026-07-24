@@ -128,14 +128,34 @@ async function seedDropdownDefaults() {
   console.log("Seeded dropdown categories and default options");
 }
 
+async function seedSubscriptions() {
+  const instructorsWithout = await prisma.instructor.findMany({
+    where: { subscription: { is: null } },
+    select: { id: true },
+  });
+
+  if (instructorsWithout.length === 0) {
+    console.log("All instructors already have subscription records");
+    return;
+  }
+
+  await prisma.subscription.createMany({
+    data: instructorsWithout.map((instructor) => ({
+      instructorId: instructor.id,
+      status: "free",
+    })),
+  });
+  console.log(`Backfilled ${instructorsWithout.length} free subscription(s)`);
+}
+
 async function main() {
-  // Seed default platform settings
+  // Seed default platform settings — open signup for freemium MVP
   await prisma.platformSetting.upsert({
     where: { key: "signupEnabled" },
-    update: {},
-    create: { key: "signupEnabled", value: "false" },
+    update: { value: "true" },
+    create: { key: "signupEnabled", value: "true" },
   });
-  console.log("Seeded platform setting: signupEnabled = false");
+  console.log("Seeded platform setting: signupEnabled = true");
 
   // Promote the first registered user to ADMIN (if one exists and none are admin yet)
   const adminExists = await prisma.instructor.findFirst({
@@ -164,6 +184,7 @@ async function main() {
         "Admin password loaded from ADMIN_PASSWORD env or local seed default."
       );
       await seedDropdownDefaults();
+      await seedSubscriptions();
       return;
     }
 
@@ -185,6 +206,7 @@ async function main() {
   }
 
   await seedDropdownDefaults();
+  await seedSubscriptions();
 }
 
 main()

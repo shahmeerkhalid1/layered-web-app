@@ -742,9 +742,18 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
       toast.success(isEdit ? "Exercise updated" : "Exercise created");
       router.push(`/exercises/${exerciseId}`);
     } catch (e) {
-      toast.error(
-        e instanceof ApiError ? e.message : "Failed to save exercise"
-      );
+      if (e instanceof ApiError && e.status === 403 && !isEdit) {
+        toast.error(e.message, {
+          action: {
+            label: "Upgrade",
+            onClick: () => router.push("/billing"),
+          },
+        });
+      } else {
+        toast.error(
+          e instanceof ApiError ? e.message : "Failed to save exercise"
+        );
+      }
     }
   },
     onSubmitInvalid

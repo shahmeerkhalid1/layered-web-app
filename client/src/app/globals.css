@@ -145,8 +145,8 @@
   --sidebar-ring:           oklch(0.3971 0.1597 265.04);
 
   /* Form fields */
-  --field-empty:            oklch(0.985 0.008 85);
-  --field-filled:           oklch(0.94 0.015 85);
+  --field-empty:            oklch(0.965 0.012 85);
+  --field-filled:           oklch(0.925 0.015 85);
 
   /* Radius */
   --radius:                 0.625rem;

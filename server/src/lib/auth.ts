@@ -57,6 +57,13 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
+          await prisma.subscription.create({
+            data: {
+              instructorId: user.id,
+              status: "free",
+            },
+          });
+
           // If user signed up with an email that has a pending invitation, accept it and apply the role
           const invitation = await prisma.invitation.findFirst({
             where: { email: user.email, status: "PENDING" },

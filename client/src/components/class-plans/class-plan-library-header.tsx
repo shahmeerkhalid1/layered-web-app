@@ -43,6 +43,9 @@ export interface ClassPlanLibraryHeaderProps {
   onTagFilterChange: (value: string | null) => void;
   /** Clears search, folder, class type, style, and tag filters */
   onClearAllFilters: () => void;
+  /** When true, disable creating new class plans (free tier quota) */
+  createDisabled?: boolean;
+  createDisabledTitle?: string;
 }
 
 export function ClassPlanLibraryHeader({
@@ -68,6 +71,8 @@ export function ClassPlanLibraryHeader({
   tagFilter,
   onTagFilterChange,
   onClearAllFilters,
+  createDisabled = false,
+  createDisabledTitle = "Upgrade to create more class plans",
 }: ClassPlanLibraryHeaderProps) {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const advancedFiltersPanelId = useId();
@@ -155,10 +160,13 @@ export function ClassPlanLibraryHeader({
           </Button>
           <button
             type="button"
-            onClick={onNewPlan}
+            onClick={createDisabled ? undefined : onNewPlan}
+            disabled={createDisabled}
+            title={createDisabled ? createDisabledTitle : undefined}
             className={cn(
               buttonVariants({ variant: "default" }),
-              "inline-flex h-10 items-center justify-center rounded-full px-5 text-primary-foreground shadow-md hover:bg-primary/90"
+              "inline-flex h-10 items-center justify-center rounded-full px-5 text-primary-foreground shadow-md hover:bg-primary/90",
+              createDisabled && "pointer-events-none opacity-50"
             )}
           >
             <Plus className="mr-2 size-4" />

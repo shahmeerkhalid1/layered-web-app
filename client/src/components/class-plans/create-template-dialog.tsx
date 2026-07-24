@@ -157,6 +157,15 @@ export function CreateTemplateDialog({
       onCreated?.();
       router.push(`/class-plans/${created.id}`);
     } catch (e) {
+      if (e instanceof ApiError && e.status === 403) {
+        toast.error(e.message, {
+          action: {
+            label: "Upgrade",
+            onClick: () => router.push("/billing"),
+          },
+        });
+        return;
+      }
       toast.error(e instanceof ApiError ? e.message : "Failed to create class plan");
     }
   };

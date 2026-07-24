@@ -10,6 +10,7 @@ import {
   UserPlus,
   Calendar,
   CalendarDays,
+  CreditCard,
   Dumbbell,
   FileText,
   KeyRound,
@@ -60,6 +61,7 @@ const navItems: MainNavItem[] = [
   { href: "/class-plans", label: "Class Plans", icon: FileText },
   { href: "/exercises", label: "Exercises Library", icon: Dumbbell },
   { href: "/clients", label: "Clients", icon: Users },
+  { href: "/billing", label: "Billing", icon: CreditCard },
 ];
 
 const adminNavItems = [

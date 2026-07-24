@@ -425,3 +425,33 @@ export interface DashboardNotificationsResponse {
   missingNotes: DashboardNotificationItem[];
   upcoming: DashboardNotificationItem[];
 }
+
+// ─── Billing / Subscriptions ─────────────────────────────────────────────────
+
+export type SubscriptionTier = "free" | "active" | "past_due" | "canceled";
+
+export interface SubscriptionPricing {
+  monthly: number;
+  annualMonthlyEquivalent: number;
+  annualTotal: number;
+  annualSavingsPercent: number;
+  annualSavingsAmount: number;
+}
+
+export interface SubscriptionStatus {
+  tier: SubscriptionTier;
+  billingInterval: "month" | "year" | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  classPlanCount: number;
+  classPlanLimit: number | null;
+  exerciseCount: number;
+  exerciseLimit: number | null;
+  clientCount: number;
+  clientLimit: number | null;
+  currency: "NZD";
+  pricing: SubscriptionPricing;
+  canUpgrade: boolean;
+  canManage: boolean;
+}
+

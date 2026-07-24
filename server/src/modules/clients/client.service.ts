@@ -2,6 +2,7 @@ import { prisma } from "../../lib/prisma";
 import { ConflictError, NotFoundError, ValidationError } from "../../lib/errors";
 import { getClassIdsWithUpcomingScheduledInstances } from "../../lib/upcoming-instances";
 import { activeEnrollmentFilter } from "../../lib/enrollment-scope";
+import { assertClientQuota } from "../subscriptions/subscription.service";
 import type {
   CreateClientInput,
   UpdateClientInput,
@@ -41,6 +42,8 @@ function listClientsWhere(
 }
 
 export async function createClient(instructorId: string, input: CreateClientInput) {
+  await assertClientQuota(instructorId);
+
   const email = input.email.trim();
 
   const existing = await prisma.client.findFirst({

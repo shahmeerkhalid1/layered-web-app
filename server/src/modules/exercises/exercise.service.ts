@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma";
+import { assertExerciseQuota } from "../subscriptions/subscription.service";
 import { ConflictError, NotFoundError } from "../../lib/errors";
 import { deleteObject } from "../../lib/storage";
 import type {
@@ -122,6 +123,10 @@ export async function saveExerciseToLibrary(
   });
   if (!exercise) throw new NotFoundError("Exercise");
 
+  if (!exercise.savedToLibrary) {
+    await assertExerciseQuota(instructorId);
+  }
+
   if (data.folderId !== undefined && data.folderId !== null) {
     await assertExerciseFolderOwned(data.folderId, instructorId);
   }
@@ -169,6 +174,7 @@ export async function createExercise(
 ) {
   const { layers, savedToLibrary, ...rest } = data;
   if (savedToLibrary !== false) {
+    await assertExerciseQuota(instructorId);
     await assertUniqueExerciseName(instructorId, rest.name);
   }
   return prisma.exercise.create({
@@ -207,6 +213,10 @@ export async function updateExercise(
   const willBeInLibrary =
     savedToLibrary === true ||
     (savedToLibrary !== false && exercise.savedToLibrary);
+
+  if (!exercise.savedToLibrary && willBeInLibrary) {
+    await assertExerciseQuota(instructorId);
+  }
 
   if (willBeInLibrary) {
     const nameToCheck = rest.name ?? exercise.name;

@@ -14,6 +14,9 @@ export interface ClientLibraryHeaderProps {
   hasActiveFilters: boolean;
   search: string;
   onSearchChange: (value: string) => void;
+  onNewClient?: () => void;
+  createDisabled?: boolean;
+  createDisabledTitle?: string;
 }
 
 export function ClientLibraryHeader({
@@ -23,6 +26,9 @@ export function ClientLibraryHeader({
   hasActiveFilters,
   search,
   onSearchChange,
+  onNewClient,
+  createDisabled = false,
+  createDisabledTitle = "Upgrade to add more clients",
 }: ClientLibraryHeaderProps) {
   const totalKnown = totalClients !== undefined;
   const total = totalClients ?? 0;
@@ -57,13 +63,30 @@ export function ClientLibraryHeader({
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <Link
-            href="/clients/new"
-            className={cn(buttonVariants({ size: "sm" }), "rounded-full px-4")}
-          >
-            <Plus className="mr-2 size-4" />
-            New client
-          </Link>
+          {onNewClient ? (
+            <button
+              type="button"
+              onClick={createDisabled ? undefined : onNewClient}
+              disabled={createDisabled}
+              title={createDisabled ? createDisabledTitle : undefined}
+              className={cn(
+                buttonVariants({ size: "sm" }),
+                "rounded-full px-4",
+                createDisabled && "pointer-events-none opacity-50"
+              )}
+            >
+              <Plus className="mr-2 size-4" />
+              New client
+            </button>
+          ) : (
+            <Link
+              href="/clients/new"
+              className={cn(buttonVariants({ size: "sm" }), "rounded-full px-4")}
+            >
+              <Plus className="mr-2 size-4" />
+              New client
+            </Link>
+          )}
         </div>
       </div>
 

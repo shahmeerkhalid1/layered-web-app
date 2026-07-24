@@ -14,6 +14,10 @@ interface ClassPlanListProps {
   /** True when the library has plans but the current filters yield none */
   showFilteredEmpty?: boolean;
   onClearFilters?: () => void;
+  duplicateDisabled?: boolean;
+  duplicateDisabledTitle?: string;
+  createDisabled?: boolean;
+  createDisabledTitle?: string;
 }
 
 export function ClassPlanList({
@@ -24,6 +28,10 @@ export function ClassPlanList({
   onNewPlan,
   showFilteredEmpty,
   onClearFilters,
+  duplicateDisabled = false,
+  duplicateDisabledTitle = "Upgrade to duplicate class plans",
+  createDisabled = false,
+  createDisabledTitle = "Upgrade to create more class plans",
 }: ClassPlanListProps) {
   if (loading) {
     return <ClassPlanListSkeleton />;
@@ -33,7 +41,7 @@ export function ClassPlanList({
     if (showFilteredEmpty && onClearFilters) {
       return <ClassPlanFilteredEmptyState onClearFilters={onClearFilters} />;
     }
-    return <ClassPlanEmptyState onNewPlan={onNewPlan} />;
+    return <ClassPlanEmptyState onNewPlan={onNewPlan} createDisabled={createDisabled} createDisabledTitle={createDisabledTitle} />;
   }
 
   return (
@@ -44,6 +52,8 @@ export function ClassPlanList({
           template={template}
           onDuplicate={onDuplicate}
           onRequestDelete={onRequestDelete}
+          duplicateDisabled={duplicateDisabled}
+          duplicateDisabledTitle={duplicateDisabledTitle}
         />
       ))}
     </div>
@@ -91,7 +101,15 @@ function ClassPlanFilteredEmptyState({ onClearFilters }: { onClearFilters: () =>
   );
 }
 
-function ClassPlanEmptyState({ onNewPlan }: { onNewPlan?: () => void }) {
+function ClassPlanEmptyState({
+  onNewPlan,
+  createDisabled = false,
+  createDisabledTitle = "Upgrade to create more class plans",
+}: {
+  onNewPlan?: () => void;
+  createDisabled?: boolean;
+  createDisabledTitle?: string;
+}) {
   return (
     <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card px-6 py-14 text-center shadow-lg">
       <div className="flex size-14 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
@@ -110,7 +128,9 @@ function ClassPlanEmptyState({ onNewPlan }: { onNewPlan?: () => void }) {
             type="button"
             size="sm"
             className="rounded-full bg-primary px-4 text-primary-foreground hover:bg-primary/90"
-            onClick={onNewPlan}
+            onClick={createDisabled ? undefined : onNewPlan}
+            disabled={createDisabled}
+            title={createDisabled ? createDisabledTitle : undefined}
           >
             New plan
           </Button>

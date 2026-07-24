@@ -34,6 +34,9 @@ export interface ExerciseLibraryHeaderProps {
   onSelectFolder: (folderId: string | null) => void;
   onEditFolder: (folder: ExerciseFolder) => void;
   onRequestDeleteFolder: (folder: ExerciseFolder) => void;
+  onNewExercise?: () => void;
+  createDisabled?: boolean;
+  createDisabledTitle?: string;
 }
 
 export function ExerciseLibraryHeader({
@@ -51,6 +54,9 @@ export function ExerciseLibraryHeader({
   onSelectFolder,
   onEditFolder,
   onRequestDeleteFolder,
+  onNewExercise,
+  createDisabled = false,
+  createDisabledTitle = "Upgrade to create more exercises",
 }: ExerciseLibraryHeaderProps) {
   const totalKnown = totalExercises !== undefined;
   const total = totalExercises ?? 0;
@@ -122,16 +128,33 @@ export function ExerciseLibraryHeader({
             <FolderPlus className="mr-2 size-4" />
             New folder
           </Button>
-          <Link
-            href="/exercises/new"
-            className={cn(
-              buttonVariants({ variant: "default" }),
-              "inline-flex h-10 items-center justify-center rounded-full px-5 text-primary-foreground shadow-md hover:bg-primary/90",
-            )}
-          >
-            <Plus className="mr-2 size-4" />
-            New exercise
-          </Link>
+          {onNewExercise ? (
+            <button
+              type="button"
+              onClick={createDisabled ? undefined : onNewExercise}
+              disabled={createDisabled}
+              title={createDisabled ? createDisabledTitle : undefined}
+              className={cn(
+                buttonVariants({ variant: "default" }),
+                "inline-flex h-10 items-center justify-center rounded-full px-5 text-primary-foreground shadow-md hover:bg-primary/90",
+                createDisabled && "pointer-events-none opacity-50"
+              )}
+            >
+              <Plus className="mr-2 size-4" />
+              New exercise
+            </button>
+          ) : (
+            <Link
+              href="/exercises/new"
+              className={cn(
+                buttonVariants({ variant: "default" }),
+                "inline-flex h-10 items-center justify-center rounded-full px-5 text-primary-foreground shadow-md hover:bg-primary/90",
+              )}
+            >
+              <Plus className="mr-2 size-4" />
+              New exercise
+            </Link>
+          )}
         </div>
       </div>
 

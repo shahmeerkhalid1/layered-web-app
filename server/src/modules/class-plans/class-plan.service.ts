@@ -1,5 +1,6 @@
 import { prisma } from "../../lib/prisma";
-import { ConflictError, NotFoundError } from "../../lib/errors";
+import { ConflictError, ForbiddenError, NotFoundError } from "../../lib/errors";
+import { assertClassPlanQuota } from "../subscriptions/subscription.service";
 import {
   assertUniquePlanSectionName,
   assertUniqueSectionNamesInPayload,
@@ -151,6 +152,8 @@ export async function createClassPlan(
   instructorId: string,
   data: CreateClassPlanInput
 ) {
+  await assertClassPlanQuota(instructorId);
+
   const { sections, folderId, ...rest } = data;
 
   if (folderId) {
@@ -351,6 +354,8 @@ export async function deleteClassPlan(id: string, instructorId: string) {
 }
 
 export async function duplicateClassPlan(id: string, instructorId: string) {
+  await assertClassPlanQuota(instructorId);
+
   const original = await prisma.classPlanTemplate.findFirst({
     where: { id, instructorId, ...activeFilter },
     include: templateDetailInclude,

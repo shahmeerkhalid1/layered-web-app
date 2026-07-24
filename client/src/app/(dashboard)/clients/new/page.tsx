@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api";
 import { ClientForm } from "@/components/clients/client-form";
 import { Button } from "@/components/ui/button";
 import { clientApi } from "@/services/client-api";
@@ -19,8 +20,17 @@ export default function NewClientPage() {
       const client = await clientApi.createClient(values);
       toast.success("Client created");
       router.push(`/clients/${client.id}`);
-    } catch {
-      toast.error("Failed to create client");
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 403) {
+        toast.error(err.message, {
+          action: {
+            label: "Upgrade",
+            onClick: () => router.push("/billing"),
+          },
+        });
+      } else {
+        toast.error("Failed to create client");
+      }
     } finally {
       setPending(false);
     }

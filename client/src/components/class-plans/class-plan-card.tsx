@@ -16,12 +16,16 @@ interface ClassPlanCardProps {
   template: ClassPlanTemplate;
   onDuplicate: (id: string) => void;
   onRequestDelete: (template: ClassPlanTemplate) => void;
+  duplicateDisabled?: boolean;
+  duplicateDisabledTitle?: string;
 }
 
 export function ClassPlanCard({
   template,
   onDuplicate,
   onRequestDelete,
+  duplicateDisabled = false,
+  duplicateDisabledTitle = "Upgrade to duplicate class plans",
 }: ClassPlanCardProps) {
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const tags = template.tags ?? [];
@@ -178,7 +182,11 @@ export function ClassPlanCard({
             size="icon-xs"
             className="text-muted-foreground hover:bg-background/80 hover:text-foreground"
             aria-label="Duplicate plan"
-            onClick={() => onDuplicate(template.id)}
+            disabled={duplicateDisabled}
+            title={duplicateDisabled ? duplicateDisabledTitle : undefined}
+            onClick={() => {
+              if (!duplicateDisabled) onDuplicate(template.id);
+            }}
           >
             <Copy className="size-3.5" aria-hidden />
           </Button>
