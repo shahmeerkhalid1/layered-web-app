@@ -135,7 +135,7 @@ export default function ClientEditPage() {
         <Button
           type="button"
           variant="outline"
-          className="rounded-full text-destructive hover:text-destructive"
+          className="rounded text-destructive hover:text-destructive"
           onClick={() => setDeleteOpen(true)}
           disabled={pending}
         >
@@ -151,7 +151,7 @@ export default function ClientEditPage() {
         pending={pending}
       />
 
-      <section className="rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
+      <section className="rounded border border-border bg-card p-5 shadow-lg sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="font-heading text-lg font-semibold tracking-[-0.02em]">
@@ -164,7 +164,7 @@ export default function ClientEditPage() {
           <Button
             type="button"
             variant="secondary"
-            className="rounded-full"
+            className="rounded"
             onClick={() => setEnrollOpen(true)}
             disabled={pending}
           >
@@ -174,7 +174,7 @@ export default function ClientEditPage() {
         </div>
 
         {client.enrollments.length === 0 ? (
-          <div className="mt-4 rounded-2xl border border-dashed border-border/80 bg-muted/15 px-4 py-8 text-center">
+          <div className="mt-4 rounded border border-dashed border-border/80 bg-muted/15 px-4 py-8 text-center">
             <p className="text-sm text-muted-foreground">
               Not enrolled in any classes yet.
             </p>
@@ -184,7 +184,7 @@ export default function ClientEditPage() {
             {client.enrollments.map((enrollment) => (
               <li
                 key={enrollment.id}
-                className="flex flex-col gap-3 rounded-2xl border border-border bg-muted/10 p-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 rounded border border-border bg-muted/10 p-4 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
                   <p className="font-medium text-foreground">{enrollment.class.title}</p>
@@ -211,7 +211,7 @@ export default function ClientEditPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="shrink-0 rounded-full"
+                    className="shrink-0 rounded"
                     disabled={pending || !enrollment.canUnenroll}
                     onClick={() =>
                       setUnenrollTarget({
@@ -245,7 +245,7 @@ export default function ClientEditPage() {
       />
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="rounded-3xl sm:max-w-md">
+        <DialogContent className="rounded sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Archive this client?</DialogTitle>
             <DialogDescription>
@@ -257,7 +257,7 @@ export default function ClientEditPage() {
             <Button
               type="button"
               variant="outline"
-              className="rounded-full"
+              className="rounded"
               onClick={() => setDeleteOpen(false)}
             >
               Cancel
@@ -265,7 +265,7 @@ export default function ClientEditPage() {
             <Button
               type="button"
               variant="destructive"
-              className="rounded-full"
+              className="rounded"
               disabled={pending}
               onClick={() => void handleDelete()}
             >

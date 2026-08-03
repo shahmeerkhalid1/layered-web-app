@@ -70,12 +70,12 @@ export function AccountSection({
     <section
       id={id}
       className={cn(
-        "scroll-mt-24 rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6",
+        "scroll-mt-24 rounded border border-border bg-card p-5 shadow-lg sm:p-6",
         className,
       )}
     >
       <div className="flex items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
           <Icon className="size-4.5" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">

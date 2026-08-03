@@ -2,11 +2,10 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { Dumbbell, FolderPlus, Pencil, Plus, Trash2 } from "lucide-react";
+import { FolderPlus, Pencil, Plus, Trash2 } from "lucide-react";
 import type { ExerciseFolder } from "@/lib/types";
 import { ExerciseSearch } from "@/components/exercises/exercise-search";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -86,43 +85,30 @@ export function ExerciseLibraryHeader({
     return n !== undefined ? `${f.name} (${n})` : f.name;
   }, [selectedFolder, folders, totalExerciseCount]);
 
+  const subtitle = totalKnown
+    ? hasActiveFilters
+      ? `Showing ${visibleExerciseCount} of ${total} exercise${total === 1 ? "" : "es"} · ${folderCount} folder${folderCount === 1 ? "" : "s"}`
+      : `${total} exercise${total === 1 ? "" : "es"} · ${folderCount} folder${folderCount === 1 ? "" : "s"}`
+    : loading
+      ? "Loading library…"
+      : "0 exercises · 0 folders";
+
   return (
-    <div className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
-        <div className="min-w-0 max-w-2xl space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
-              <Dumbbell className="size-5" aria-hidden />
-            </div>
-          <h2 className="text-xl font-semibold tracking-[-0.03em] text-card-foreground sm:text-lg uppercase">
-            Exercise Library
-          </h2>
-          </div>
-          <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground" aria-live="polite">
-            {!totalKnown && loading && <span>Loading library…</span>}
-            {totalKnown && (
-              <>
-                <span className="font-medium text-foreground">
-                  {hasActiveFilters
-                    ? `Showing ${visibleExerciseCount} of ${total} exercise${total === 1 ? "" : "es"}`
-                    : `${total} exercise${total === 1 ? "" : "es"}`}
-                </span>
-                <span className="text-muted-foreground/50" aria-hidden>
-                  ·
-                </span>
-                <span>
-                  {folderCount} folder{folderCount === 1 ? "" : "s"}
-                </span>
-              </>
-            )}
+    <div className="space-y-6">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <header className="space-y-2">
+          <p className="layered-eyebrow">Exercises</p>
+          <h1 className="layered-display-headline">Exercise library</h1>
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            {subtitle}
           </p>
-        </div>
+        </header>
 
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
           <Button
             type="button"
             variant="outline"
-            className="h-10 rounded-full border-border px-4"
+            className="h-10 rounded border border-[var(--layered-black)] bg-transparent px-4 shadow-none"
             onClick={onNewFolder}
           >
             <FolderPlus className="mr-2 size-4" />
@@ -136,8 +122,8 @@ export function ExerciseLibraryHeader({
               title={createDisabled ? createDisabledTitle : undefined}
               className={cn(
                 buttonVariants({ variant: "default" }),
-                "inline-flex h-10 items-center justify-center rounded-full px-5 text-primary-foreground shadow-md hover:bg-primary/90",
-                createDisabled && "pointer-events-none opacity-50"
+                "inline-flex h-10 items-center justify-center rounded bg-primary px-5 text-primary-foreground shadow-none hover:bg-primary/90",
+                createDisabled && "pointer-events-none opacity-50",
               )}
             >
               <Plus className="mr-2 size-4" />
@@ -148,7 +134,7 @@ export function ExerciseLibraryHeader({
               href="/exercises/new"
               className={cn(
                 buttonVariants({ variant: "default" }),
-                "inline-flex h-10 items-center justify-center rounded-full px-5 text-primary-foreground shadow-md hover:bg-primary/90",
+                "inline-flex h-10 items-center justify-center rounded bg-primary px-5 text-primary-foreground shadow-none hover:bg-primary/90",
               )}
             >
               <Plus className="mr-2 size-4" />
@@ -158,22 +144,17 @@ export function ExerciseLibraryHeader({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-start gap-3 border-t border-border pt-5">
-        <div className="min-w-0 flex-1 basis-52 space-y-2 sm:basis-64">
-          <Label htmlFor="exercise-library-search" className="text-muted-foreground">
-            Search
-          </Label>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-[260px] flex-1">
           <ExerciseSearch
             id="exercise-library-search"
             value={search}
             onChange={onSearchChange}
+            placeholder="Search by exercise name…"
           />
         </div>
 
-        <div className="w-full min-w-44 max-w-xs shrink-0 space-y-2 sm:w-56">
-          <Label htmlFor="exercise-library-folder" className="text-muted-foreground">
-            Folder
-          </Label>
+        <div className="w-full min-w-[180px] sm:w-auto">
           <Select
             value={selectValue}
             emptyValues={FILTER_SELECT_EMPTY_VALUES}
@@ -185,32 +166,28 @@ export function ExerciseLibraryHeader({
           >
             <SelectTrigger
               id="exercise-library-folder"
-              className="h-12 w-full min-w-0 rounded-2xl border-border bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+              className="h-10 w-full min-w-[180px] rounded border-border bg-card px-3 shadow-none"
             >
               <SelectValue placeholder="All exercises">{folderSelectLabel}</SelectValue>
             </SelectTrigger>
-            <SelectContent
-              align="start"
-              sideOffset={6}
-              className="max-h-72 rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
-            >
-              <SelectItem value="all" className="rounded-xl py-2.5 pl-3">
+            <SelectContent align="start" sideOffset={6} className="rounded border-border p-1">
+              <SelectItem value="all" className="rounded py-2 pl-3">
                 {totalExerciseCount !== undefined ? (
                   <span>All exercises ({totalExerciseCount})</span>
                 ) : (
                   <span>All exercises</span>
                 )}
               </SelectItem>
-              <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+              <SelectItem value="none" className="rounded py-2 pl-3">
                 <span>Unorganized</span>
               </SelectItem>
               {folders.length > 0 && (
                 <>
-                  <SelectSeparator className="mx-1 bg-border/70" />
+                  <SelectSeparator />
                   {folders.map((f) => {
                     const n = f._count?.exercises;
                     return (
-                      <SelectItem key={f.id} value={f.id} className="rounded-xl py-2.5 pl-3">
+                      <SelectItem key={f.id} value={f.id} className="rounded py-2 pl-3">
                         {n !== undefined ? `${f.name} (${n})` : f.name}
                       </SelectItem>
                     );
@@ -221,35 +198,30 @@ export function ExerciseLibraryHeader({
           </Select>
         </div>
 
-        {selectedFolderRow && (
-          <div className="flex shrink-0 flex-col space-y-2">
-            <Label className="invisible pointer-events-none select-none text-muted-foreground" aria-hidden>
-              Folder
-            </Label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 min-h-12 shrink-0 rounded-2xl border-border px-4"
-                onClick={() => onEditFolder(selectedFolderRow)}
-                aria-label={`Rename folder ${selectedFolderRow.name}`}
-              >
-                <Pencil className="mr-2 size-4" />
-                Rename
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 min-h-12 shrink-0 rounded-2xl border-border px-4 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => onRequestDeleteFolder(selectedFolderRow)}
-                aria-label={`Delete folder ${selectedFolderRow.name}`}
-              >
-                <Trash2 className="mr-2 size-4" />
-                Delete
-              </Button>
-            </div>
+        {selectedFolderRow ? (
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 rounded border-border px-3 shadow-none"
+              onClick={() => onEditFolder(selectedFolderRow)}
+              aria-label={`Rename folder ${selectedFolderRow.name}`}
+            >
+              <Pencil className="mr-2 size-4" />
+              Rename
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 rounded border-border px-3 text-destructive shadow-none hover:bg-destructive/10"
+              onClick={() => onRequestDeleteFolder(selectedFolderRow)}
+              aria-label={`Delete folder ${selectedFolderRow.name}`}
+            >
+              <Trash2 className="mr-2 size-4" />
+              Delete
+            </Button>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

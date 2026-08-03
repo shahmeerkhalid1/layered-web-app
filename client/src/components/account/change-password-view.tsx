@@ -82,7 +82,7 @@ export function ChangePasswordView() {
       backLabel="Back to account settings"
     >
       <div className="grid w-full gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,280px)] xl:items-start">
-        <section className="rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
+        <section className="rounded border border-border bg-card p-5 sm:p-6">
           <form noValidate onSubmit={onSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="current-password">Current password</Label>
@@ -162,7 +162,7 @@ export function ChangePasswordView() {
               </div>
             </div>
 
-            <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-border px-4 py-3.5 transition-colors hover:border-ring/40">
+            <label className="flex cursor-pointer items-start gap-3 rounded border border-border px-4 py-3.5 transition-colors hover:border-ring/40">
               <Checkbox
                 checked={revokeOtherSessions}
                 onChange={(e) =>
@@ -191,12 +191,12 @@ export function ChangePasswordView() {
                 href="/account"
                 className={cn(
                   buttonVariants({ variant: "outline" }),
-                  "inline-flex justify-center rounded-full",
+                  "inline-flex justify-center rounded",
                 )}
               >
                 Cancel
               </Link>
-              <Button type="submit" className="rounded-full shadow-sm" disabled={saving}>
+              <Button type="submit" className="rounded shadow-sm" disabled={saving}>
                 {saving ? (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
@@ -210,7 +210,7 @@ export function ChangePasswordView() {
           </form>
         </section>
 
-        <aside className="rounded-3xl border border-border bg-card p-5 shadow-lg lg:sticky lg:top-6">
+        <aside className="rounded border border-border bg-card p-5  lg:sticky lg:top-6">
           <p className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
             Password tips
           </p>
@@ -228,7 +228,7 @@ export function ChangePasswordView() {
               </li>
             ))}
           </ul>
-          <p className="mt-6 rounded-2xl border border-border px-3 py-2.5 text-xs leading-5 text-muted-foreground">
+          <p className="mt-6 rounded border border-border px-3 py-2.5 text-xs leading-5 text-muted-foreground">
             After saving, you stay signed in on this device unless you chose to sign out
             others.
           </p>

@@ -30,7 +30,7 @@ This document records the work done to add **confirmation dialogs for destructiv
 
 | Area | What changed |
 |------|----------------|
-| **Shared UI** | New `ConfirmDestructiveDialog` wrapper over existing shadcn `Dialog` — consistent `rounded-3xl` styling, Cancel + destructive confirm, pending/loading labels. |
+| **Shared UI** | New `ConfirmDestructiveDialog` wrapper over existing shadcn `Dialog` — consistent `rounded` styling, Cancel + destructive confirm, pending/loading labels. |
 | **Exercises** | Confirm before delete (library card + detail page), delete folder, remove images in create/edit forms (temp + saved). |
 | **Class plans** | Confirm before delete folder; `DeleteClassPlanDialog` refactored to use shared component. |
 | **Scheduling** | Confirm cancel class, remove instance section/exercise, unenroll (single + bulk), delete session note, detach exercise from note. |
@@ -90,7 +90,7 @@ The project uses **Base UI `Dialog`** via `@/components/ui/dialog`. There is no 
 | `confirmDisabled` | `boolean` | `false` | Extra disable (e.g. no target selected) |
 | `confirmVariant` | `"destructive" \| "default"` | `"destructive"` | Confirm button variant |
 
-**Styling:** `rounded-3xl border-border bg-popover p-6 shadow-xl sm:max-w-md`; outline Cancel (`rounded-full`) + confirm button.
+**Styling:** `rounded border-border bg-popover p-6 shadow-xl sm:max-w-md`; outline Cancel (`rounded`) + confirm button.
 
 ---
 

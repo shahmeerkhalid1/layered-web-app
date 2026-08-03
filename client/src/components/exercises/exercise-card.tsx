@@ -35,7 +35,7 @@ export function ExerciseCard({ exercise, onRequestDelete }: ExerciseCardProps) {
         >
           <CardContent className="flex flex-1 flex-col p-3 pb-3">
             {exercise.images?.[0] ? (
-              <div className="relative mb-4 shrink-0 aspect-4/3 overflow-hidden rounded-2xl bg-muted">
+              <div className="relative mb-4 shrink-0 aspect-4/3 overflow-hidden rounded bg-muted">
                 <Image
                   src={exercise.images[0].url}
                   alt={exercise.name}
@@ -47,7 +47,7 @@ export function ExerciseCard({ exercise, onRequestDelete }: ExerciseCardProps) {
                 <div className="absolute inset-0 bg-linear-to-t from-foreground/25 via-transparent to-background/10" />
               </div>
             ) : (
-              <div className="relative mb-4 flex shrink-0 aspect-4/3 items-center justify-center overflow-hidden rounded-2xl bg-muted/80 ring-1 ring-border/60">
+              <div className="relative mb-4 flex shrink-0 aspect-4/3 items-center justify-center overflow-hidden rounded bg-muted/80 ring-1 ring-border/60">
                 <div className="absolute inset-x-8 top-1/2 h-px -rotate-6 bg-border/80" />
                 <FolderOpen className="size-8 text-muted-foreground/70" aria-hidden />
               </div>

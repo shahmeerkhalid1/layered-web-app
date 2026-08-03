@@ -19,7 +19,7 @@ export function SubscriptionUpgradeBanner({
   description = "Upgrade to Instructor+ for unlimited class plans, exercises, client notes, and more — from $10 NZD/month billed annually.",
 }: SubscriptionUpgradeBannerProps) {
   return (
-    <div className="flex flex-col gap-4 rounded-3xl border border-primary/25 bg-background p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
+    <div className="flex flex-col gap-4 rounded border border-[var(--layered-navy)]/30 bg-[var(--layered-light-blue)]/40 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
       <div className="min-w-0">
         <p className="font-medium text-foreground">
           You&apos;ve reached your free plan limit ({count}/{limit} {resourceLabel})
@@ -30,7 +30,7 @@ export function SubscriptionUpgradeBanner({
         href="/billing"
         className={cn(
           buttonVariants({ variant: "default" }),
-          "inline-flex shrink-0 items-center rounded-full"
+          "inline-flex h-10 shrink-0 items-center rounded bg-primary px-5 shadow-none hover:bg-primary/90",
         )}
       >
         <Sparkles className="mr-2 size-4" aria-hidden />

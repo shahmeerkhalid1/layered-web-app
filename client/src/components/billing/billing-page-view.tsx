@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Check, ChevronDown, CreditCard, Loader2, Sparkles } from "lucide-react";
+import { Check, ChevronDown, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
 import { subscriptionApi, type BillingInterval } from "@/services/subscription-api";
@@ -126,7 +126,6 @@ export function BillingPageView() {
   const pricing = status?.pricing;
   const monthlyPrice = pricing?.monthly ?? 14;
   const annualMonthly = pricing?.annualMonthlyEquivalent ?? 10;
-  const annualTotal = pricing?.annualTotal ?? 120;
   const annualSavings = pricing?.annualSavingsAmount ?? 60;
 
   const instructorPriceLabel =
@@ -150,14 +149,14 @@ export function BillingPageView() {
 
   if (error || !status) {
     return (
-      <div className="rounded-3xl border border-dashed border-border/80 bg-muted/15 px-6 py-14 text-center">
+      <div className="rounded border border-dashed border-border bg-muted/15 px-6 py-14 text-center">
         <p className="text-sm text-muted-foreground">
           {error ?? "Unable to load billing information."}
         </p>
         <Button
           type="button"
-          variant="secondary"
-          className="mt-4 rounded-full"
+          variant="outline"
+          className="mt-4 h-10 rounded border-border px-4 shadow-none"
           onClick={() => void refresh()}
         >
           Try again
@@ -168,27 +167,17 @@ export function BillingPageView() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
-        <div className="flex items-start gap-3">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <CreditCard className="size-5" aria-hidden />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="font-heading text-2xl font-semibold tracking-[-0.02em]">
-              Manage your Layered subscription and upgrade features
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Choose the plan that fits your teaching — all paid pricing in NZD.
-            </p>
-          </div>
-        </div>
-      </div>
+      <header className="space-y-2">
+        <p className="layered-eyebrow">Billing</p>
+        <h1 className="layered-display-headline">Subscription</h1>
+        <p className="text-sm text-muted-foreground">
+          Choose the plan that fits your teaching — all paid pricing in NZD.
+        </p>
+      </header>
 
-      <section className="rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-          Current Plan
-        </h2>
-        <div className="mt-4 rounded-2xl border border-border/80 bg-muted/15 p-4 sm:p-5">
+      <section className="layered-card">
+        <h2 className="layered-section-title">Current plan</h2>
+        <div className="mt-4 rounded border border-border bg-muted/30 p-4 sm:p-5">
           <p className="font-medium text-foreground">
             {isPaid
               ? `You are on Instructor+ (${status.billingInterval === "year" ? "annual" : "monthly"} billing).`
@@ -198,7 +187,7 @@ export function BillingPageView() {
             {isPaid ? (
               <>
                 <li className="flex items-center gap-2">
-                  <Check className="size-4 shrink-0 text-primary" aria-hidden />
+                  <Check className="size-4 shrink-0 text-[var(--layered-navy)]" aria-hidden />
                   Unlimited class plans, exercises & client notes
                 </li>
                 {status.currentPeriodEnd ? (
@@ -212,21 +201,21 @@ export function BillingPageView() {
             ) : (
               <>
                 <li className="flex items-center gap-2">
-                  <Check className="size-4 shrink-0 text-primary" aria-hidden />
+                  <Check className="size-4 shrink-0 text-[var(--layered-navy)]" aria-hidden />
                   Up to 3 class plans
                   {status.classPlanLimit != null
                     ? ` (${status.classPlanCount}/${status.classPlanLimit} used)`
                     : null}
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="size-4 shrink-0 text-primary" aria-hidden />
+                  <Check className="size-4 shrink-0 text-[var(--layered-navy)]" aria-hidden />
                   Up to 5 exercises
                   {status.exerciseLimit != null
                     ? ` (${status.exerciseCount}/${status.exerciseLimit} used)`
                     : null}
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="size-4 shrink-0 text-primary" aria-hidden />
+                  <Check className="size-4 shrink-0 text-[var(--layered-navy)]" aria-hidden />
                   Client notes for up to 5 clients
                   {status.clientLimit != null
                     ? ` (${status.clientCount}/${status.clientLimit} used)`
@@ -239,7 +228,7 @@ export function BillingPageView() {
             <Button
               type="button"
               variant="outline"
-              className="mt-4 rounded-full"
+              className="mt-4 h-10 rounded border border-[var(--layered-black)] bg-transparent px-4 shadow-none"
               disabled={portalPending}
               onClick={() => void handleManage()}
             >
@@ -262,31 +251,31 @@ export function BillingPageView() {
             <h2 className="font-heading text-lg font-semibold tracking-[-0.02em]">
               Choose Your Plan
             </h2>
-            <div className="inline-flex items-center rounded-full border border-border bg-muted/30 p-1">
+            <div className="inline-flex items-center rounded border border-border bg-muted/30 p-1">
               <button
                 type="button"
                 onClick={() => setBillingInterval("month")}
                 className={cn(
-                  "rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                  "rounded px-4 py-2 text-sm font-medium transition-colors",
                   billingInterval === "month"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                Monthly Billing
+                Monthly
               </button>
               <button
                 type="button"
                 onClick={() => setBillingInterval("year")}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                  "inline-flex items-center gap-2 rounded px-4 py-2 text-sm font-medium transition-colors",
                   billingInterval === "year"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 Annual Billing
-                <Badge variant="secondary" className="rounded-full px-2 py-0 text-[10px]">
+                <Badge variant="secondary" className="rounded px-2 py-0 text-[10px]">
                   Save 17%
                 </Badge>
               </button>
@@ -305,10 +294,10 @@ export function BillingPageView() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full rounded-full"
+                    className="h-10 w-full rounded border-border shadow-none"
                     disabled
                   >
-                    Current Plan
+                    Current plan
                   </Button>
                 ) : null
               }
@@ -324,7 +313,7 @@ export function BillingPageView() {
               action={
                 <Button
                   type="button"
-                  className="w-full rounded-full"
+                  className="h-10 w-full rounded bg-primary shadow-none hover:bg-primary/90"
                   disabled={checkoutPending}
                   onClick={() => void handleUpgrade()}
                 >
@@ -336,7 +325,7 @@ export function BillingPageView() {
                   ) : (
                     <>
                       <Sparkles className="mr-2 size-4" aria-hidden />
-                      Upgrade Now
+                      Upgrade now
                     </>
                   )}
                 </Button>
@@ -355,14 +344,12 @@ function BillingFaq() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
-      <h2 className="font-heading text-lg font-semibold tracking-[-0.02em]">
-        Frequently asked questions
-      </h2>
+    <section className="layered-card">
+      <h2 className="layered-section-title">Frequently asked questions</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         Common questions about upgrading, billing, and your Layered plan.
       </p>
-      <ul className="mt-5 divide-y divide-border rounded-2xl border border-border/80">
+      <ul className="mt-5 divide-y divide-border rounded border border-border">
         {BILLING_FAQ.map((item, index) => {
           const isOpen = openIndex === index;
           return (
@@ -370,14 +357,14 @@ function BillingFaq() {
               <button
                 type="button"
                 onClick={() => setOpenIndex(isOpen ? null : index)}
-                className="flex w-full items-start justify-between gap-4 px-4 py-4 text-left transition-colors hover:bg-muted/20 sm:px-5"
+                className="flex w-full items-start justify-between gap-4 px-4 py-4 text-left transition-colors hover:bg-muted/30 sm:px-5"
                 aria-expanded={isOpen}
               >
                 <span className="font-medium text-foreground">{item.question}</span>
                 <ChevronDown
                   className={cn(
                     "mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform",
-                    isOpen && "rotate-180"
+                    isOpen && "rotate-180",
                   )}
                   aria-hidden
                 />
@@ -415,8 +402,10 @@ function PlanCard({
   return (
     <article
       className={cn(
-        "flex flex-col rounded-3xl border bg-card p-6 shadow-lg",
-        highlighted ? "border-primary/40 ring-1 ring-primary/20" : "border-border"
+        "flex flex-col p-6",
+        highlighted
+          ? "layered-card-interactive border-[var(--layered-navy)] ring-1 ring-[var(--layered-navy)]/20"
+          : "layered-card",
       )}
     >
       <div>
@@ -424,13 +413,13 @@ function PlanCard({
         <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
       </div>
       <div className="mt-5">
-        <p className="text-3xl font-semibold tracking-[-0.03em]">{priceLabel}</p>
+        <p className="text-3xl font-light tracking-[-0.03em]">{priceLabel}</p>
         <p className="mt-1 text-sm text-muted-foreground">{priceHint}</p>
       </div>
       <ul className="mt-6 flex-1 space-y-2.5">
         {features.map((feature) => (
           <li key={feature} className="flex items-start gap-2 text-sm text-muted-foreground">
-            <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+            <Check className="mt-0.5 size-4 shrink-0 text-[var(--layered-navy)]" aria-hidden />
             <span>{feature}</span>
           </li>
         ))}

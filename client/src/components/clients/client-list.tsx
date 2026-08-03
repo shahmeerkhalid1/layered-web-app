@@ -171,7 +171,7 @@ export function ClientList({
 
   return (
     <>
-      <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-lg">
+      <div className="overflow-hidden rounded border border-border bg-muted/30">
         {selectedIds.size > 0 ? (
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-accent/40 px-4 py-3 sm:px-5">
             <p className="text-sm font-medium text-foreground">
@@ -182,7 +182,7 @@ export function ClientList({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-background hover:text-foreground"
+                className="rounded border-border bg-transparent text-muted-foreground hover:bg-background hover:text-foreground"
                 onClick={clearSelection}
               >
                 Clear selection
@@ -191,7 +191,7 @@ export function ClientList({
                 type="button"
                 variant="destructive"
                 size="sm"
-                className="rounded-full"
+                className="rounded"
                 onClick={() => setArchiveTarget(selectedClients)}
               >
                 <Trash2 className="mr-2 size-4" />
@@ -255,7 +255,7 @@ export function ClientList({
                       key={client.id}
                       data-state={isSelected ? "selected" : undefined}
                       tabIndex={0}
-                      className="cursor-pointer border-border hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
+                      className="cursor-pointer bg-background border-border hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
                       onClick={() => router.push(`/clients/${client.id}`)}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
@@ -303,7 +303,7 @@ export function ClientList({
                           <DropdownMenuTrigger
                             className={cn(
                               buttonVariants({ variant: "ghost", size: "icon-sm" }),
-                              "shrink-0 rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground data-popup-open:bg-accent"
+                              "shrink-0 rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground data-popup-open:bg-accent"
                             )}
                             aria-label={`Open menu for ${clientDisplayName(client)}`}
                           >
@@ -311,7 +311,7 @@ export function ClientList({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent
                             align="end"
-                            className="rounded-2xl border-border bg-popover p-1 shadow-xl"
+                            className="rounded border-border bg-popover p-1 shadow-xl"
                           >
                             <DropdownMenuItem
                               className="rounded-xl"
@@ -364,7 +364,7 @@ export function ClientList({
           if (!open) setArchiveTarget(null);
         }}
       >
-        <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl sm:max-w-md">
+        <DialogContent className="rounded border-border bg-popover p-6 shadow-xl sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-popover-foreground">
               Archive client{Array.isArray(archiveTarget) && archiveTarget.length !== 1 ? "s" : ""}?
@@ -378,7 +378,7 @@ export function ClientList({
               type="button"
               variant="outline"
               onClick={() => setArchiveTarget(null)}
-              className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              className="rounded border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             >
               Cancel
             </Button>
@@ -387,7 +387,7 @@ export function ClientList({
               variant="destructive"
               disabled={archiving}
               onClick={() => void handleArchiveConfirm()}
-              className="rounded-full"
+              className="rounded"
             >
               {archiving ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -409,7 +409,7 @@ function ClientFilteredEmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-      <div className="flex size-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
+      <div className="flex size-14 items-center justify-center rounded bg-muted text-muted-foreground">
         <SearchX className="size-6" />
       </div>
       <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-card-foreground">
@@ -421,7 +421,7 @@ function ClientFilteredEmptyState({
       <Button
         type="button"
         variant="secondary"
-        className="mt-4 rounded-full px-4"
+        className="mt-4 rounded px-4"
         onClick={onClearFilters}
       >
         Clear filters
@@ -433,7 +433,7 @@ function ClientFilteredEmptyState({
 function ClientEmptyState() {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-      <div className="flex size-14 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+      <div className="flex size-14 items-center justify-center rounded bg-secondary text-secondary-foreground">
         <Users className="size-6" />
       </div>
       <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-card-foreground">
@@ -444,8 +444,7 @@ function ClientEmptyState() {
       </p>
       <Link href="/clients/new" className="mt-4">
         <Button
-          size="sm"
-          className="rounded-full bg-primary px-4 text-primary-foreground hover:bg-primary/90"
+          className="rounded bg-primary px-4 text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="mr-2 size-4" />
           New client

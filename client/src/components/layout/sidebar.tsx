@@ -124,18 +124,18 @@ function SidebarNavLink({
   onNavigate: () => void;
 }) {
   const linkClassName = cn(
-    "group flex items-center rounded-2xl text-sm font-medium transition-all",
+    "group flex items-center rounded text-sm transition-colors duration-150 ease-out",
     collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5",
     active
-      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-inner"
-      : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+      ? "bg-muted font-semibold text-foreground"
+      : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
   );
 
   const iconClassName = cn(
     "size-4 shrink-0 transition-colors",
     active
-      ? "text-sidebar-primary-foreground"
-      : "text-muted-foreground group-hover:text-sidebar-accent-foreground",
+      ? "text-foreground"
+      : "text-muted-foreground group-hover:text-foreground",
   );
 
   if (!collapsed) {
@@ -237,33 +237,17 @@ export function Sidebar() {
             className={cn("cursor-pointer", collapsed && "flex justify-center")}
           >
             {collapsed ? (
-              // <Image
-              //   src="/web-app-manifest-192x192.png"
-              //   alt="Layered."
-              //   width={36}
-              //   height={36}
-              //   className="size-9 rounded-xl"
-              // />
-              <div className="w-8 h-8 bg-[#1b3c9b] rounded-full"></div>
+              <div className="w-8 h-8 bg-[var(--layered-navy)] rounded-full"></div>
             ) : (
-             <>
+              <>
              <Image
             src="/layered-dark-logo.png"
             alt="Layered Planning Logo"
             width={180}
             height={100}
-            className="ms-2 h-auto w-[155px] dark:hidden"
+            className="ms-2 h-auto w-[140px] dark:filter dark:invert"
             priority
           />
-          <Image
-            src="/layered-light-logo.png"
-            alt="Layered Planning Logo"
-            width={180}
-            height={100}
-            className="ms-2 hidden h-auto w-[155px] dark:block"
-            priority
-          />
-          
           </>
             )}
           </Link>
@@ -347,7 +331,7 @@ export function Sidebar() {
                   <DropdownMenuTrigger
                     className={cn(
                       buttonVariants({ variant: "ghost" }),
-                      "mx-auto flex size-10 items-center justify-center rounded-2xl p-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      "mx-auto flex size-10 items-center justify-center rounded p-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     )}
                     aria-label="Account menu"
                   >
@@ -367,7 +351,7 @@ export function Sidebar() {
             <DropdownMenuTrigger
               className={cn(
                 buttonVariants({ variant: "ghost" }),
-                "h-auto w-full justify-start gap-3 rounded-2xl px-3 py-2.5 text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                "h-auto w-full justify-start gap-3 rounded px-3 py-2.5 text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               )}
             >
               <AccountAvatar
@@ -389,10 +373,10 @@ export function Sidebar() {
           <DropdownMenuContent
             side="top"
             align={collapsed ? "center" : "start"}
-            className="w-64 rounded-2xl border border-border/60 bg-popover p-2 shadow-xl"
+            className="w-64 rounded border border-border/60 bg-popover p-2 shadow-xl"
           >
             <div className="flex items-center gap-3 rounded-xl bg-accent/70 px-3 py-2.5">
-              <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <div className="flex size-9 items-center justify-center rounded bg-primary/10 text-primary">
                 <User className="size-4" />
               </div>
               <div className="flex min-w-0 flex-col">
@@ -458,7 +442,7 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="icon"
-          className="fixed top-3 left-3 z-50 rounded-full bg-background/90 text-foreground shadow-sm backdrop-blur md:hidden"
+          className="fixed top-3 left-3 z-50 rounded bg-background/90 text-foreground shadow-sm backdrop-blur md:hidden"
           onClick={() => setMobileOpen(true)}
           aria-label="Open menu"
         >
@@ -488,7 +472,7 @@ export function Sidebar() {
       <aside
         className={cn(
           "hidden h-full min-h-0 shrink-0 overflow-hidden transition-[width] duration-200 ease-in-out md:flex md:flex-col md:border-r md:border-sidebar-border md:bg-sidebar md:text-sidebar-foreground",
-          desktopCollapsed ? "md:w-18" : "md:w-72",
+          desktopCollapsed ? "md:w-18" : "md:w-[232px]",
         )}
       >
         {renderNavContent(desktopCollapsed)}

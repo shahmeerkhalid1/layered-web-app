@@ -68,7 +68,7 @@ export function ExercisePlanPreview({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-7 gap-1 rounded-full px-2 text-sm text-muted-foreground hover:text-foreground"
+        className="h-7 gap-1 rounded px-2 text-sm text-muted-foreground hover:text-foreground"
         aria-expanded={expanded}
         aria-controls={panelId}
         onClick={() => setExpanded((open) => !open)}

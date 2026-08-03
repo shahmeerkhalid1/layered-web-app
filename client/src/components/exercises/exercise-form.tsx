@@ -695,7 +695,7 @@ export function ExerciseForm({
   return (
     <>
     <form onSubmit={onSubmit} className="w-full min-w-0">
-      <Card className="border-border bg-card shadow-xl">
+      <Card className="border-border bg-card">
         <CardContent className="space-y-6 p-5 sm:p-6">
           <div>
             <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
@@ -719,7 +719,7 @@ export function ExerciseForm({
               placeholder="e.g. Hundred"
               aria-invalid={errors.name || duplicateExerciseName ? true : undefined}
               className={cn(
-                "h-12 rounded-2xl border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35",
+                "h-12 rounded border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35",
                 duplicateExerciseName && "border-destructive"
               )}
             />
@@ -752,7 +752,7 @@ export function ExerciseForm({
                   onValueChange={field.onChange}
                   placeholder="Describe the movement, setup, and intention..."
                   rows={4}
-                  className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                  className="rounded border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                   bulletsEnabled={false}
                 />
               )}
@@ -778,7 +778,7 @@ export function ExerciseForm({
                   onValueChange={field.onChange}
                   placeholder="e.g., Supine, feet on footbar"
                   rows={3}
-                  className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                  className="rounded border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                   bulletsEnabled={false}
                 />
               )}
@@ -807,7 +807,7 @@ export function ExerciseForm({
                       >
                         <SelectTrigger
                           id="exercise-orientation"
-                          className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+                          className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
                         >
                           <SelectValue placeholder="Select orientation">
                             <span
@@ -826,7 +826,7 @@ export function ExerciseForm({
                         <SelectContent
                           align="start"
                           sideOffset={6}
-                          className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                          className="max-h-72 min-w-(--anchor-width) rounded border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
                         >
                           <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
                             <span className="text-muted-foreground">Select orientation</span>
@@ -866,7 +866,7 @@ export function ExerciseForm({
                       >
                         <SelectTrigger
                           id="exercise-direction"
-                          className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+                          className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
                         >
                           <SelectValue placeholder="Select direction">
                             <span
@@ -884,7 +884,7 @@ export function ExerciseForm({
                         <SelectContent
                           align="start"
                           sideOffset={6}
-                          className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                          className="max-h-72 min-w-(--anchor-width) rounded border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
                         >
                           <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
                             <span className="text-muted-foreground">Select direction</span>
@@ -930,7 +930,7 @@ export function ExerciseForm({
                         id="exercise-movement-type"
                         aria-invalid={errors.movementType ? true : undefined}
                         className={cn(
-                          "box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground",
+                          "box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground",
                           errors.movementType && "border-destructive",
                         )}
                       >
@@ -951,7 +951,7 @@ export function ExerciseForm({
                       <SelectContent
                         align="start"
                         sideOffset={6}
-                        className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                        className="max-h-72 min-w-(--anchor-width) rounded border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
                       >
                         <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
                           <span className="text-muted-foreground">Select movement type</span>
@@ -993,7 +993,7 @@ export function ExerciseForm({
                     id="springs"
                     {...register("springs")}
                     placeholder="e.g., Medium (2 red) or N/A for mat"
-                    className="box-border h-12 min-h-12 w-full min-w-0 rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 sm:flex-1"
+                    className="box-border h-12 min-h-12 w-full min-w-0 rounded border-input bg-background/80 px-4 py-0 leading-snug shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 sm:flex-1"
                   />
                   <Button
                     type="button"
@@ -1001,7 +1001,7 @@ export function ExerciseForm({
                     onClick={() =>
                       setValue("springs", "N/A", { shouldDirty: true, shouldValidate: true })
                     }
-                    className="h-12 w-full shrink-0 rounded-2xl border-input px-4 text-sm font-medium sm:w-auto sm:min-w-22"
+                    className="h-12 w-full shrink-0 rounded border-input px-4 text-sm font-medium sm:w-auto sm:min-w-22"
                   >
                     N/A
                   </Button>
@@ -1083,14 +1083,14 @@ export function ExerciseForm({
                           addCustomEquipment();
                         }
                       }}
-                      className="box-border h-12 min-h-12 w-full min-w-0 rounded-2xl border-input bg-background/80 px-4 py-0 text-sm leading-snug shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 sm:flex-1 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="box-border h-12 min-h-12 w-full min-w-0 rounded border-input bg-background/80 px-4 py-0 text-sm leading-snug shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 sm:flex-1 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                     <Button
                       type="button"
                       variant="outline"
                       onClick={addCustomEquipment}
                       disabled={(wEquipment ?? []).includes(noneEquipmentValue)}
-                      className="h-12 w-full shrink-0 rounded-2xl border-input px-4 text-sm font-medium sm:w-auto sm:min-w-22 disabled:cursor-not-allowed"
+                      className="h-12 w-full shrink-0 rounded border-input px-4 text-sm font-medium sm:w-auto sm:min-w-22 disabled:cursor-not-allowed"
                     >
                       Add
                     </Button>
@@ -1119,7 +1119,7 @@ export function ExerciseForm({
                       >
                         <SelectTrigger
                           id="exercise-machine-setup"
-                          className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+                          className="box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
                         >
                           <SelectValue placeholder="Select setup">
                             <span
@@ -1138,7 +1138,7 @@ export function ExerciseForm({
                         <SelectContent
                           align="start"
                           sideOffset={6}
-                          className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                          className="max-h-72 min-w-(--anchor-width) rounded border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
                         >
                           <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
                             <span className="text-muted-foreground">Select setup</span>
@@ -1177,7 +1177,7 @@ export function ExerciseForm({
                   }
                   append({ content: "", isFinisher: false });
                 }}
-                className="h-9 gap-1.5 rounded-full border-input px-4 text-sm font-medium"
+                className="h-9 gap-1.5 rounded border-input px-4 text-sm font-medium"
               >
                 <Plus className="size-4 shrink-0" aria-hidden />
                 Add Layer
@@ -1256,7 +1256,7 @@ export function ExerciseForm({
                               : "Build on the previous layer..."
                         }
                         rows={showFinisherStyle ? 4 : 3}
-                        className="min-h-22 resize-y rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                        className="min-h-22 resize-y rounded border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                       />
                     )}
                   />
@@ -1285,7 +1285,7 @@ export function ExerciseForm({
                   onValueChange={field.onChange}
                   placeholder="How to make this exercise harder (load, range, tempo, props…)"
                   rows={3}
-                  className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                  className="rounded border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                 />
               )}
             />
@@ -1311,7 +1311,7 @@ export function ExerciseForm({
                   onValueChange={field.onChange}
                   placeholder="How to make this exercise easier (modifications, support, range…)"
                   rows={3}
-                  className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                  className="rounded border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                 />
               )}
             />
@@ -1325,7 +1325,7 @@ export function ExerciseForm({
               id="transitionCues"
               {...register("transitionCues")}
               placeholder="e.g., Coming down from lunge"
-              className="h-12 rounded-2xl border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+              className="h-12 rounded border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
             />
           </div>
 
@@ -1349,7 +1349,7 @@ export function ExerciseForm({
                   onValueChange={field.onChange}
                   placeholder="Key coaching points, modifications, breathing cues..."
                   rows={3}
-                  className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                  className="rounded border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                 />
               )}
             />
@@ -1466,14 +1466,14 @@ export function ExerciseForm({
                 >
                   <SelectTrigger
                     id="folder"
-                    className="h-12 w-full min-w-0 rounded-2xl border-input bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+                    className="h-12 w-full min-w-0 rounded border-input bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
                   >
                     <SelectValue placeholder="No folder">{folderTriggerLabel}</SelectValue>
                   </SelectTrigger>
                   <SelectContent
                     align="start"
                     sideOffset={6}
-                    className="max-h-72 rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                    className="max-h-72 rounded border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
                   >
                     <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
                       No folder
@@ -1504,7 +1504,7 @@ export function ExerciseForm({
             >
               <SelectTrigger
                 id="progression"
-                className="h-12 w-full min-w-0 rounded-2xl border-input bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+                className="h-12 w-full min-w-0 rounded border-input bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
               >
                 <SelectValue placeholder="None — root level">
                   {progressionTriggerLabel}
@@ -1513,7 +1513,7 @@ export function ExerciseForm({
               <SelectContent
                 align="start"
                 sideOffset={6}
-                className="max-h-72 rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                className="max-h-72 rounded border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
               >
                 <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
                   None — this is the easiest step (root)
@@ -1569,13 +1569,13 @@ export function ExerciseForm({
                     addTag();
                   }
                 }}
-                className="h-12 min-w-0 flex-1 rounded-2xl border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                className="h-12 min-w-0 flex-1 rounded border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
               />
               <Button
                 type="button"
                 variant="outline"
                 onClick={addTag}
-                className="h-12 shrink-0 gap-2 rounded-2xl border-input bg-background/70 px-5 text-sm font-medium text-foreground shadow-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring/35"
+                className="h-12 shrink-0 gap-2 rounded border-input bg-background/70 px-5 text-sm font-medium text-foreground shadow-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring/35"
               >
                 <Plus className="size-5 shrink-0" aria-hidden />
                 Add
@@ -1604,7 +1604,7 @@ export function ExerciseForm({
           </div>
 
           {showEmbedSaveToLibrary && (
-            <div className="rounded-2xl border border-border bg-muted/20 p-4">
+            <div className="rounded border border-border bg-muted/20 p-4">
               <div className="flex items-start gap-3">
                 <Checkbox
                   id="exercise-save-to-library-embed"
@@ -1658,7 +1658,7 @@ export function ExerciseForm({
                     onDragOver={(e) => handleDragOver(e, index)}
                     onDrop={(e) => handleDrop(e, index)}
                     onDragEnd={handleDragEnd}
-                    className={`group relative aspect-square overflow-hidden rounded-2xl border bg-muted transition-all ${
+                    className={`group relative aspect-square overflow-hidden rounded border bg-muted transition-all ${
                       dragOverIdx === index
                         ? "border-primary ring-2 ring-primary/30"
                         : "border-border"
@@ -1686,13 +1686,13 @@ export function ExerciseForm({
                       />
                     </a>
                     <div className="pointer-events-none absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100" />
-                    <div className="pointer-events-auto absolute left-1.5 top-1.5 flex size-6 cursor-grab items-center justify-center rounded-full bg-black text-white opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing">
+                    <div className="pointer-events-auto absolute left-1.5 top-1.5 flex size-6 cursor-grab items-center justify-center rounded bg-black text-white opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing">
                       <GripVertical className="size-3.5" aria-hidden />
                     </div>
                     <button
                       type="button"
                       onClick={() => setImageRemoveTarget(item)}
-                      className="pointer-events-auto absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                      className="pointer-events-auto absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded bg-destructive text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
                       aria-label="Remove image"
                     >
                       <X className="size-3.5 text-white" />
@@ -1710,7 +1710,7 @@ export function ExerciseForm({
             {availableSlots > 0 && (
               <div
                 {...getRootProps()}
-                className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-8 transition-colors ${
+                className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded border-2 border-dashed px-4 py-8 transition-colors ${
                   isDragActive
                     ? "border-primary bg-primary/5"
                     : "border-input bg-background/70 hover:border-muted-foreground/40"
@@ -1746,7 +1746,7 @@ export function ExerciseForm({
             if (onEmbedCancel) onEmbedCancel();
             else router.back();
           }}
-          className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          className="rounded border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         >
           <ArrowLeft className="mr-2 size-4" />
           Cancel
@@ -1754,7 +1754,7 @@ export function ExerciseForm({
         <Button
           type="submit"
           disabled={duplicateExerciseName}
-          className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
+          className="rounded bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
         >
           {isSubmitting
             ? "Saving..."

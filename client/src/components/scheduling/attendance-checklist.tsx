@@ -77,7 +77,7 @@ export function AttendanceChecklist({
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-border bg-muted/10 p-4">
+      <div className="rounded border border-border bg-muted/10 p-4">
         <p className="text-sm font-medium text-foreground">Clients</p>
         <div className="mt-3 flex justify-center py-4">
           <div className="size-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -88,7 +88,7 @@ export function AttendanceChecklist({
 
   return (
     <>
-      <div className="rounded-2xl border border-border bg-muted/10 p-4">
+      <div className="rounded border border-border bg-muted/10 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-sm font-medium text-foreground">Client</p>
@@ -104,7 +104,7 @@ export function AttendanceChecklist({
             type="button"
             variant="outline"
             size="sm"
-            className="rounded-full"
+            className="rounded"
             onClick={() => setEnrollOpen(true)}
           >
             <Settings2 className="mr-1.5 size-3.5" />
@@ -121,7 +121,7 @@ export function AttendanceChecklist({
               type="button"
               variant="secondary"
               size="sm"
-              className="mt-3 rounded-full"
+              className="mt-3 rounded"
               onClick={() => setEnrollOpen(true)}
             >
               <UserPlus className="mr-1.5 size-3.5" />
@@ -156,7 +156,7 @@ export function AttendanceChecklist({
             <Button
               type="button"
               size="sm"
-              className="mt-3 rounded-full"
+              className="mt-3 rounded"
               disabled={saving}
               onClick={() => void handleSave()}
             >

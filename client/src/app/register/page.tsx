@@ -124,7 +124,7 @@ function RegisterPageContent() {
           footer={<AuthFooterLink prompt="Already have an account?" linkLabel="Sign in" href="/login" />}
         >
           <div className="flex flex-col items-center rounded-xl border border-dashed border-border/80 bg-muted/15 px-6 py-10 text-center">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+            <div className="flex size-12 items-center justify-center rounded bg-muted text-muted-foreground">
               <Mail className="size-6" aria-hidden />
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
@@ -149,7 +149,7 @@ function RegisterPageContent() {
 
   const inviteBadge = invite ? (
     <div className="flex flex-wrap items-center justify-center gap-2">
-      <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs font-medium">
+      <Badge variant="secondary" className="rounded px-3 py-1 text-xs font-medium">
         Invitation
       </Badge>
       {invite.role ? (

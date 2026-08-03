@@ -90,7 +90,7 @@ Schemas updated so whitespace-only input fails validation and does not count as 
 
 ### New / heavily updated: `components/scheduling/week-overview-panel.tsx`
 
-- Rounded shell card (`rounded-3xl`, border, shadow).
+- Rounded shell card (`rounded`, border, shadow).
 - Header with icon, week range, stats (class count / days with classes).
 - Chevron + **This week** navigation (`Button` outline / secondary).
 - **Day strip** — pill buttons per weekday with counts; today highlighted.
@@ -358,9 +358,9 @@ Shared auth layout and building blocks:
 ## Design patterns used consistently
 
 - **Semantic tokens** — `bg-background`, `text-muted-foreground`, `border-border`, `bg-primary/10`, etc. (not hardcoded grays).
-- **Rounded shells** — `rounded-3xl` cards with `border-border` and light shadow for major surfaces (week overview, calendar, dashboard, auth, dialogs).
+- **Rounded shells** — `rounded` cards with `border-border` and light shadow for major surfaces (week overview, calendar, dashboard, auth, dialogs).
 - **Font heading** — `font-heading` (Fraunces) for page titles.
-- **Full-width primary actions** — `rounded-full` buttons on auth and many dialogs.
+- **Full-width primary actions** — `rounded` buttons on auth and many dialogs.
 - **Tooltips** — Dark `TooltipContent` with title + secondary text (calendar events, chain types).
 
 ---

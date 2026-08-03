@@ -74,7 +74,7 @@ export function ClassPlanFilterBar({
         >
           <SelectTrigger
             id="class-plan-filter-type"
-            className="h-12 w-full min-w-0 rounded-2xl border-border bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+            className="h-12 w-full min-w-0 rounded border-border bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
           >
             <SelectValue>
               <span
@@ -89,7 +89,7 @@ export function ClassPlanFilterBar({
           <SelectContent
             align="start"
             sideOffset={6}
-            className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+            className="max-h-72 min-w-(--anchor-width) rounded border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
           >
             <SelectItem value="all" className="rounded-xl py-2.5 pl-3">
               <span className="text-muted-foreground">All types</span>
@@ -115,7 +115,7 @@ export function ClassPlanFilterBar({
         >
           <SelectTrigger
             id="class-plan-filter-style"
-            className="h-12 w-full min-w-0 rounded-2xl border-border bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+            className="h-12 w-full min-w-0 rounded border-border bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
           >
             <SelectValue>
               <span
@@ -130,7 +130,7 @@ export function ClassPlanFilterBar({
           <SelectContent
             align="start"
             sideOffset={6}
-            className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+            className="max-h-72 min-w-(--anchor-width) rounded border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
           >
             <SelectItem value="all" className="rounded-xl py-2.5 pl-3">
               <span className="text-muted-foreground">All styles</span>
@@ -155,7 +155,7 @@ export function ClassPlanFilterBar({
                 type="button"
                 onClick={() => onTagFilterChange(active ? null : tag)}
                 className={cn(
-                  "inline-flex h-8 items-center rounded-full border px-3 text-xs font-medium transition-colors",
+                  "inline-flex h-8 items-center rounded border px-3 text-xs font-medium transition-colors",
                   active
                     ? "border-transparent bg-primary text-primary-foreground hover:bg-primary/90"
                     : "border-border bg-muted/40 text-foreground hover:bg-accent hover:text-accent-foreground"
@@ -169,7 +169,7 @@ export function ClassPlanFilterBar({
             <button
               type="button"
               onClick={() => onTagFilterChange(null)}
-              className="inline-flex h-8 items-center rounded-full border border-transparent bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+              className="inline-flex h-8 items-center rounded border border-transparent bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
             >
               {tagFilter} ×
             </button>

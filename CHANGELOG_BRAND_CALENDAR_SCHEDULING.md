@@ -276,7 +276,7 @@ Used in:
 ### Week overview layout tweaks
 
 - Outer shell adjusted so brand background shows through between day sections
-- Day sections use `bg-card rounded-3xl` cards on the background
+- Day sections use `bg-card rounded` cards on the background
 
 ### Private vs completed color fix
 

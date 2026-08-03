@@ -1,12 +1,18 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
-import { ChevronDown, FolderPlus, ListFilter, Pencil, FileText, Plus, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  FolderPlus,
+  ListFilter,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import type { ClassPlanFolder } from "@/lib/types";
 import { ClassPlanFilterBar } from "@/components/class-plans/class-plan-filter-bar";
 import { ExerciseSearch } from "@/components/exercises/exercise-search";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -30,7 +36,6 @@ export interface ClassPlanLibraryHeaderProps {
   onSearchChange: (value: string) => void;
   folders: ClassPlanFolder[];
   totalTemplateCount?: number;
-  /** `null` = all, `"none"` = plans not in any folder, else folder id */
   selectedFolder: string | null;
   onSelectFolder: (folderId: string | null) => void;
   onEditFolder: (folder: ClassPlanFolder) => void;
@@ -41,9 +46,7 @@ export interface ClassPlanLibraryHeaderProps {
   onClassStyleFilterChange: (value: string) => void;
   tagFilter: string | null;
   onTagFilterChange: (value: string | null) => void;
-  /** Clears search, folder, class type, style, and tag filters */
   onClearAllFilters: () => void;
-  /** When true, disable creating new class plans (free tier quota) */
   createDisabled?: boolean;
   createDisabledTitle?: string;
 }
@@ -81,7 +84,9 @@ export function ClassPlanLibraryHeader({
   const total = totalPlans ?? 0;
 
   const hasAdvancedFilters =
-    classTypeFilter.length > 0 || classStyleFilter.length > 0 || tagFilter !== null;
+    classTypeFilter.length > 0 ||
+    classStyleFilter.length > 0 ||
+    tagFilter !== null;
 
   const advancedFilterCount = useMemo(() => {
     let n = 0;
@@ -98,7 +103,7 @@ export function ClassPlanLibraryHeader({
       selectedFolder && selectedFolder !== "none"
         ? folders.find((f) => f.id === selectedFolder)
         : undefined,
-    [folders, selectedFolder]
+    [folders, selectedFolder],
   );
 
   const folderSelectLabel = useMemo(() => {
@@ -116,43 +121,30 @@ export function ClassPlanLibraryHeader({
     return n !== undefined ? `${f.name} (${n})` : f.name;
   }, [selectedFolder, folders, totalTemplateCount]);
 
+  const subtitle = totalKnown
+    ? hasActiveFilters
+      ? `Showing ${visiblePlanCount} of ${total} plan${total === 1 ? "" : "s"} · ${folderCount} folder${folderCount === 1 ? "" : "s"}`
+      : `${total} plan${total === 1 ? "" : "s"} · ${folderCount} folder${folderCount === 1 ? "" : "s"}`
+    : loading
+      ? "Loading library…"
+      : "0 plans · 0 folders";
+
   return (
-    <div className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
-        <div className="min-w-0 max-w-2xl space-y-2">
-        <div className="flex items-center gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
-              <FileText className="size-5" aria-hidden />
-            </div>
-          <h2 className="text-xl font-semibold tracking-[-0.03em] text-card-foreground sm:text-lg uppercase">
-            Class Plans
-          </h2>
-          </div>
-          <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground" aria-live="polite">
-            {!totalKnown && loading && <span>Loading library…</span>}
-            {totalKnown && (
-              <>
-                <span className="font-medium text-foreground">
-                  {hasActiveFilters
-                    ? `Showing ${visiblePlanCount} of ${total} plan${total === 1 ? "" : "s"}`
-                    : `${total} plan${total === 1 ? "" : "s"}`}
-                </span>
-                <span className="text-muted-foreground/50" aria-hidden>
-                  ·
-                </span>
-                <span>
-                  {folderCount} folder{folderCount === 1 ? "" : "s"}
-                </span>
-              </>
-            )}
+    <div className="space-y-6">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between ">
+        <header className="space-y-2">
+          <p className="layered-eyebrow">Class plans</p>
+          <h1 className="layered-display-headline">Class plans</h1>
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            {subtitle}
           </p>
-        </div>
+        </header>
 
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
           <Button
             type="button"
             variant="outline"
-            className="h-10 rounded-full border-border px-4"
+            className="h-10 rounded border border-[var(--layered-black)] bg-transparent px-4 shadow-none"
             onClick={onNewFolder}
           >
             <FolderPlus className="mr-2 size-4" />
@@ -165,8 +157,8 @@ export function ClassPlanLibraryHeader({
             title={createDisabled ? createDisabledTitle : undefined}
             className={cn(
               buttonVariants({ variant: "default" }),
-              "inline-flex h-10 items-center justify-center rounded-full px-5 text-primary-foreground shadow-md hover:bg-primary/90",
-              createDisabled && "pointer-events-none opacity-50"
+              "inline-flex h-10 items-center justify-center rounded bg-primary px-5 text-primary-foreground shadow-none hover:bg-primary/90",
+              createDisabled && "pointer-events-none opacity-50",
             )}
           >
             <Plus className="mr-2 size-4" />
@@ -175,11 +167,8 @@ export function ClassPlanLibraryHeader({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-start gap-3 border-t border-border pt-5">
-        <div className="min-w-0 flex-1 basis-52 space-y-2 sm:basis-64">
-          <Label htmlFor="class-plan-library-search" className="text-muted-foreground">
-            Search
-          </Label>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-[260px] flex-1">
           <ExerciseSearch
             id="class-plan-library-search"
             value={search}
@@ -188,10 +177,7 @@ export function ClassPlanLibraryHeader({
           />
         </div>
 
-        <div className="w-full min-w-44 max-w-xs shrink-0 space-y-2 sm:w-56">
-          <Label htmlFor="class-plan-library-folder" className="text-muted-foreground">
-            Folder
-          </Label>
+        <div className="w-full min-w-[180px] sm:w-auto">
           <Select
             value={selectValue}
             emptyValues={FILTER_SELECT_EMPTY_VALUES}
@@ -203,32 +189,28 @@ export function ClassPlanLibraryHeader({
           >
             <SelectTrigger
               id="class-plan-library-folder"
-              className="h-12 w-full min-w-0 rounded-2xl border-border bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+              className="h-10 w-full min-w-[180px] rounded border-border bg-card px-3 shadow-none"
             >
               <SelectValue placeholder="All plans">{folderSelectLabel}</SelectValue>
             </SelectTrigger>
-            <SelectContent
-              align="start"
-              sideOffset={6}
-              className="max-h-72 rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
-            >
-              <SelectItem value="all" className="rounded-xl py-2.5 pl-3">
+            <SelectContent align="start" sideOffset={6} className="rounded border-border p-1">
+              <SelectItem value="all" className="rounded py-2 pl-3">
                 {totalTemplateCount !== undefined ? (
                   <span>All plans ({totalTemplateCount})</span>
                 ) : (
                   <span>All plans</span>
                 )}
               </SelectItem>
-              <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
+              <SelectItem value="none" className="rounded py-2 pl-3">
                 <span>Unorganized</span>
               </SelectItem>
               {folders.length > 0 && (
                 <>
-                  <SelectSeparator className="mx-1 bg-border/70" />
+                  <SelectSeparator />
                   {folders.map((f) => {
                     const n = f._count?.templates;
                     return (
-                      <SelectItem key={f.id} value={f.id} className="rounded-xl py-2.5 pl-3">
+                      <SelectItem key={f.id} value={f.id} className="rounded py-2 pl-3">
                         {n !== undefined ? `${f.name} (${n})` : f.name}
                       </SelectItem>
                     );
@@ -239,98 +221,89 @@ export function ClassPlanLibraryHeader({
           </Select>
         </div>
 
-        {selectedFolderRow && (
-          <div className="flex shrink-0 flex-col space-y-2">
-            <Label className="invisible pointer-events-none select-none text-muted-foreground" aria-hidden>
-              Folder
-            </Label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 min-h-12 shrink-0 rounded-2xl border-border px-4"
-                onClick={() => onEditFolder(selectedFolderRow)}
-                aria-label={`Rename folder ${selectedFolderRow.name}`}
-              >
-                <Pencil className="mr-2 size-4" />
-                Rename
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 min-h-12 shrink-0 rounded-2xl border-border px-4 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => onRequestDeleteFolder(selectedFolderRow)}
-                aria-label={`Delete folder ${selectedFolderRow.name}`}
-              >
-                <Trash2 className="mr-2 size-4" />
-                Delete
-              </Button>
-            </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 rounded border border-[var(--layered-black)] px-4 shadow-none"
+          aria-expanded={filtersExpanded}
+          aria-controls={advancedFiltersPanelId}
+          onClick={() => setFiltersExpanded((open) => !open)}
+        >
+          <ListFilter className="mr-2 size-4 shrink-0" />
+          Filters
+          {hasAdvancedFilters ? (
+            <span
+              className="ml-2 inline-flex min-w-5 justify-center rounded bg-muted px-1.5 text-xs font-medium tabular-nums"
+              aria-label={`${advancedFilterCount} advanced filter${advancedFilterCount === 1 ? "" : "s"} active`}
+            >
+              {advancedFilterCount}
+            </span>
+          ) : null}
+          <ChevronDown
+            className={cn(
+              "ml-1 size-4 shrink-0 text-muted-foreground transition-transform duration-150",
+              filtersExpanded && "rotate-180",
+            )}
+            aria-hidden
+          />
+        </Button>
+
+        {selectedFolderRow ? (
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 rounded border-border px-3 shadow-none"
+              onClick={() => onEditFolder(selectedFolderRow)}
+              aria-label={`Rename folder ${selectedFolderRow.name}`}
+            >
+              <Pencil className="mr-2 size-4" />
+              Rename
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 rounded border-border px-3 text-destructive shadow-none hover:bg-destructive/10"
+              onClick={() => onRequestDeleteFolder(selectedFolderRow)}
+              aria-label={`Delete folder ${selectedFolderRow.name}`}
+            >
+              <Trash2 className="mr-2 size-4" />
+              Delete
+            </Button>
           </div>
-        )}
+        ) : null}
       </div>
 
-      <div className="border-t border-border pt-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="h-10 rounded-full border-border px-4"
-            aria-expanded={filtersExpanded}
-            aria-controls={advancedFiltersPanelId}
-            onClick={() => setFiltersExpanded((open) => !open)}
-          >
-            <ListFilter className="mr-2 size-4 shrink-0" />
-            <span>Filters</span>
-            {hasAdvancedFilters ? (
-              <span
-                className="ml-2 inline-flex min-w-5 justify-center rounded-full bg-primary/15 px-1.5 text-xs font-medium tabular-nums text-primary"
-                aria-label={`${advancedFilterCount} advanced filter${advancedFilterCount === 1 ? "" : "s"} active`}
-              >
-                {advancedFilterCount}
-              </span>
-            ) : null}
-            <ChevronDown
-              className={cn(
-                "ml-1 size-4 shrink-0 text-muted-foreground transition-transform duration-200",
-                filtersExpanded && "rotate-180"
-              )}
-              aria-hidden
-            />
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="h-10 rounded-full px-4"
-            disabled={!hasActiveFilters}
-            onClick={onClearAllFilters}
-          >
-            Clear all filters
-          </Button>
-        </div>
-
+      <div
+        id={advancedFiltersPanelId}
+        className={cn(
+          "grid transition-[grid-template-rows] duration-150 ease-out",
+          filtersExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
         <div
-          id={advancedFiltersPanelId}
-          className={cn(
-            "grid transition-[grid-template-rows] duration-200 ease-in-out",
-            filtersExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-          )}
+          className="min-h-0 overflow-hidden"
+          aria-hidden={!filtersExpanded}
+          inert={filtersExpanded ? undefined : true}
         >
-          <div
-            className="min-h-0 overflow-hidden"
-            aria-hidden={!filtersExpanded}
-            inert={filtersExpanded ? undefined : true}
-          >
-            <div className="pt-4 px-1">
-              <ClassPlanFilterBar
-                classTypeFilter={classTypeFilter}
-                onClassTypeFilterChange={onClassTypeFilterChange}
-                classStyleFilter={classStyleFilter}
-                onClassStyleFilterChange={onClassStyleFilterChange}
-                tagFilter={tagFilter}
-                onTagFilterChange={onTagFilterChange}
-              />
-            </div>
+          <div className="pb-1">
+            <ClassPlanFilterBar
+              classTypeFilter={classTypeFilter}
+              onClassTypeFilterChange={onClassTypeFilterChange}
+              classStyleFilter={classStyleFilter}
+              onClassStyleFilterChange={onClassStyleFilterChange}
+              tagFilter={tagFilter}
+              onTagFilterChange={onTagFilterChange}
+            />
+            {hasActiveFilters ? (
+              <Button
+                type="button"
+                className="mt-3 h-9 rounded px-3 text-sm"
+                onClick={onClearAllFilters}
+              >
+                Clear all filters
+              </Button>
+            ) : null}
           </div>
         </div>
       </div>

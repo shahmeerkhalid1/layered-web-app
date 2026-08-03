@@ -48,25 +48,17 @@ export function AuthPageShell({ children, className }: AuthPageShellProps) {
 
       <main
         className={cn(
-          "flex min-h-screen flex-col items-center justify-center bg-card px-6 py-10 sm:px-10 lg:px-16 lg:py-12",
+          "flex min-h-screen flex-col items-center justify-center bg-muted px-6 py-10 sm:px-10 lg:px-16 lg:py-12",
           className
         )}
       >
-        <div className="mb-8 flex w-full max-w-[400px] justify-center lg:mb-10">
+        <div className="mb-6 flex w-full max-w-[400px] justify-center lg:mb-4">
           <Image
             src="/layered-dark-logo.png"
-            alt="Layered."
+            alt="Layered Planning logo"
             width={400}
             height={100}
-            className="h-auto w-[280px] dark:hidden"
-            priority
-          />
-          <Image
-            src="/layered-light-logo.png"
-            alt="Layered."
-            width={400}
-            height={100}
-            className="hidden h-auto w-[280px] dark:block"
+            className="h-auto w-[280px] dark:filter dark:invert"
             priority
           />
         </div>
@@ -190,7 +182,7 @@ export function AuthSubmitButton({
       type={type}
       disabled={disabled}
       className={cn(
-        "inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground",
+        "inline-flex h-11 w-full items-center justify-center gap-2 rounded bg-primary px-6 text-sm font-medium text-primary-foreground",
         "transition-[opacity,transform,box-shadow] duration-150",
         "hover:opacity-95 active:scale-[0.99]",
         "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",

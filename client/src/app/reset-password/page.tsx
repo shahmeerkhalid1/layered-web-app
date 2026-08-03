@@ -77,7 +77,7 @@ function ResetPasswordPageContent() {
           </AuthFormAlert>
           <Link
             href="/forgot-password"
-            className={cn(buttonVariants(), "mt-5 h-11 w-full rounded-full")}
+            className={cn(buttonVariants(), "mt-5 h-11 w-full rounded")}
           >
             Request new link
           </Link>

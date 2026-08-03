@@ -55,11 +55,8 @@ export function FolderDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl">
+      <DialogContent className="rounded border-border bg-popover p-6 shadow-xl">
         <DialogHeader>
-          <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
-            Studio Set
-          </p>
           <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-popover-foreground">
             {editingFolder ? "Rename Folder" : "New Folder"}
           </DialogTitle>
@@ -75,7 +72,7 @@ export function FolderDialog({
               onChange={(event) => onFolderNameChange(event.target.value)}
               placeholder="e.g. Reformer, Mat, Chair"
               aria-invalid={duplicateName}
-              className="h-11 rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 aria-invalid:border-destructive"
+              className="h-11 rounded border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 aria-invalid:border-destructive"
             />
             {duplicateName ? (
               <p className="text-sm text-destructive">
@@ -88,14 +85,14 @@ export function FolderDialog({
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            className="rounded border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           >
             Cancel
           </Button>
           <Button
             onClick={onSave}
             disabled={!trimmedName || duplicateName}
-            className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
+            className="rounded bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
           >
             {editingFolder ? "Save" : "Create"}
           </Button>

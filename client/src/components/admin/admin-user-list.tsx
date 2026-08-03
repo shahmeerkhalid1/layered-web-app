@@ -236,7 +236,7 @@ export function AdminUserList({
 
   return (
     <>
-    <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-lg">
+    <div className="overflow-hidden rounded border border-border bg-muted/30">
       {selectedIds.size > 0 ? (
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-accent/40 px-4 py-3 sm:px-5">
           <p className="text-sm font-medium text-foreground">
@@ -247,7 +247,7 @@ export function AdminUserList({
               type="button"
               variant="outline"
               size="sm"
-              className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-background hover:text-foreground"
+              className="rounded border-border bg-transparent text-muted-foreground hover:bg-background hover:text-foreground"
               onClick={clearSelection}
             >
               Clear selection
@@ -257,7 +257,7 @@ export function AdminUserList({
                 type="button"
                 variant="destructive"
                 size="sm"
-                className="rounded-full"
+                className="rounded"
                 onClick={() => setDeactivateTarget(selectedActiveUsers)}
               >
                 <UserX className="mr-2 size-4" />
@@ -270,7 +270,7 @@ export function AdminUserList({
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <div className="flex items-center gap-3 rounded-full border border-border bg-background/75 px-4 py-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-3 rounded border border-border bg-background px-4 py-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
             Loading users
           </div>
@@ -318,7 +318,7 @@ export function AdminUserList({
                 <TableRow
                   key={`invite-${invitation.id}`}
                   tabIndex={0}
-                  className="cursor-pointer border-border bg-muted/15 hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
+                  className="cursor-pointer border-border bg-background hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
                   onClick={() => onViewInvitationDetails?.(invitation)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
@@ -349,7 +349,7 @@ export function AdminUserList({
                   <TableCell className="px-4 py-3">
                     <Badge
                       variant="outline"
-                      className="rounded-full border-primary/25 bg-primary/10 text-[11px] text-primary"
+                      className="rounded border-primary/25 bg-primary/10 text-[11px] text-primary"
                     >
                       <Mail className="mr-1 size-3" />
                       Invite pending
@@ -363,7 +363,7 @@ export function AdminUserList({
                       <DropdownMenuTrigger
                         className={cn(
                           buttonVariants({ variant: "ghost", size: "icon-sm" }),
-                          "shrink-0 rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground data-popup-open:bg-accent",
+                          "shrink-0 rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground data-popup-open:bg-accent",
                         )}
                         aria-label={`Open menu for ${invitation.email}`}
                       >
@@ -371,7 +371,7 @@ export function AdminUserList({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
                         align="end"
-                        className="rounded-2xl border-border bg-popover p-1 shadow-xl w-48"
+                        className="rounded border-border bg-popover p-1 shadow-xl w-48"
                       >
                         <DropdownMenuItem
                           className="rounded-xl"
@@ -412,7 +412,7 @@ export function AdminUserList({
                     key={user.id}
                     data-state={isSelected ? "selected" : undefined}
                     tabIndex={0}
-                    className="cursor-pointer border-border hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
+                    className="cursor-pointer bg-background border-border hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
                     onClick={() => onViewDetails(user)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
@@ -457,7 +457,7 @@ export function AdminUserList({
                       {banned ? (
                         <Badge
                           variant="destructive"
-                          className="rounded-full text-[11px]"
+                          className="rounded text-[11px]"
                         >
                           Inactive
                         </Badge>
@@ -478,7 +478,7 @@ export function AdminUserList({
                         <DropdownMenuTrigger
                           className={cn(
                             buttonVariants({ variant: "ghost", size: "icon-sm" }),
-                            "shrink-0 rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground data-popup-open:bg-accent",
+                            "shrink-0 rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground data-popup-open:bg-accent",
                           )}
                           aria-label={`Open menu for ${user.name}`}
                         >
@@ -486,7 +486,7 @@ export function AdminUserList({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="end"
-                          className="rounded-2xl border-border bg-popover p-1 shadow-xl"
+                          className="rounded border-border bg-popover p-1 shadow-xl"
                         >
                           <DropdownMenuItem
                             className="rounded-xl"
@@ -561,7 +561,7 @@ export function AdminUserList({
         if (!open) setDeactivateTarget(null);
       }}
     >
-      <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl sm:max-w-md">
+      <DialogContent className="rounded border-border bg-popover p-6 shadow-xl sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-popover-foreground">
             Deactivate user
@@ -580,7 +580,7 @@ export function AdminUserList({
             type="button"
             variant="outline"
             onClick={() => setDeactivateTarget(null)}
-            className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            className="rounded border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           >
             Cancel
           </Button>
@@ -589,7 +589,7 @@ export function AdminUserList({
             variant="destructive"
             disabled={deactivating}
             onClick={() => void handleDeactivateConfirm()}
-            className="rounded-full"
+            className="rounded"
           >
             {deactivating ? (
               <Loader2 className="size-4 animate-spin" />
@@ -611,7 +611,7 @@ function AdminUserFilteredEmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-      <div className="flex size-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
+      <div className="flex size-14 items-center justify-center rounded bg-muted text-muted-foreground">
         <SearchX className="size-6" />
       </div>
       <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-card-foreground">
@@ -623,7 +623,7 @@ function AdminUserFilteredEmptyState({
       <Button
         type="button"
         variant="secondary"
-        className="mt-4 rounded-full px-4"
+        className="mt-4 rounded px-4"
         onClick={onClearFilters}
       >
         Clear filters
@@ -635,7 +635,7 @@ function AdminUserFilteredEmptyState({
 function AdminUserEmptyState({ onInvite }: { onInvite?: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-      <div className="flex size-14 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+      <div className="flex size-14 items-center justify-center rounded bg-secondary text-secondary-foreground">
         <UserPlus className="size-6" />
       </div>
       <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-card-foreground">
@@ -648,7 +648,7 @@ function AdminUserEmptyState({ onInvite }: { onInvite?: () => void }) {
         <Button
           type="button"
           size="sm"
-          className="mt-4 rounded-full bg-primary px-4 text-primary-foreground hover:bg-primary/90"
+          className="mt-4 rounded bg-primary px-4 text-primary-foreground hover:bg-primary/90"
           onClick={onInvite}
         >
           <UserPlus className="mr-2 size-4" />

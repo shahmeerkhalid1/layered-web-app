@@ -91,7 +91,7 @@ export function EnrollInClassDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[min(90vh,40rem)] w-full flex-col gap-0 overflow-hidden rounded-3xl p-0 sm:max-w-lg">
+      <DialogContent className="flex max-h-[min(90vh,40rem)] w-full flex-col gap-0 overflow-hidden rounded p-0 sm:max-w-lg">
         <DialogHeader className="shrink-0 space-y-1 border-b border-border/60 px-6 pt-6 pr-12 pb-4 text-left">
           <DialogTitle className="text-xl font-semibold tracking-[-0.02em]">
             Enroll in class
@@ -128,7 +128,7 @@ export function EnrollInClassDialog({
                 filtered.map((cls) => (
                   <div
                     key={cls.id}
-                    className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/10 p-3"
+                    className="flex items-center justify-between gap-3 rounded border border-border bg-muted/10 p-3"
                   >
                     <div className="min-w-0">
                       <p className="truncate font-medium text-foreground">{cls.title}</p>
@@ -144,7 +144,7 @@ export function EnrollInClassDialog({
                     <Button
                       type="button"
                       size="sm"
-                      className="shrink-0 rounded-full"
+                      className="shrink-0 rounded"
                       disabled={pending}
                       onClick={() => void handleEnroll(cls.id)}
                     >

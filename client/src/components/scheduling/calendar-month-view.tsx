@@ -40,7 +40,7 @@ export function CalendarMonthView({ anchor, instances, onSelectDay }: CalendarMo
   const inMonth = (d: Date) => d.getMonth() === anchor.getMonth();
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-inner">
+    <div className="overflow-hidden rounded border border-border/80 bg-card shadow-inner">
       <div className="grid grid-cols-7 gap-px border-b border-border/70 bg-muted/25 text-center text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
           <div key={d} className="py-2.5">
@@ -62,7 +62,7 @@ export function CalendarMonthView({ anchor, instances, onSelectDay }: CalendarMo
               variant="outline"
               onClick={() => onSelectDay(d)}
               className={cn(
-                "h-auto min-h-16 cursor-pointer flex-col gap-1 rounded-2xl px-1 py-2 font-normal shadow-none",
+                "h-auto min-h-16 cursor-pointer flex-col gap-1 rounded px-1 py-2 font-normal shadow-none",
                 outside && "opacity-45",
                 isToday
                   ? "border-primary/40 bg-primary/10 text-foreground hover:border-primary/50 hover:bg-primary/15"

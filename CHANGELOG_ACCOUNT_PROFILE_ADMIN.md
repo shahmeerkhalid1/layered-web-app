@@ -229,7 +229,7 @@ Optional `?v=` / `&v=` cache-bust query when `imageVersion` changes after replac
 
 | Feature | Behavior |
 |---------|----------|
-| Table shell | `rounded-3xl border bg-card shadow-lg` |
+| Table shell | `rounded border bg-card shadow-lg` |
 | Header row | `bg-accent`, uppercase tracked column labels |
 | Columns | Checkbox, Name, Email, Role (hidden &lt; `sm`), Status, Actions |
 | Row click / Enter / Space | Opens **View details** sheet |

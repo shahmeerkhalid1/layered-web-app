@@ -97,7 +97,7 @@ export default function ClientDetailPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           <Link href={`/clients/${client.id}/edit`}>
-            <Button variant="outline" className="rounded-full">
+            <Button variant="outline" className="rounded">
               <Pencil className="mr-2 size-4" />
               Edit client
             </Button>
@@ -105,7 +105,7 @@ export default function ClientDetailPage() {
           <Button
             type="button"
             variant="outline"
-            className="rounded-full text-destructive hover:text-destructive"
+            className="rounded text-destructive hover:text-destructive"
             onClick={() => setDeleteOpen(true)}
             disabled={pending}
           >
@@ -118,7 +118,7 @@ export default function ClientDetailPage() {
       <ClientProfileView client={client} />
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="rounded-3xl sm:max-w-md">
+        <DialogContent className="rounded sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Archive this client?</DialogTitle>
             <DialogDescription>
@@ -130,7 +130,7 @@ export default function ClientDetailPage() {
             <Button
               type="button"
               variant="outline"
-              className="rounded-full"
+              className="rounded"
               onClick={() => setDeleteOpen(false)}
             >
               Cancel
@@ -138,7 +138,7 @@ export default function ClientDetailPage() {
             <Button
               type="button"
               variant="destructive"
-              className="rounded-full"
+              className="rounded"
               disabled={pending}
               onClick={() => void handleDelete()}
             >

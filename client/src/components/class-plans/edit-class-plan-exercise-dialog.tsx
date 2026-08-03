@@ -82,7 +82,7 @@ export function EditClassPlanExerciseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[min(90vh,800px)] w-full max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-3xl border-border p-0 shadow-xl sm:max-w-6xl">
+      <DialogContent className="flex h-[min(90vh,800px)] w-full max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded border-border p-0 shadow-xl sm:max-w-6xl">
         <DialogHeader className="shrink-0 border-b border-border px-6 py-5 text-left">
           <DialogTitle className="text-xl font-semibold tracking-[-0.02em]">
             Edit exercise

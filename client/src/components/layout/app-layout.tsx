@@ -35,7 +35,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <Sidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
           <main className="flex-1 overflow-y-auto overflow-x-hidden">
-            <PageBackgroundContent className="p-4 pt-14 md:p-6 md:pt-4">
+            <PageBackgroundContent className="mx-auto w-full max-w-[1200px] px-4 py-8 pt-14 md:px-14 md:py-10 md:pt-10">
               {children}
             </PageBackgroundContent>
           </main>

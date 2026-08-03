@@ -46,7 +46,7 @@ export default function ExercisesPage() {
     library.totalExerciseCount > 0;
 
   return (
-    <div className="space-y-6 rounded-[2rem] px-2 pb-6 sm:px-4">
+    <div className="space-y-6">
       {exerciseQuotaReached ? (
         <SubscriptionUpgradeBanner
           resourceLabel="exercises"

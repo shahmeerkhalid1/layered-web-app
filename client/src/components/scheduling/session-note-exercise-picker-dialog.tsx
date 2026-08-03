@@ -108,7 +108,7 @@ export function SessionNoteExercisePickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg rounded-3xl">
+      <DialogContent className="max-w-lg rounded">
         <DialogHeader>
           <DialogTitle>Attach exercises</DialogTitle>
           <DialogDescription>
@@ -121,7 +121,7 @@ export function SessionNoteExercisePickerDialog({
           onChange={setSearch}
           placeholder="Search by name or description…"
         />
-        <div className="max-h-64 overflow-y-auto rounded-2xl bg-muted/15 p-2">
+        <div className="max-h-64 overflow-y-auto rounded bg-muted/15 p-2">
           {loading ? (
             <div className="flex justify-center py-8">
               <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -151,7 +151,7 @@ export function SessionNoteExercisePickerDialog({
                         }
                       }}
                       className={cn(
-                        "flex cursor-pointer gap-3 rounded-2xl border bg-card p-3 transition-colors",
+                        "flex cursor-pointer gap-3 rounded border bg-card p-3 transition-colors",
                         selected ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"
                       )}
                     >
@@ -168,7 +168,7 @@ export function SessionNoteExercisePickerDialog({
           <Button
             type="button"
             variant="outline"
-            className="rounded-full"
+            className="rounded"
             onClick={() => onOpenChange(false)}
             disabled={pending}
           >
@@ -176,7 +176,7 @@ export function SessionNoteExercisePickerDialog({
           </Button>
           <Button
             type="button"
-            className="rounded-full"
+            className="rounded"
             disabled={pending || selectedCount === 0}
             onClick={() => void handleConfirm()}
           >

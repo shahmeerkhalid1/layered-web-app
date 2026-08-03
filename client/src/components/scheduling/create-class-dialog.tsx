@@ -197,7 +197,7 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[95vh] overflow-y-auto rounded-3xl sm:max-w-lg">
+      <DialogContent className="max-h-[95vh] overflow-y-auto rounded sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>New class</DialogTitle>
           <DialogDescription>
@@ -335,7 +335,7 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
                       type="button"
                       size="sm"
                       variant={daySet.has(d.value) ? "default" : "outline"}
-                      className="rounded-full px-3"
+                      className="rounded px-3"
                       onClick={() => toggleDay(d.value)}
                     >
                       {d.label}
@@ -370,10 +370,10 @@ export function CreateClassDialog({ open, onOpenChange, onSuccess }: CreateClass
           )}
 
           <DialogFooter>
-            <Button type="button" variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" className="rounded" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="rounded-full" disabled={isSubmitting}>
+            <Button type="submit" className="rounded" disabled={isSubmitting}>
               {isSubmitting ? "Creating…" : "Create"}
             </Button>
           </DialogFooter>

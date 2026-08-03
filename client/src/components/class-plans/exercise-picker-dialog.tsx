@@ -170,7 +170,7 @@ export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[min(90vh,800px)] w-full max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-3xl border-border p-0 shadow-xl sm:max-w-6xl">
+      <DialogContent className="flex h-[min(90vh,800px)] w-full max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded border-border p-0 shadow-xl sm:max-w-6xl">
         <DialogHeader className="shrink-0 border-b border-border px-6 py-5 text-left">
           <DialogTitle className="text-xl font-semibold tracking-[-0.02em]">
             Add exercise to section
@@ -191,11 +191,11 @@ export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
             onValueChange={(v) => v && setTab(v)}
             className="flex flex-col gap-0"
           >
-            <TabsList className="mb-4 w-full max-w-xl mx-auto shrink-0">
-              <TabsTrigger value="create" className={`flex-1 ${tab === "create" ? "bg-primary!" : ""}`}>
+            <TabsList className="mb-4 w-full max-w-xl mx-auto shrink-0 p-0">
+              <TabsTrigger value="create" className={`flex-1 ${tab === "create" ? "bg-primary! text-white!" : ""}`}>
                 Create new
               </TabsTrigger>
-              <TabsTrigger value="library" className={`flex-1 ${tab === "library" ? "bg-primary!" : ""}`}>
+              <TabsTrigger value="library" className={`flex-1 ${tab === "library" ? "bg-primary! text-white!" : ""}`}>
                 Pick from library
               </TabsTrigger>
             </TabsList>
@@ -226,7 +226,7 @@ export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
             <TabsContent value="library" className="mt-0">
               {tab === "library" ? (
                 <div className="flex flex-col gap-3">
-                <div className="shrink-0 p-2 w-full max-w-full">
+                <div className="shrink-0  w-full max-w-full">
                   <ExerciseSearch
                     id="exercise-picker-search"
                     value={search}
@@ -234,7 +234,7 @@ export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
                     placeholder="Search by name or description…"
                   />
                 </div>
-                <div className="rounded-2xl bg-muted/15 p-2">
+                <div className="rounded bg-muted/15">
                   {loadingLibrary ? (
                     <div className="flex justify-center py-12">
                       <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -265,7 +265,7 @@ export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
                                 }
                               }}
                               className={cn(
-                                "flex w-full cursor-pointer gap-3 rounded-2xl border bg-card p-3 text-left transition-colors",
+                                "flex w-full cursor-pointer gap-3 rounded border bg-card p-3 text-left transition-colors",
                                 selected
                                   ? "border-primary/40 bg-primary/5 ring-1 ring-primary/20"
                                   : "border-border hover:border-border hover:bg-card/90 hover:ring-1 hover:ring-border",
@@ -302,7 +302,7 @@ export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
         </div>
 
         {showLibraryFooter ? (
-          <div className="flex shrink-0 items-center justify-between gap-4 border-t border-border px-6 py-4">
+          <div className="flex shrink-0 items-center justify-between gap-4 border-t border-border px-6 py-4 bg-[var(--layered-cream)] ">
             <p className="text-sm text-muted-foreground">
               {selectedCount === 0
                 ? "Select one or more exercises"
@@ -312,6 +312,7 @@ export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
             </p>
             <Button
               type="button"
+              className="rounded mr-5"
               disabled={selectedCount === 0 || isAdding}
               onClick={() => void addSelectedFromLibrary()}
             >

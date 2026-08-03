@@ -16,6 +16,7 @@ import {
 import {
   calendarDayColumnHeightPx,
   computeCalendarHourRange,
+  formatCalendarEventTimeRange,
   formatCalendarHourLabel,
   formatYmdLocal,
   hourSlots,
@@ -138,7 +139,7 @@ function CalendarEventTooltipContent({
         {statusLabel ? (
           <span
             className={cn(
-              "inline-flex h-5 items-center rounded-full px-2 text-[10px] font-semibold uppercase tracking-wide",
+              "inline-flex h-5 items-center rounded px-2 text-[10px] font-semibold uppercase tracking-wide",
               instance.status === "CANCELLED"
                 ? "bg-destructive/25 text-background"
                 : "bg-background/25 text-background/90"
@@ -149,7 +150,7 @@ function CalendarEventTooltipContent({
         ) : null}
         <span
           className={cn(
-            "inline-flex h-5 items-center rounded-full px-2 text-[10px] font-semibold uppercase tracking-wide",
+            "inline-flex h-5 items-center rounded px-2 text-[10px] font-semibold uppercase tracking-wide",
             isGroup ? "bg-background/20 text-background" : "bg-background/15 text-background/90"
           )}
         >
@@ -177,8 +178,10 @@ export function CalendarEventBlock({ instance, onSelect, layout, columnHeightPx 
 
   const label = instance.class.title;
   const isGroup = instance.class.type === "GROUP";
+  const displayTitle = isGroup ? label : `Private: ${label}`;
   const statusLabel = instanceStatusLabel(instance.status);
-  const timeStr = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", hour12: true });
+  const timeStr = formatCalendarEventTimeRange(start, durationMin);
+  const isScheduled = instance.status === "SCHEDULED";
   const typeStyle = [instance.classType, instance.classStyle].filter(Boolean).join(" · ");
   const ariaLabel = [
     label,
@@ -204,7 +207,7 @@ export function CalendarEventBlock({ instance, onSelect, layout, columnHeightPx 
           left: LANE_INSET_PX,
           right: LANE_INSET_PX,
           width: "auto",
-          borderRadius: `${borderRadiusPx}px`,
+          // borderRadius: `${borderRadiusPx}px`,
         }
       : {
           top: `${top}%`,
@@ -212,55 +215,66 @@ export function CalendarEventBlock({ instance, onSelect, layout, columnHeightPx 
           left: `calc(${LANE_INSET_PX}px + ${col} * (${seg} + ${LANE_GAP_PX}px))`,
           width: `calc(${seg})`,
           right: "auto",
-          borderRadius: `${borderRadiusPx}px`,
+          // borderRadius: `${borderRadiusPx}px`,
         };
 
   const blockClassName = cn(
-    "absolute z-10 cursor-pointer overflow-hidden border-y border-r text-left font-medium shadow-sm transition-all",
-    "border-l-[3px] hover:z-20 hover:-translate-y-px hover:shadow-md hover:ring-3 hover:ring-ring/40",
-    "focus-visible:z-20 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+    "absolute z-10 cursor-pointer overflow-hidden border-0 text-left transition-colors duration-150 ease-out",
+    "hover:z-20 focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
     veryTight
-      ? "flex items-center gap-1 px-1.5 py-0.5"
+      ? "flex items-center gap-1 px-2 py-0.5"
       : compact
-        ? "flex min-h-0 flex-col justify-start gap-0.5 px-1.5 py-0.5"
-        : "flex min-h-0 flex-col gap-0.5 px-2 py-1 text-[11px]",
+        ? "flex min-h-0 flex-col justify-start gap-0 px-2 py-1"
+        : "flex min-h-0 flex-col gap-0 px-2.5 py-1.5",
     weekGridEventStatusClasses(instance.status, isGroup)
   );
 
   const titleClassName =
     instance.status === "CANCELLED"
-      ? "line-through decoration-destructive/50"
+      ? "line-through decoration-destructive decoration-[1.8px]"
       : instance.status === "COMPLETED"
         ? "opacity-85"
         : undefined;
 
+  const timeClassName = cn(
+    "line-clamp-1 min-w-0 tabular-nums leading-tight font-normal",
+    veryTight ? "text-[10px]" : "text-[11px]",
+    isScheduled ? "text-white/70" : "opacity-80",
+  );
+
   const blockContent = veryTight ? (
-    <span className={cn("min-w-0 truncate text-[10px] leading-tight font-medium", titleClassName)}>
-      <span className="tabular-nums opacity-90">{timeStr}</span>
-      <span className="opacity-50"> · </span>
-      {label}
+    <span className={cn("min-w-0 truncate text-[10px] leading-tight font-semibold", titleClassName)}>
+      <span className={cn("tabular-nums", isScheduled ? "text-white/70 font-normal" : "opacity-80")}>
+        {timeStr}
+      </span>
+      <span className={isScheduled ? "text-white/50" : "opacity-50"}> · </span>
+      {displayTitle}
     </span>
   ) : compact ? (
     <>
-      <span className={cn("line-clamp-1 min-w-0 text-[10px] leading-tight font-semibold", titleClassName)}>
-        {label}
+      <span
+        className={cn(
+          "line-clamp-1 min-w-0 text-xs leading-tight font-semibold ",
+          isScheduled && "text-white",
+          titleClassName,
+        )}
+      >
+        {displayTitle}
       </span>
-      {typeStyle ? (
-        <span className="line-clamp-1 min-w-0 text-[9px] leading-tight opacity-75">{typeStyle}</span>
-      ) : null}
-      <span className="line-clamp-1 min-w-0 text-[9px] leading-tight opacity-80 tabular-nums">
-        {timeStr} · {durationMin}m
-      </span>
+      <span className={timeClassName}>{timeStr}</span>
     </>
   ) : (
     <>
-      <span className={cn("line-clamp-2 min-w-0 font-semibold leading-snug", titleClassName)}>{label}</span>
-      {typeStyle ? (
-        <span className="line-clamp-1 min-w-0 text-[10px] leading-tight opacity-75">{typeStyle}</span>
-      ) : null}
-      <span className="mt-0.5 block shrink-0 text-[10px] tabular-nums leading-tight opacity-80">
-        {timeStr} · {durationMin}m
+      <span
+        className={cn(
+          "line-clamp-2 min-w-0 text-xs font-semibold leading-snug",
+          isScheduled && "text-white",
+          titleClassName,
+        )}
+      >
+        {displayTitle}
       </span>
+      <span className={cn("mt-0.5 block shrink-0", timeClassName)}>{timeStr}</span>
     </>
   );
 
@@ -339,31 +353,33 @@ export function CalendarWeekView({
   const today = new Date();
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-inner">
+    <div className="overflow-x-auto overflow-y-hidden rounded border border-border bg-card">
       <div className="grid min-w-[760px] grid-cols-[3.5rem_repeat(7,minmax(0,1fr))]">
-        <div className="border-b border-border/70 bg-muted/25 p-2" />
+        <div className="h-14 border-b border-border" />
         {days.map((d) => {
           const isToday = isSameLocalDay(d, today);
           return (
             <div
               key={formatYmdLocal(d)}
               className={cn(
-                "border-b border-l border-border/70 p-2 text-center",
-                isToday ? "bg-primary/10" : "bg-muted/20"
+                "flex h-14 flex-col items-center justify-center border-b border-border text-center",
+                isToday && "bg-[var(--layered-light-blue)]",
               )}
             >
               <p
                 className={cn(
-                  "text-[10px] font-semibold tracking-wider uppercase",
-                  isToday ? "text-primary" : "text-muted-foreground"
+                  "text-[10px] font-medium uppercase tracking-wide",
+                  isToday ? "text-[var(--layered-navy)]" : "text-muted-foreground",
                 )}
               >
                 {d.toLocaleDateString(undefined, { weekday: "short" })}
               </p>
               <p
                 className={cn(
-                  "text-sm font-semibold tabular-nums",
-                  isToday ? "text-primary" : "text-foreground"
+                  "text-lg font-semibold tabular-nums",
+                  isToday
+                    ? "rounded bg-[var(--layered-navy)]/15 px-2 text-[var(--layered-navy)]"
+                    : "text-foreground",
                 )}
               >
                 {d.getDate()}
@@ -373,7 +389,7 @@ export function CalendarWeekView({
         })}
 
         <div
-          className="relative border-r border-border/70 bg-muted/15"
+          className="relative border-r border-border"
           style={{ height: `${columnHeightPx}px` }}
         >
           {hours.map((h) => {
@@ -408,8 +424,7 @@ export function CalendarWeekView({
             <div
               key={ymd}
               className={cn(
-                "relative border-l border-border/70",
-                isToday ? "bg-primary/2" : "bg-background/40"
+                "relative border-l border-border",
               )}
               style={{ height: `${columnHeightPx}px` }}
             >
@@ -427,10 +442,10 @@ export function CalendarWeekView({
                         : `Schedule at ${h}:00 on ${ymd}`
                     }
                     className={cn(
-                      "absolute right-0 left-0 border-t border-border/35 transition-colors",
+                      "absolute right-0 left-0 transition-colors duration-150 px-1",
                       isPastSlot
                         ? "cursor-default opacity-40"
-                        : "cursor-pointer hover:bg-muted/25 hover:ring-1 hover:ring-inset hover:ring-ring/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50"
+                        : "cursor-pointer hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50"
                     )}
                     style={{ top: `${top * 100}%`, height: `${(60 / total) * 100}%` }}
                     onClick={isPastSlot ? undefined : () => onSelectSlot(d, h)}

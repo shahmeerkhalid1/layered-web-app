@@ -1,9 +1,8 @@
 "use client";
 
-import { UserPlus, UsersRound } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { ExerciseSearch } from "@/components/exercises/exercise-search";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 
 export interface AdminUserLibraryHeaderProps {
   totalUsers?: number;
@@ -27,41 +26,30 @@ export function AdminUserLibraryHeader({
   const totalKnown = totalUsers !== undefined;
   const total = totalUsers ?? 0;
 
-  return (
-    <div className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
-        <div className="min-w-0 max-w-2xl space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
-              <UsersRound className="size-5" aria-hidden />
-            </div>
-            <div>
-              <h2 className="font-heading text-xl font-semibold tracking-[-0.03em] text-card-foreground sm:text-lg uppercase">
-                User management
-              </h2>
-              <p
-                className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground"
-                aria-live="polite"
-              >
-                {!totalKnown && loading && <span>Loading directory…</span>}
-                {totalKnown && (
-                  <span className="font-medium text-foreground">
-                    {hasActiveFilters
-                      ? `Showing ${visibleUserCount} of ${total} user${total === 1 ? "" : "s"}`
-                      : `${total} user${total === 1 ? "" : "s"}`}
-                  </span>
-                )}
-              </p>
-            </div>
-          </div>
-        </div>
+  const subtitle = totalKnown
+    ? hasActiveFilters
+      ? `Showing ${visibleUserCount} of ${total} user${total === 1 ? "" : "s"}`
+      : `${total} user${total === 1 ? "" : "s"}`
+    : loading
+      ? "Loading directory…"
+      : "0 users";
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <header className="space-y-2">
+          <p className="layered-eyebrow">Admin</p>
+          <h1 className="layered-display-headline">User management</h1>
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            {subtitle}
+          </p>
+        </header>
+
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
           <Button
             type="button"
-            size="sm"
+            className="h-10 rounded bg-primary px-5 shadow-none hover:bg-primary/90"
             onClick={onInvite}
-            className="rounded-full px-4"
           >
             <UserPlus className="mr-2 size-4" />
             Invite user
@@ -69,11 +57,8 @@ export function AdminUserLibraryHeader({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-start gap-3 border-t border-border pt-5">
-        <div className="min-w-0 flex-1 basis-52 space-y-2 sm:basis-72">
-          <Label htmlFor="user-search" className="text-muted-foreground">
-            Search
-          </Label>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-[260px] flex-1">
           <ExerciseSearch
             id="user-search"
             value={search}

@@ -56,7 +56,7 @@ export function ClientForm({
     <form
       noValidate
       onSubmit={handleSubmit(onSubmit, handleInvalid)}
-      className="space-y-6 rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6"
+      className="space-y-6 rounded border border-border bg-card p-5 sm:p-6"
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
@@ -167,7 +167,7 @@ export function ClientForm({
       />
 
       <div className="flex justify-end">
-        <Button type="submit" className="rounded-full px-6" disabled={pending}>
+        <Button type="submit" className="rounded px-6" disabled={pending}>
           {pending ? "Saving…" : submitLabel}
         </Button>
       </div>

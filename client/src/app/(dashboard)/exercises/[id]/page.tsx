@@ -256,7 +256,7 @@ export default function ExerciseDetailPage() {
                         key={layer.id}
                         className={
                           finisher
-                            ? "min-w-0 rounded-2xl border border-border bg-card/40 p-4 sm:p-5"
+                            ? "min-w-0 rounded border border-border bg-card/40 p-4 sm:p-5"
                             : "min-w-0 border-b border-border/60 pb-4 last:border-0 last:pb-0"
                         }
                       >

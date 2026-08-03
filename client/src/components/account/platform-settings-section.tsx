@@ -57,10 +57,10 @@ export function PlatformSettingsSection() {
   return (
     <section
       id="platform-settings"
-      className="w-full scroll-mt-6 rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6"
+      className="w-full scroll-mt-6 rounded border border-border bg-card p-5 shadow-lg sm:p-6"
     >
       <div className="flex items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
           <ShieldCheck className="size-4.5" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
@@ -76,14 +76,14 @@ export function PlatformSettingsSection() {
 
       {loading ? (
         <div className="mt-6 flex justify-center py-8">
-          <div className="flex items-center gap-3 rounded-full border border-border px-4 py-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-3 rounded border border-border px-4 py-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin text-primary" aria-hidden />
             Loading platform settings
           </div>
         </div>
       ) : (
         <div className="mt-6 space-y-6">
-          <div className="rounded-2xl border border-border bg-muted/15 p-4 sm:p-5">
+          <div className="rounded border border-border bg-muted/15 p-4 sm:p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3">
                 <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -113,13 +113,13 @@ export function PlatformSettingsSection() {
                 disabled={saving}
                 onClick={() => void toggleSignup(!signupEnabled)}
                 className={cn(
-                  "relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border border-transparent p-1 transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
+                  "relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded border border-transparent p-1 transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
                   signupEnabled ? "bg-primary" : "bg-muted",
                 )}
               >
                 <span
                   className={cn(
-                    "pointer-events-none block size-6 translate-x-0 rounded-full bg-background shadow-sm transition-transform",
+                    "pointer-events-none block size-6 translate-x-0 rounded bg-background shadow-sm transition-transform",
                     signupEnabled && "translate-x-6",
                   )}
                 />
@@ -129,7 +129,7 @@ export function PlatformSettingsSection() {
 
           <Separator />
 
-          <div className="rounded-2xl border border-border bg-muted/15 p-4 sm:p-5">
+          <div className="rounded border border-border bg-muted/15 p-4 sm:p-5">
             <div className="flex items-start gap-3">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <MailCheck className="size-4" aria-hidden />

@@ -308,7 +308,7 @@ export function EditClassDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-3xl sm:max-w-lg">
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{mode === "single" ? "Edit class" : "Edit class series"}</DialogTitle>
             <DialogDescription>
@@ -456,7 +456,7 @@ export function EditClassDialog({
                           type="button"
                           size="sm"
                           variant={daySet.has(d.value) ? "default" : "outline"}
-                          className="rounded-full px-3"
+                          className="rounded px-3"
                           onClick={() => toggleDay(d.value)}
                         >
                           {d.label}
@@ -494,12 +494,12 @@ export function EditClassDialog({
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-full"
+                  className="rounded"
                   onClick={() => onOpenChange(false)}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" className="rounded-full" disabled={isSubmitting}>
+                <Button type="submit" className="rounded" disabled={isSubmitting}>
                   {isSubmitting ? "Saving…" : "Save changes"}
                 </Button>
               </DialogFooter>
@@ -509,7 +509,7 @@ export function EditClassDialog({
       </Dialog>
 
       <Dialog open={confirmRegenOpen} onOpenChange={setConfirmRegenOpen}>
-        <DialogContent className="max-w-sm rounded-3xl">
+        <DialogContent className="max-w-sm rounded">
           <DialogHeader>
             <DialogTitle>Update future sessions?</DialogTitle>
             <DialogDescription>
@@ -521,7 +521,7 @@ export function EditClassDialog({
             <Button
               type="button"
               variant="outline"
-              className="rounded-full"
+              className="rounded"
               onClick={() => {
                 setConfirmRegenOpen(false);
                 setPendingValues(null);
@@ -529,7 +529,7 @@ export function EditClassDialog({
             >
               Cancel
             </Button>
-            <Button type="button" className="rounded-full" onClick={() => void confirmRegeneration()}>
+            <Button type="button" className="rounded" onClick={() => void confirmRegeneration()}>
               Update series
             </Button>
           </DialogFooter>

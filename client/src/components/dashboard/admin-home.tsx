@@ -8,17 +8,82 @@ import {
   type InvitationRow,
 } from "@/services/admin-api";
 import { ApiError } from "@/lib/api";
-import { buttonVariants } from "@/components/ui/button";
+import { useAuth } from "@/context/auth-context";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Users, UserCheck, UserX, Mail, ArrowRight, UsersRound } from "lucide-react";
+  ArrowRight,
+  Mail,
+  Settings,
+  UserCheck,
+  UserPlus,
+  Users,
+  UserX,
+} from "lucide-react";
+import type { ComponentType } from "react";
+
+function StatCard({
+  label,
+  value,
+  hint,
+  icon: Icon,
+}: {
+  label: string;
+  value: string | number;
+  hint: string;
+  icon: ComponentType<{ className?: string }>;
+}) {
+  return (
+    <article className="layered-card flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+      </div>
+      <div>
+        <p className="text-4xl font-semibold tabular-nums tracking-tight text-foreground">
+          {value}
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{hint}</p>
+      </div>
+    </article>
+  );
+}
+
+function QuickActionRow({
+  href,
+  title,
+  description,
+  icon: Icon,
+}: {
+  href: string;
+  title: string;
+  description: string;
+  icon: ComponentType<{ className?: string }>;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex items-center gap-3 rounded px-3 py-2.5 transition-colors duration-150 ease-out",
+        "bg-white/8 hover:bg-white/14",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30",
+      )}
+    >
+      <div className="flex size-9 shrink-0 items-center justify-center rounded bg-white/12">
+        <Icon className="size-4 text-white" aria-hidden />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-white">{title}</p>
+        <p className="text-xs text-white/70">{description}</p>
+      </div>
+      <ArrowRight className="size-4 shrink-0 text-white/50" aria-hidden />
+    </Link>
+  );
+}
 
 export function AdminHome() {
+  const { instructor } = useAuth();
+  const firstName = instructor?.name?.split(" ")[0];
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -59,98 +124,105 @@ export function AdminHome() {
   }
 
   return (
-    <div className="space-y-6 rounded-3xl border border-border bg-card shadow-lg p-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-border bg-card shadow-lg p-4">
-        <div className="min-w-0 max-w-2xl space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
-              <UsersRound className="size-5" aria-hidden />
-            </div>
-          <h2 className="text-xl font-semibold tracking-[-0.03em] text-card-foreground sm:text-lg uppercase">Admin</h2>
-          <p className="text-xs text-muted-foreground">
-            Platform overview and quick access to management tools.
-          </p>
-        </div>
-        </div>
-        {error && (
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm text-destructive">{error}</p>
-            <button
-              type="button"
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-              onClick={() => void load()}
-            >
-              Retry
-            </button>
-          </div>
-        )}
-      </div>
+    <div className="space-y-6">
+      <header className="space-y-2">
+        <p className="layered-eyebrow">Admin</p>
+        <h1 className="layered-display-headline">
+          {firstName ? `Welcome back, ${firstName}.` : "Welcome back."}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Platform overview and quick access to management tools.
+        </p>
+      </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total instructors</CardTitle>
-            <Users className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalInstructors ?? "—"}</div>
-            <p className="text-xs text-muted-foreground">Registered accounts</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active</CardTitle>
-            <UserCheck className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.activeInstructors ?? "—"}</div>
-            <p className="text-xs text-muted-foreground">Not banned</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Inactive</CardTitle>
-            <UserX className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.bannedInstructors ?? "—"}</div>
-            <p className="text-xs text-muted-foreground">Banned(Cannot sign in)</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Pending invites</CardTitle>
-            <Mail className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingCount}</div>
-            <p className="text-xs text-muted-foreground">Awaiting registration</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">User management</CardTitle>
-          <Link
-            href="/admin/users"
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "inline-flex gap-1.5"
-            )}
+      {error ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded border border-destructive/30 bg-destructive/5 px-4 py-3">
+          <p className="text-sm text-destructive">{error}</p>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-9 rounded border-border px-3 shadow-none"
+            onClick={() => void load()}
           >
-            Open
-            <ArrowRight className="size-4" />
-          </Link>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          Invite instructors, change roles, and activate or deactivate accounts from the
-          user management page.
-        </CardContent>
-      </Card>
+            Try again
+          </Button>
+        </div>
+      ) : null}
+
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Total instructors"
+          value={stats?.totalInstructors ?? "—"}
+          hint="Registered accounts"
+          icon={Users}
+        />
+        <StatCard
+          label="Active"
+          value={stats?.activeInstructors ?? "—"}
+          hint="Not banned"
+          icon={UserCheck}
+        />
+        <StatCard
+          label="Inactive"
+          value={stats?.bannedInstructors ?? "—"}
+          hint="Banned — cannot sign in"
+          icon={UserX}
+        />
+        <StatCard
+          label="Pending invites"
+          value={pendingCount}
+          hint="Awaiting registration"
+          icon={Mail}
+        />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-1">
+        {/* <div className="flex flex-col gap-3 rounded bg-[var(--layered-navy)] p-5 text-white">
+          <div>
+            <h2 className="layered-section-title text-white">Quick actions</h2>
+            <p className="mt-0.5 text-sm text-white/70">
+              Shortcuts to admin tools
+            </p>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <QuickActionRow
+              href="/admin/users"
+              title="User management"
+              description="Invite, roles, and account status"
+              icon={Users}
+            />
+            <QuickActionRow
+              href="/admin/users"
+              title="Invite user"
+              description="Send a registration invitation"
+              icon={UserPlus}
+            />
+            <QuickActionRow
+              href="/admin/settings"
+              title="Platform settings"
+              description="Signup and platform configuration"
+              icon={Settings}
+            />
+          </div>
+        </div> */}
+
+        <Link
+          href="/admin/users"
+          className="layered-card-interactive flex flex-col justify-between gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <div>
+            <h2 className="layered-section-title">User management</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Invite instructors, change roles, and activate or deactivate accounts
+              from the user management page.
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+            Open user management
+            <ArrowRight className="size-4" aria-hidden />
+          </span>
+        </Link>
+      </div>
     </div>
   );
 }

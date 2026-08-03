@@ -83,8 +83,8 @@ export function AccountSettingsView() {
 
   if (!instructor) {
     return (
-      <div className="flex min-h-[40vh] w-full items-center justify-center rounded-3xl border border-border bg-card shadow-lg">
-        <div className="flex items-center gap-3 rounded-full border border-border px-4 py-2 text-sm text-muted-foreground">
+      <div className="flex min-h-[40vh] w-full items-center justify-center rounded border border-border bg-card shadow-lg">
+        <div className="flex items-center gap-3 rounded border border-border px-4 py-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin text-primary" aria-hidden />
           Loading account settings
         </div>
@@ -131,7 +131,7 @@ export function AccountSettingsView() {
       backHref="/"
       backLabel="Back to dashboard"
     >
-      <div className="rounded-3xl border border-border bg-card px-4 py-5 shadow-lg md:px-6 md:py-6">
+      <div className="rounded border border-border bg-card px-4 py-5  md:px-6 md:py-6">
         <p className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">
           Signed in as
         </p>
@@ -150,7 +150,7 @@ export function AccountSettingsView() {
               </h2>
               <Badge
                 variant={isAdmin ? "default" : "secondary"}
-                className="rounded-full"
+                className="rounded"
               >
                 {roleLabel(instructor.role)}
               </Badge>
@@ -164,9 +164,9 @@ export function AccountSettingsView() {
       </div>
 
       <div className="flex w-full flex-col gap-6">
-        <section className="w-full rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
+        <section className="w-full rounded border border-border bg-card p-5  sm:p-6">
           <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
               <UserCircle className="size-4.5" aria-hidden />
             </div>
             <div>
@@ -212,7 +212,7 @@ export function AccountSettingsView() {
               </p>
               <Button
                 type="submit"
-                className="rounded-full"
+                className="rounded"
                 disabled={saving || !isDirty}
               >
                 {saving ? (
@@ -229,9 +229,9 @@ export function AccountSettingsView() {
         </section>
 
         {!isAdmin ? (
-          <section className="w-full rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
+          <section className="w-full rounded border border-border bg-card p-5 sm:p-6">
             <div className="flex items-start gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
                 <Mail className="size-4.5" aria-hidden />
               </div>
               <div className="min-w-0 flex-1">
@@ -264,9 +264,9 @@ export function AccountSettingsView() {
 
         {isAdmin ? <PlatformSettingsSection /> : null}
 
-        <section className="w-full rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
+        <section className="w-full rounded border border-border bg-card p-5 sm:p-6">
             <div className="flex items-start gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
                 <KeyRound className="size-4.5" aria-hidden />
               </div>
               <div>
@@ -282,7 +282,7 @@ export function AccountSettingsView() {
             <Link
               href="/account/password"
               className={cn(
-                "group mt-5 flex items-center gap-4 rounded-2xl border border-border p-4 transition-all",
+                "group mt-5 flex items-center gap-4 rounded border border-border p-4 transition-all",
                 "hover:-translate-y-px hover:border-ring/40 hover:shadow-md",
                 "focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
               )}

@@ -245,7 +245,7 @@ Forgot-password page uses this instead of `authClient.requestPasswordReset()` so
 
 - All auth pages use `AuthPageShell`, `AuthFormCard`, `AuthField`, `AuthFormAlert`, `AuthFooterLink`
 - Forms: React Hook Form + `zodResolver`
-- Primary actions: `Button` with `rounded-full`
+- Primary actions: `Button` with `rounded`
 - Link-styled buttons: `Link` + `buttonVariants()` (not `Button asChild`)
 
 ---

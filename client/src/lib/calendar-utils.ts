@@ -102,6 +102,23 @@ export function computeCalendarHourRange(
   return { startHour, endHour };
 }
 
+/** Compact start–end range for calendar event blocks (e.g. `6:00 – 7:00 am`). */
+export function formatCalendarEventTimeRange(start: Date, durationMinutes: number): string {
+  const end = new Date(start.getTime() + durationMinutes * 60_000);
+  const opts: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit", hour12: true };
+  const startFull = start.toLocaleTimeString(undefined, opts).toLowerCase();
+  const endFull = end.toLocaleTimeString(undefined, opts).toLowerCase();
+
+  const startMeridiem = startFull.match(/\s*(am|pm)$/)?.[1];
+  const endMeridiem = endFull.match(/\s*(am|pm)$/)?.[1];
+  const stripMeridiem = (value: string) => value.replace(/\s*(am|pm)$/i, "").trim();
+
+  if (startMeridiem && startMeridiem === endMeridiem) {
+    return `${stripMeridiem(startFull)} – ${stripMeridiem(endFull)} ${startMeridiem}`;
+  }
+  return `${startFull} – ${endFull}`;
+}
+
 /** 12-hour label for a week-grid hour index (0–23). */
 export function formatCalendarHourLabel(hour: number): string {
   if (hour === 0 || hour === 24) return "12 AM";

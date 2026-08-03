@@ -159,11 +159,11 @@ Product brand in UI copy: **Layered.** (see `app/layout.tsx` metadata). Match ex
 
 #### Visual language (dashboard & feature pages)
 
-- **Page shells**: major views use `rounded-3xl border border-border bg-card shadow-lg` (or `shadow-sm` for nested panels); section headers often pair a **rounded-2xl icon tile** (`size-11`, `bg-primary/10 text-primary`) with `font-heading` title (`tracking-[-0.02em]`) and `text-sm text-muted-foreground` subtitle
+- **Page shells**: major views use `rounded border border-border bg-card shadow-lg` (or `shadow-sm` for nested panels); section headers often pair a **rounded icon tile** (`size-11`, `bg-primary/10 text-primary`) with `font-heading` title (`tracking-[-0.02em]`) and `text-sm text-muted-foreground` subtitle
 - **Spacing**: outer page `space-y-6`; card padding `px-4 py-5 md:px-6 md:py-6`; nested lists `space-y-2`
-- **Interactive rows/cards**: `rounded-2xl border`, hover `-translate-y-px` and/or `hover:shadow-md`, `focus-visible:ring-3 focus-visible:ring-ring/50`; use **`cursor-pointer`** on clickable calendar grid cells and event blocks (not default cursor)
-- **Primary actions**: prefer `Button` with `rounded-full` on dialogs and auth; outline/secondary for secondary nav (e.g. week chevrons, filter chips)
-- **Empty states**: dashed border panel (`border-dashed border-border/80 bg-muted/15`), centered icon in `rounded-2xl` tile, short title + helper text + one clear CTA
+- **Interactive rows/cards**: `rounded border`, hover `-translate-y-px` and/or `hover:shadow-md`, `focus-visible:ring-3 focus-visible:ring-ring/50`; use **`cursor-pointer`** on clickable calendar grid cells and event blocks (not default cursor)
+- **Primary actions**: prefer `Button` with `rounded` on dialogs and auth; outline/secondary for secondary nav (e.g. week chevrons, filter chips)
+- **Empty states**: dashed border panel (`border-dashed border-border/80 bg-muted/15`), centered icon in `rounded` tile, short title + helper text + one clear CTA
 - **Loading**: centered spinner (`border-2 border-primary border-t-transparent`) or skeleton blocks inside the same card shell — do not leave a bare white area
 
 #### Form controls (`@/lib/form-control-styles.ts`)
@@ -174,7 +174,7 @@ Product brand in UI copy: **Layered.** (see `app/layout.tsx` metadata). Match ex
 - **Meaningful value**: `inputHasValue()` / `valueHasMeaningfulContent()` trim strings; whitespace-only = empty. Align with Zod `.trim()` on text fields in `lib/validation/*` where user-facing required strings matter
 - **Select sentinels**: `DEFAULT_SELECT_EMPTY_VALUES` (`none`, `""`) for form fields; `FILTER_SELECT_EMPTY_VALUES` (`all`, `""`) for library/filter selects — pass `emptyValues={FILTER_SELECT_EMPTY_VALUES}` so “All types” / “All folders” do not get filled background
 - **Checkbox**: custom indicator; checked = primary fill; **enabled-only** hover hint on unchecked (faint check icon, no primary fill until checked); disabled = default cursor, no hover effect (`peer` disabled overrides)
-- **Errors**: `aria-invalid` + `border-destructive` on control; `text-sm text-destructive` message below; root/auth errors in `rounded-2xl` destructive alert (`AuthFormAlert` pattern)
+- **Errors**: `aria-invalid` + `border-destructive` on control; `text-sm text-destructive` message below; root/auth errors in `rounded` destructive alert (`AuthFormAlert` pattern)
 - **Select typing**: `Select` is `SelectPrimitive.Root.Props<string>` — `onValueChange` receives `string | null`; type callbacks explicitly when needed
 
 #### Tooltips
@@ -198,7 +198,7 @@ Product brand in UI copy: **Layered.** (see `app/layout.tsx` metadata). Match ex
 
 - **Calendar**: `CalendarPanel` shell (loading/error/empty); `CalendarHeader` (stats, view toggle, new class); `calendar-week-view` / `calendar-month-view`; `ClassInstanceDrawer` on instance click
 - **Week overview**: `WeekOverviewPanel` — week nav, day strip (`Button` outline), day sections, `WeekClassCard` (GROUP vs PRIVATE color accents)
-- **Dialogs**: `create-class-dialog`, `edit-class-dialog`, `quick-schedule-dialog` — `rounded-3xl` content; prefer **`useWatch`** over `watch()` from RHF for React Compiler compatibility
+- **Dialogs**: `create-class-dialog`, `edit-class-dialog`, `quick-schedule-dialog` — `rounded` content; prefer **`useWatch`** over `watch()` from RHF for React Compiler compatibility
 
 #### Libraries & pickers (UX patterns)
 

@@ -61,7 +61,7 @@ export function InstanceExerciseRow({
 
   return (
     <>
-      <li className="rounded-2xl border border-border/80 bg-background/60 p-3 md:p-4">
+      <li className="rounded border border-border/80 bg-background/60 p-3 md:p-4">
         <div className="space-y-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 flex-1 space-y-1.5">
@@ -99,7 +99,7 @@ export function InstanceExerciseRow({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="shrink-0 rounded-full text-destructive hover:text-destructive"
+                className="shrink-0 rounded text-destructive hover:text-destructive"
                 disabled={disabled || pending}
                 onClick={() => setRemoveOpen(true)}
               >

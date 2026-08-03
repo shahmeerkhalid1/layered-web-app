@@ -62,7 +62,7 @@ export function ClientSessionTimeline({ clientId }: ClientSessionTimelineProps) 
   }, [startDate, endDate]);
 
   const datePickerTriggerClass =
-    "h-11 w-full min-w-0 rounded-2xl border-border bg-background/80 px-3 shadow-none focus-visible:ring-ring/35";
+    "h-11 w-full min-w-0 rounded border-border bg-background/80 px-3 shadow-none focus-visible:ring-ring/35";
 
   function clearDateFilters() {
     setStartDate("");
@@ -70,9 +70,9 @@ export function ClientSessionTimeline({ clientId }: ClientSessionTimelineProps) 
   }
 
   return (
-    <section className="rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
+    <section className="rounded border border-border bg-card p-5  sm:p-6">
       <div className="flex items-start gap-3">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
           <ClipboardList className="size-5" aria-hidden />
         </div>
         <div className="min-w-0 flex-1 space-y-1">
@@ -113,7 +113,7 @@ export function ClientSessionTimeline({ clientId }: ClientSessionTimelineProps) 
             <span>Filters</span>
             {hasDateFilter ? (
               <span
-                className="inline-flex min-w-5 justify-center rounded-full bg-primary/15 px-1.5 text-xs font-medium tabular-nums text-primary"
+                className="inline-flex min-w-5 justify-center rounded bg-primary/15 px-1.5 text-xs font-medium tabular-nums text-primary"
                 aria-label={`${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}`}
               >
                 {activeFilterCount}
@@ -124,7 +124,7 @@ export function ClientSessionTimeline({ clientId }: ClientSessionTimelineProps) 
             type="button"
             variant="secondary"
             size="sm"
-            className="h-9 rounded-full px-4"
+            className="h-9 rounded px-4"
             disabled={!hasDateFilter}
             onClick={clearDateFilters}
           >
@@ -132,7 +132,7 @@ export function ClientSessionTimeline({ clientId }: ClientSessionTimelineProps) 
           </Button>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-border/80 bg-muted/15 p-4 sm:p-5">
+        <div className="mt-4 rounded border border-border/80 bg-muted/15 p-4 sm:p-5">
           <div className="flex items-start gap-2">
             <CalendarRange
               className="mt-0.5 size-4 shrink-0 text-muted-foreground"
@@ -184,12 +184,12 @@ export function ClientSessionTimeline({ clientId }: ClientSessionTimelineProps) 
               {startDate ? (
                 <Badge
                   variant="secondary"
-                  className="gap-1 rounded-full py-1 pl-2.5 pr-1 text-xs font-normal"
+                  className="gap-1 rounded py-1 pl-2.5 pr-1 text-xs font-normal"
                 >
                   From {formatYmdLabel(startDate, startDate)}
                   <button
                     type="button"
-                    className="rounded-full p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                    className="rounded p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                     aria-label="Remove start date filter"
                     onClick={() => setStartDate("")}
                   >
@@ -200,12 +200,12 @@ export function ClientSessionTimeline({ clientId }: ClientSessionTimelineProps) 
               {endDate ? (
                 <Badge
                   variant="secondary"
-                  className="gap-1 rounded-full py-1 pl-2.5 pr-1 text-xs font-normal"
+                  className="gap-1 rounded py-1 pl-2.5 pr-1 text-xs font-normal"
                 >
                   To {formatYmdLabel(endDate, endDate)}
                   <button
                     type="button"
-                    className="rounded-full p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                    className="rounded p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                     aria-label="Remove end date filter"
                     onClick={() => setEndDate("")}
                   >
@@ -221,12 +221,12 @@ export function ClientSessionTimeline({ clientId }: ClientSessionTimelineProps) 
       {loading && items.length === 0 ? (
         <div className="mt-5 flex justify-center py-8">
           <div
-            className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent"
+            className="size-8 animate-spin rounded border-2 border-primary border-t-transparent"
             aria-label="Loading session history"
           />
         </div>
       ) : items.length === 0 ? (
-        <div className="mt-4 rounded-2xl border border-dashed border-border/80 bg-muted/15 px-4 py-8 text-center">
+        <div className="mt-4 rounded border border-dashed border-border/80 bg-muted/15 px-4 py-8 text-center">
           <p className="text-sm font-medium text-foreground">
             {hasDateFilter ? "No notes match these filters" : "No session notes yet"}
           </p>
@@ -240,7 +240,7 @@ export function ClientSessionTimeline({ clientId }: ClientSessionTimelineProps) 
               type="button"
               variant="outline"
               size="sm"
-              className="mt-4 rounded-full"
+              className="mt-4 rounded"
               onClick={clearDateFilters}
             >
               Clear filters
@@ -263,7 +263,7 @@ export function ClientSessionTimeline({ clientId }: ClientSessionTimelineProps) 
               return (
                 <li
                   key={item.id}
-                  className="rounded-2xl border border-border bg-muted/10 p-4"
+                  className="rounded border border-border bg-muted/10 p-4"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -313,7 +313,7 @@ export function ClientSessionTimeline({ clientId }: ClientSessionTimelineProps) 
                         <Link
                           key={row.id}
                           href={`/exercises/${row.exercise.id}`}
-                          className="focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 rounded-full"
+                          className="focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 rounded"
                         >
                           <Badge
                             variant="secondary"

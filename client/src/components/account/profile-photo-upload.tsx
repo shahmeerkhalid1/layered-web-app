@@ -181,7 +181,7 @@ export function ProfilePhotoUpload({
               if (!busy) open();
             }}
             className={cn(
-              "flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-border px-4 py-8 text-center transition-colors",
+              "flex cursor-pointer flex-col items-center justify-center rounded border border-dashed border-border px-4 py-8 text-center transition-colors",
               isDragActive && "border-primary bg-primary/5",
               !busy && "hover:border-ring/50 hover:bg-muted/30",
               busy && "pointer-events-none opacity-60",
@@ -200,7 +200,7 @@ export function ProfilePhotoUpload({
             <Button
               type="button"
               variant="outline"
-              className="rounded-full"
+              className="rounded"
               disabled={busy}
               onClick={() => open()}
             >
@@ -210,7 +210,7 @@ export function ProfilePhotoUpload({
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-full text-destructive hover:text-destructive"
+                className="rounded text-destructive hover:text-destructive"
                 disabled={busy}
                 onClick={() => setRemoveConfirmOpen(true)}
               >

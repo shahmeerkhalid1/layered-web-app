@@ -84,7 +84,7 @@ function LoginPageContent() {
     <AuthPageShell>
       {/* <p className="text-sm text-muted-foreground text-center w-72 mx-auto"></p> */}
       <AuthFormCard
-      description="Welcome Back — enter your credentials to open your workspace."
+      description="Welcome Back, enter your credentials to open your workspace."
         footer={
           <AuthFooterLink prompt="Don't have an account?" linkLabel="Create one" href="/register" />
         }
@@ -106,7 +106,7 @@ function LoginPageContent() {
               type="email"
               autoComplete="email"
               aria-invalid={errors.email ? true : undefined}
-              className={`h-11 rounded-xl`}
+              className={`h-11 rounded`}
               {...register("email")}
             />
           </AuthField>
@@ -114,29 +114,30 @@ function LoginPageContent() {
           <AuthField
             id="password"
             label="Password"
-            labelEnd={
-              <Link
-                href="/forgot-password"
-                className="text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
-              >
-                Forgot Password
-              </Link>
-            }
             error={errors.password?.message}
           >
             <PasswordInput
               id="password"
               autoComplete="current-password"
               aria-invalid={errors.password ? true : undefined}
-              className={`h-11 rounded-xl`}
+              className={`h-11 rounded`}
               {...register("password")}
             />
           </AuthField>
 
-          <label className="flex cursor-pointer items-center gap-2.5 text-sm text-foreground">
+          <div className="flex justify-between items-center">
+          <label className="flex justify-between cursor-pointer items-center gap-2.5 text-sm text-foreground">
             <Checkbox id="rememberMe" {...register("rememberMe")} />
             Remember me
+            
           </label>
+          <Link
+                href="/forgot-password"
+                className="text-sm text-[var(--layered-navy)] underline-offset-4 transition-colors hover:text-foreground hover:underline"
+              >
+                Forgot Password
+              </Link>
+              </div>
 
           <AuthSubmitButton disabled={isSubmitting}>
             {isSubmitting ? "Signing in…" : "Sign In"}

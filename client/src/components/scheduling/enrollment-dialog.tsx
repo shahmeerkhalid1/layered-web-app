@@ -317,7 +317,7 @@ export function EnrollmentDialog({
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-hidden rounded-3xl sm:max-w-lg">
+      <DialogContent className="max-h-[85vh] overflow-hidden rounded sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
@@ -332,7 +332,7 @@ export function EnrollmentDialog({
             ) : (
               <>
                 {enrollments.length > 0 && (
-                  <section className="rounded-2xl border border-border bg-muted/15 p-3">
+                  <section className="rounded border border-border bg-muted/15 p-3">
                     <p className="text-xs font-medium text-muted-foreground">Current client</p>
                     <div className="mt-2 flex items-center justify-between gap-2">
                       <p className="text-sm font-medium text-foreground">
@@ -342,7 +342,7 @@ export function EnrollmentDialog({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="shrink-0 rounded-full text-destructive hover:text-destructive"
+                        className="shrink-0 rounded text-destructive hover:text-destructive"
                         disabled={pending}
                         onClick={() => void handleUnenroll([enrollments[0]!.id])}
                       >
@@ -401,7 +401,7 @@ export function EnrollmentDialog({
                               />
                               <span
                                 className={cn(
-                                  "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2",
+                                  "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border-2",
                                   selected
                                     ? "border-primary bg-primary text-primary-foreground"
                                     : "border-muted-foreground/40 bg-background"
@@ -409,7 +409,7 @@ export function EnrollmentDialog({
                                 aria-hidden
                               >
                                 {selected ? (
-                                  <span className="size-1.5 rounded-full bg-current" />
+                                  <span className="size-1.5 rounded bg-current" />
                                 ) : null}
                               </span>
                               <span className="min-w-0 flex-1 text-left">
@@ -432,7 +432,7 @@ export function EnrollmentDialog({
                   <Button
                     type="button"
                     variant="outline"
-                    className="rounded-full"
+                    className="rounded"
                     onClick={() => onOpenChange(false)}
                     disabled={pending}
                   >
@@ -440,7 +440,7 @@ export function EnrollmentDialog({
                   </Button>
                   <Button
                     type="button"
-                    className="rounded-full"
+                    className="rounded"
                     disabled={pending || !selectedPrivateClientId}
                     onClick={() => {
                       if (selectedPrivateClientId) {
@@ -468,7 +468,7 @@ export function EnrollmentDialog({
                     type="button"
                     variant="destructive"
                     size="sm"
-                    className="rounded-full"
+                    className="rounded"
                     disabled={pending}
                     onClick={() => setUnenrollTarget([...selectedRemoveIds])}
                   >
@@ -522,7 +522,7 @@ export function EnrollmentDialog({
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="shrink-0 rounded-full text-destructive hover:text-destructive"
+                            className="shrink-0 rounded text-destructive hover:text-destructive"
                             disabled={pending}
                             onClick={() => setUnenrollTarget([row.id])}
                           >
@@ -544,7 +544,7 @@ export function EnrollmentDialog({
                   <Button
                     type="button"
                     size="sm"
-                    className="rounded-full"
+                    className="rounded"
                     disabled={pending}
                     onClick={() => void handleEnroll([...selectedAddIds])}
                   >
@@ -605,7 +605,7 @@ export function EnrollmentDialog({
                         <Button
                           type="button"
                           size="sm"
-                          className="shrink-0 rounded-full"
+                          className="shrink-0 rounded"
                           disabled={pending}
                           onClick={() => void handleEnroll([client.id])}
                         >

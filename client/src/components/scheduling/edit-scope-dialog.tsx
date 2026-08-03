@@ -20,7 +20,7 @@ export interface EditScopeDialogProps {
 export function EditScopeDialog({ open, onOpenChange, onChoose }: EditScopeDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-3xl">
+      <DialogContent className="max-w-md rounded">
         <DialogHeader>
           <DialogTitle>Apply to which classes?</DialogTitle>
           <DialogDescription>
@@ -32,7 +32,7 @@ export function EditScopeDialog({ open, onOpenChange, onChoose }: EditScopeDialo
           <Button
             type="button"
             variant="outline"
-            className="rounded-full"
+            className="rounded"
             onClick={() => {
               onChoose("this");
               onOpenChange(false);
@@ -42,7 +42,7 @@ export function EditScopeDialog({ open, onOpenChange, onChoose }: EditScopeDialo
           </Button>
           <Button
             type="button"
-            className="rounded-full"
+            className="rounded"
             onClick={() => {
               onChoose("future");
               onOpenChange(false);

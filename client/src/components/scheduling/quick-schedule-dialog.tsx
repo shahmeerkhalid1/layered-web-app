@@ -261,7 +261,7 @@ export function QuickScheduleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[95vh] overflow-y-auto rounded-3xl border-border sm:max-w-lg">
+      <DialogContent className="max-h-[95vh] overflow-y-auto rounded border-border sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold tracking-[-0.02em]">
             {lockedTemplate ? "Schedule this plan" : "Quick schedule"}
@@ -278,7 +278,7 @@ export function QuickScheduleDialog({
           className="space-y-4"
         >
           {lockedTemplate && (
-            <div className="rounded-2xl border border-border bg-muted/30 px-3 py-2 text-sm">
+            <div className="rounded border border-border bg-muted/30 px-3 py-2 text-sm">
               <span className="text-muted-foreground">Template: </span>
               <span className="font-medium text-foreground">{templatePrefill!.name}</span>
             </div>
@@ -330,7 +330,7 @@ export function QuickScheduleDialog({
                   align="start"
                   sideOffset={6}
                   alignItemWithTrigger={false}
-                  className="min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                  className="min-w-(--anchor-width) rounded border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
                 >
                   <SelectItem value="GROUP" className="rounded-xl py-2.5 pl-3">
                     Group
@@ -442,7 +442,7 @@ export function QuickScheduleDialog({
                       type="button"
                       size="sm"
                       variant={daySet.has(d.value) ? "default" : "outline"}
-                      className="rounded-full px-3"
+                      className="rounded px-3"
                       onClick={() => toggleDay(d.value)}
                       disabled={isSubmitting}
                     >
@@ -482,13 +482,13 @@ export function QuickScheduleDialog({
             <Button
               type="button"
               variant="outline"
-              className="rounded-full"
+              className="rounded"
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button type="submit" className="rounded-full" disabled={isSubmitting}>
+            <Button type="submit" className="rounded" disabled={isSubmitting}>
               {isSubmitting ? "Scheduling…" : "Schedule"}
             </Button>
           </DialogFooter>

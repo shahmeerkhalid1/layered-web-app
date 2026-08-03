@@ -416,7 +416,7 @@ export default function AdminUsersPage() {
           }
         }}
       >
-        <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl sm:max-w-md">
+        <DialogContent className="rounded border-border bg-popover p-6 shadow-xl sm:max-w-md">
           <DialogHeader>
             <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
               New Instructor
@@ -446,7 +446,7 @@ export default function AdminUsersPage() {
                 autoComplete="off"
                 aria-invalid={errors.email ? true : undefined}
                 className={cn(
-                  "h-11 rounded-2xl border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35",
+                  "h-11 rounded border-input bg-background/70 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35",
                   errors.email && "border-destructive",
                 )}
                 {...register("email")}
@@ -471,7 +471,7 @@ export default function AdminUsersPage() {
                       id="invite-role"
                       aria-invalid={errors.role ? true : undefined}
                       className={cn(
-                        "box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground",
+                        "box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground",
                         errors.role && "border-destructive",
                       )}
                     >
@@ -480,7 +480,7 @@ export default function AdminUsersPage() {
                     <SelectContent
                       align="start"
                       sideOffset={6}
-                      className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                      className="max-h-72 min-w-(--anchor-width) rounded border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
                     >
                       <SelectItem
                         value="INSTRUCTOR"
@@ -500,7 +500,7 @@ export default function AdminUsersPage() {
               ) : null}
             </div>
             {inviteLinkResult ? (
-              <div className="rounded-2xl border border-border bg-accent p-3 text-xs break-all">
+              <div className="rounded border border-border bg-accent p-3 text-xs break-all">
                 <p className="mb-2 font-semibold text-accent-foreground">
                   Invite link
                 </p>
@@ -509,7 +509,7 @@ export default function AdminUsersPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="mt-3 rounded-full border-border bg-transparent text-muted-foreground hover:bg-background hover:text-foreground"
+                  className="mt-3 rounded border-border bg-transparent text-muted-foreground hover:bg-background hover:text-foreground"
                   onClick={() => void copyLink(inviteLinkResult)}
                 >
                   <Copy className="size-3.5" />
@@ -523,7 +523,7 @@ export default function AdminUsersPage() {
               type="button"
               variant="outline"
               onClick={() => setInviteOpen(false)}
-              className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              // className="rounded border-border  text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             >
               Close
             </Button>
@@ -531,7 +531,7 @@ export default function AdminUsersPage() {
               type="submit"
               form="admin-invite-form"
               disabled={inviteSubmitting}
-              className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
+              className="rounded bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
             >
               {inviteSubmitting ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -569,7 +569,7 @@ export default function AdminUsersPage() {
               className="min-h-0 flex-1 overflow-y-auto outline-none"
             >
             <dl className="grid gap-3 px-4 pb-4 text-sm">
-              <div className="rounded-2xl border border-border bg-card/60 p-3">
+              <div className="rounded border border-border bg-card/60 p-3">
                 <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   Email
                 </dt>
@@ -577,7 +577,7 @@ export default function AdminUsersPage() {
                   {detailsInvitation.email}
                 </dd>
               </div>
-              <div className="rounded-2xl border border-border bg-card/60 p-3">
+              <div className="rounded border border-border bg-card/60 p-3">
                 <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   Role
                 </dt>
@@ -585,13 +585,13 @@ export default function AdminUsersPage() {
                   {detailsInvitation.role}
                 </dd>
               </div>
-              <div className="rounded-2xl border border-border bg-card/60 p-3">
+              <div className="rounded border border-border bg-card/60 p-3">
                 <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   Status
                 </dt>
                 <dd className="mt-1 text-muted-foreground">Pending</dd>
               </div>
-              <div className="rounded-2xl border border-border bg-card/60 p-3">
+              <div className="rounded border border-border bg-card/60 p-3">
                 <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   Expires
                 </dt>
@@ -599,7 +599,7 @@ export default function AdminUsersPage() {
                   {new Date(detailsInvitation.expiresAt).toLocaleString()}
                 </dd>
               </div>
-              <div className="rounded-2xl border border-border bg-card/60 p-3">
+              <div className="rounded border border-border bg-card/60 p-3">
                 <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   Invited
                 </dt>
@@ -608,7 +608,7 @@ export default function AdminUsersPage() {
                 </dd>
               </div>
               {detailsInvitation.invitedBy ? (
-                <div className="rounded-2xl border border-border bg-card/60 p-3">
+                <div className="rounded border border-border bg-card/60 p-3">
                   <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                     Invited by
                   </dt>
@@ -623,7 +623,7 @@ export default function AdminUsersPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="rounded-full"
+                  className="rounded"
                   onClick={() => void copyInvitationLink(detailsInvitation)}
                 >
                   <Copy className="mr-2 size-3.5" />
@@ -633,7 +633,7 @@ export default function AdminUsersPage() {
                   type="button"
                   variant="destructive"
                   size="sm"
-                  className="rounded-full"
+                  className="rounded"
                   onClick={() => setConfirmRevokeInvitation(detailsInvitation)}
                 >
                   Revoke
@@ -668,7 +668,7 @@ export default function AdminUsersPage() {
               className="min-h-0 flex-1 overflow-y-auto outline-none"
             >
             <dl className="grid gap-3 px-4 pb-4 text-sm">
-              <div className="rounded-2xl border border-border bg-card/60 p-3">
+              <div className="rounded border border-border bg-card/60 p-3">
                 <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   Name
                 </dt>
@@ -676,7 +676,7 @@ export default function AdminUsersPage() {
                   {detailsUser.name}
                 </dd>
               </div>
-              <div className="rounded-2xl border border-border bg-card/60 p-3">
+              <div className="rounded border border-border bg-card/60 p-3">
                 <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   Email
                 </dt>
@@ -684,7 +684,7 @@ export default function AdminUsersPage() {
                   {detailsUser.email}
                 </dd>
               </div>
-              <div className="rounded-2xl border border-border bg-card/60 p-3">
+              <div className="rounded border border-border bg-card/60 p-3">
                 <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   Role
                 </dt>
@@ -692,7 +692,7 @@ export default function AdminUsersPage() {
                   {detailsUser.role ?? "INSTRUCTOR"}
                 </dd>
               </div>
-              <div className="rounded-2xl border border-border bg-card/60 p-3">
+              <div className="rounded border border-border bg-card/60 p-3">
                 <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   Status
                 </dt>
@@ -701,7 +701,7 @@ export default function AdminUsersPage() {
                 </dd>
               </div>
               {detailsUser.banReason ? (
-                <div className="rounded-2xl border border-border bg-card/60 p-3">
+                <div className="rounded border border-border bg-card/60 p-3">
                   <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                     Ban reason
                   </dt>
@@ -711,7 +711,7 @@ export default function AdminUsersPage() {
                 </div>
               ) : null}
               {detailsUser.createdAt ? (
-                <div className="rounded-2xl border border-border bg-card/60 p-3">
+                <div className="rounded border border-border bg-card/60 p-3">
                   <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                     Created
                   </dt>
@@ -720,7 +720,7 @@ export default function AdminUsersPage() {
                   </dd>
                 </div>
               ) : null}
-              <div className="rounded-2xl border border-border bg-card/60 p-3">
+              <div className="rounded border border-border bg-card/60 p-3">
                 <dt className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   Email verified
                 </dt>
@@ -735,7 +735,7 @@ export default function AdminUsersPage() {
       </Sheet>
 
       <Dialog open={!!confirmBan} onOpenChange={(o) => !o && setConfirmBan(null)}>
-        <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl">
+        <DialogContent className="rounded border-border bg-popover p-6 shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-popover-foreground">
               Deactivate user?
@@ -749,7 +749,7 @@ export default function AdminUsersPage() {
               type="button"
               variant="outline"
               onClick={() => setConfirmBan(null)}
-              className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              className="rounded border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             >
               Cancel
             </Button>
@@ -758,7 +758,7 @@ export default function AdminUsersPage() {
               variant="destructive"
               disabled={actionLoading}
               onClick={() => void runBan()}
-              className="rounded-full"
+              className="rounded"
             >
               Deactivate
             </Button>
@@ -767,7 +767,7 @@ export default function AdminUsersPage() {
       </Dialog>
 
       <Dialog open={!!confirmUnban} onOpenChange={(o) => !o && setConfirmUnban(null)}>
-        <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl">
+        <DialogContent className="rounded border-border bg-popover p-6 shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-popover-foreground">
               Activate user?
@@ -781,7 +781,7 @@ export default function AdminUsersPage() {
               type="button"
               variant="outline"
               onClick={() => setConfirmUnban(null)}
-              className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              className="rounded border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             >
               Cancel
             </Button>
@@ -789,7 +789,7 @@ export default function AdminUsersPage() {
               type="button"
               disabled={actionLoading}
               onClick={() => void runUnban()}
-              className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90"
+              className="rounded bg-primary px-5 text-primary-foreground hover:bg-primary/90"
             >
               Activate
             </Button>
@@ -801,7 +801,7 @@ export default function AdminUsersPage() {
         open={!!confirmRevokeInvitation}
         onOpenChange={(o) => !o && setConfirmRevokeInvitation(null)}
       >
-        <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl">
+        <DialogContent className="rounded border-border bg-popover p-6 shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-popover-foreground">
               Revoke invitation?
@@ -816,7 +816,7 @@ export default function AdminUsersPage() {
               type="button"
               variant="outline"
               onClick={() => setConfirmRevokeInvitation(null)}
-              className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              className="rounded border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             >
               Cancel
             </Button>
@@ -825,7 +825,7 @@ export default function AdminUsersPage() {
               variant="destructive"
               disabled={actionLoading}
               onClick={() => void runRevokeInvitation()}
-              className="rounded-full"
+              className="rounded"
             >
               Revoke
             </Button>
@@ -834,7 +834,7 @@ export default function AdminUsersPage() {
       </Dialog>
 
       <Dialog open={!!confirmRole} onOpenChange={(o) => !o && setConfirmRole(null)}>
-        <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl">
+        <DialogContent className="rounded border-border bg-popover p-6 shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-popover-foreground">
               Change role?
@@ -849,7 +849,7 @@ export default function AdminUsersPage() {
               type="button"
               variant="outline"
               onClick={() => setConfirmRole(null)}
-              className="rounded-full border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              className="rounded border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             >
               Cancel
             </Button>
@@ -857,7 +857,7 @@ export default function AdminUsersPage() {
               type="button"
               disabled={actionLoading}
               onClick={() => void runSetRole()}
-              className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90"
+              className="rounded bg-primary px-5 text-primary-foreground hover:bg-primary/90"
             >
               Confirm
             </Button>

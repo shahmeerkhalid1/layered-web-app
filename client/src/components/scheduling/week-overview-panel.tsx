@@ -50,9 +50,9 @@ function WeekClassCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        "group flex w-full cursor-pointer gap-3 rounded-2xl border px-3 py-3 text-left transition-all",
+        "group flex w-full cursor-pointer gap-3 rounded border px-3 py-3 text-left transition-all",
         "hover:-translate-y-px hover:shadow-md focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-        weekOverviewCardStatusClasses(instance.status)
+        weekOverviewCardStatusClasses(instance.status, isGroup)
       )}
     >
       <div
@@ -65,7 +65,7 @@ function WeekClassCard({
         <span className="mt-0.5 text-[10px] opacity-80">{durationMin}m</span>
       </div>
       <div className="min-w-0 flex-1 space-y-1.5">
-        <p className={cn("line-clamp-2 font-medium leading-snug", weekOverviewTitleStatusClasses(instance.status))}>
+        <p className={cn("line-clamp-2 font-medium leading-snug capitalize", weekOverviewTitleStatusClasses(instance.status))}>
           {instance.class.title}
         </p>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -78,7 +78,7 @@ function WeekClassCard({
             </Badge>
           ) : null}
           <Badge
-            variant={isGroup ? "outline" : "default"}
+            variant={ "default"}
             className="h-5 rounded-sm px-2 text-[10px] font-semibold uppercase tracking-wide"
           >
             {instance.class.type}
@@ -107,11 +107,11 @@ function WeekClassCard({
 
 function DaySectionSkeleton() {
   return (
-    <div className="flex gap-4 rounded-2xl border border-border/60 bg-muted/20 p-4">
+    <div className="flex gap-4 rounded border border-border/60 bg-muted/20 p-4">
       <div className="h-14 w-12 shrink-0 animate-pulse rounded-xl bg-muted" />
       <div className="flex flex-1 flex-col gap-2">
         <div className="h-4 w-32 animate-pulse rounded-md bg-muted" />
-        <div className="h-16 w-full animate-pulse rounded-2xl bg-muted" />
+        <div className="h-16 w-full animate-pulse rounded bg-muted" />
       </div>
     </div>
   );
@@ -164,7 +164,7 @@ export function WeekOverviewPanel({
   return (
     <div className="px-4">
       {/* Header */}
-      <div className="border-b border-border/70 px-4 py-5 md:px-6 md:py-6 rounded-3xl bg-card ">
+      <div className="border-b border-border/70 px-4 py-5 md:px-6 md:py-6 rounded bg-card ">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex min-w-0 items-start gap-3">
             <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
@@ -201,7 +201,7 @@ export function WeekOverviewPanel({
               type="button"
               variant="outline"
               size="icon"
-              className="rounded-full"
+              className="rounded"
               onClick={() => onWeekStartChange((d) => addDays(d, -7))}
               aria-label="Previous week"
             >
@@ -210,7 +210,7 @@ export function WeekOverviewPanel({
             <Button
               type="button"
               variant={isCurrentWeek ? "secondary" : "outline"}
-              className="rounded-full"
+              className="rounded"
               onClick={() => onWeekStartChange(startOfWeekMonday(new Date()))}
               disabled={isCurrentWeek}
             >
@@ -220,7 +220,7 @@ export function WeekOverviewPanel({
               type="button"
               variant="outline"
               size="icon"
-              className="rounded-full"
+              className="rounded"
               onClick={() => onWeekStartChange((d) => addDays(d, 7))}
               aria-label="Next week"
             >
@@ -244,9 +244,9 @@ export function WeekOverviewPanel({
                   variant="outline"
                   onClick={() => scrollToDay(ymd)}
                   className={cn(
-                    "h-auto min-h-0 min-w-17 flex-col gap-0 rounded-2xl px-2 py-2 font-normal shadow-none",
+                    "h-auto min-h-0 min-w-17 flex-col gap-0 rounded px-2 py-2 font-normal shadow-none",
                     isToday
-                      ? "border-primary/40 bg-primary/10 dark:bg-primary text-foreground hover:border-primary/50 hover:bg-primary/15 hover:text-foreground"
+                      ? "border-primary/30 bg-[var(--layered-light-blue)] dark:bg-primary text-foreground hover:border-primary/50 hover:bg-primary/15 hover:text-foreground"
                       : "bg-muted/30 text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -292,7 +292,7 @@ export function WeekOverviewPanel({
 
         {error ? (
           <div
-            className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-6 text-center text-sm text-destructive"
+            className="rounded border border-destructive/30 bg-destructive/5 px-4 py-6 text-center text-sm text-destructive"
             role="alert"
           >
             {error}
@@ -300,16 +300,15 @@ export function WeekOverviewPanel({
         ) : null}
 
         {!loading && !error && stats.totalClasses === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-background px-6 py-14 text-center">
-            <CalendarDays className="size-10 text-muted-foreground/50" aria-hidden />
+          <div className="flex flex-col items-center justify-center rounded border border-dashed border-border bg-muted/30 px-6 py-14 text-center">
+            <CalendarDays className="size-10 text-secondary-foreground/80" aria-hidden />
             <p className="mt-4 font-medium text-foreground">Nothing scheduled this week</p>
             <p className="mt-1 max-w-sm text-sm text-muted-foreground">
               Use the calendar to add classes, or jump to another week with the arrows above.
             </p>
             <Button
               type="button"
-              variant="outline"
-              className="mt-6 rounded-full"
+              className="mt-6 rounded bg-primary"
               onClick={() => onWeekStartChange(startOfWeekMonday(new Date()))}
             >
               Back to this week
@@ -333,13 +332,13 @@ export function WeekOverviewPanel({
                 <li
                   key={ymd}
                   id={`week-day-${ymd}`}
-                  className="scroll-mt-24 bg-card rounded-3xl p-4"
+                  className="scroll-mt-24 bg-card rounded p-4"
                 >
                   <article
                     className={cn(
-                      "overflow-hidden rounded-2xl border transition-colors ",
+                      "overflow-hidden rounded border transition-colors ",
                       isToday
-                        ? "border-primary/25 bg-primary/3 shadow-sm"
+                        ? "border-primary/25 bg-[var(--layered-white)] dark:bg-primary/3 shadow-sm"
                         : "border-border/80 bg-muted/15"
                     )}
                   >
@@ -348,9 +347,9 @@ export function WeekOverviewPanel({
                       <div className="flex shrink-0 items-center gap-3 sm:w-36 sm:flex-col sm:items-start sm:gap-2">
                         <div
                           className={cn(
-                            "flex size-14 flex-col items-center justify-center rounded-2xl border tabular-nums sm:size-16",
+                            "flex size-14 flex-col items-center justify-center rounded border tabular-nums sm:size-16",
                             isToday
-                              ? "border-primary/30 bg-primary/10 dark:bg-primary text-primary dark:text-primary-foreground"
+                              ? "border-primary/30 bg-[var(--layered-light-blue)] dark:bg-primary text-primary dark:text-primary-foreground"
                               : "border-border/60 bg-background text-foreground"
                           )}
                         >
@@ -365,7 +364,7 @@ export function WeekOverviewPanel({
                           <p className="font-medium text-foreground">{weekdayLong}</p>
                           <p className="text-xs text-muted-foreground">{dateLabel}</p>
                           {isToday ? (
-                            <Badge className="mt-1 rounded-full px-2 text-[10px] uppercase tracking-wide">
+                            <Badge className="mt-1 rounded px-2 text-[10px] uppercase tracking-wide">
                               Today
                             </Badge>
                           ) : null}
@@ -380,7 +379,7 @@ export function WeekOverviewPanel({
                       {/* Classes */}
                       <div className="min-w-0 flex-1">
                         {rows.length === 0 ? (
-                          <div className="flex items-center gap-2 rounded-xl border border-dashed border-border/80 bg-background/50 px-4 py-5 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2 rounded-xl border border-dashed border-border/80 bg-[var(--layered-cream)] dark:bg-muted/30 px-4 py-5 text-sm text-muted-foreground">
                             <Clock className="size-4 shrink-0 opacity-60" aria-hidden />
                             No classes scheduled
                           </div>

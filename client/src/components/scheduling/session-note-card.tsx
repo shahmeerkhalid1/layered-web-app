@@ -179,14 +179,14 @@ export function SessionNoteCard({
 
   if (!expanded) {
     return (
-      <li className="rounded-2xl border border-border bg-card px-4 py-3">
+      <li className="rounded border border-border bg-card px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-medium text-foreground">{clientName}</p>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="rounded-full"
+            className="rounded"
             onClick={() => setExpanded(true)}
           >
             Write note
@@ -197,7 +197,7 @@ export function SessionNoteCard({
   }
 
   return (
-    <li className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+    <li className="rounded border border-border bg-card p-4 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <p className="text-sm font-semibold text-foreground">{clientName}</p>
         {statusHint ? (
@@ -223,7 +223,7 @@ export function SessionNoteCard({
               {noteId ? (
                 <button
                   type="button"
-                  className="rounded-full p-0.5 hover:bg-muted"
+                  className="rounded p-0.5 hover:bg-muted"
                   aria-label={`Remove ${row.exercise.name}`}
                   disabled={pending}
                   onClick={() =>
@@ -239,7 +239,7 @@ export function SessionNoteCard({
             type="button"
             variant="outline"
             size="sm"
-            className="h-6 rounded-full px-2 text-xs"
+            className="h-6 rounded px-2 text-xs"
             disabled={pending}
             onClick={() => setPickerOpen(true)}
           >
@@ -253,7 +253,7 @@ export function SessionNoteCard({
         <Button
           type="button"
           size="sm"
-          className="rounded-full"
+          className="rounded"
           disabled={pending}
           onClick={() => void handleSave()}
         >
@@ -264,7 +264,7 @@ export function SessionNoteCard({
             type="button"
             variant="outline"
             size="sm"
-            className="rounded-full"
+            className="rounded"
             disabled={pending || sharing}
             onClick={() => setShareDialogOpen(true)}
           >
@@ -277,7 +277,7 @@ export function SessionNoteCard({
             type="button"
             variant="outline"
             size="sm"
-            className="rounded-full text-destructive hover:text-destructive"
+            className="rounded text-destructive hover:text-destructive"
             disabled={pending}
             onClick={() => setDeleteOpen(true)}
           >
@@ -288,7 +288,7 @@ export function SessionNoteCard({
             type="button"
             variant="ghost"
             size="sm"
-            className="rounded-full"
+            className="rounded"
             disabled={pending}
             onClick={() => {
               setExpanded(false);
@@ -308,7 +308,7 @@ export function SessionNoteCard({
       />
 
       <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-        <DialogContent className="rounded-3xl sm:max-w-md">
+        <DialogContent className="rounded sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Send session summary</DialogTitle>
             <DialogDescription>
@@ -322,7 +322,7 @@ export function SessionNoteCard({
             <Button
               type="button"
               variant="outline"
-              className="rounded-full"
+              className="rounded"
               disabled={sharing}
               onClick={() => setShareDialogOpen(false)}
             >
@@ -330,7 +330,7 @@ export function SessionNoteCard({
             </Button>
             <Button
               type="button"
-              className="rounded-full"
+              className="rounded"
               disabled={sharing}
               onClick={() => void handleShare()}
             >

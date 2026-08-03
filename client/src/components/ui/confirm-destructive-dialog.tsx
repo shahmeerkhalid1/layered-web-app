@@ -42,7 +42,7 @@ export function ConfirmDestructiveDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl sm:max-w-md">
+      <DialogContent className="rounded border-border bg-popover p-6 shadow-xl sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-popover-foreground">
             {title}
@@ -56,7 +56,7 @@ export function ConfirmDestructiveDialog({
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="rounded-full border-border"
+            className="rounded border-border"
             disabled={pending}
           >
             {cancelLabel}
@@ -64,7 +64,7 @@ export function ConfirmDestructiveDialog({
           <Button
             type="button"
             variant={confirmVariant}
-            className="rounded-full"
+            className="rounded"
             disabled={pending || confirmDisabled}
             onClick={() => void onConfirm()}
           >

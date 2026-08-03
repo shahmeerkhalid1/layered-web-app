@@ -130,7 +130,7 @@ Metadata fields on `Exercise` for comprehensive Pilates documentation:
 ## 4. Exercise Form UI
 
 - **Form stack**: **React Hook Form** + **`zodResolver`** and [`exercise-form-schema.ts`](client/src/lib/validation/exercise-form-schema.ts); shadcn **`Select`** fields use **`Controller`**; simple text inputs use **`register`**; multi-select arrays use **`setValue`** / **`getValues`** with **`useWatch`** for derived UI (checkboxes, disabled states).
-- **Springs**: full-width `Label` → helper text → text input with **N/A quick button** (same `h-12` / `rounded-2xl` styling as other inputs).
+- **Springs**: full-width `Label` → helper text → text input with **N/A quick button** (same `h-12` / `rounded` styling as other inputs).
 - **Equipment**: full-width `Label` → helper text → checkboxes + custom "Add" input row (same input sizing/styling). With "None" selected, non-None checkboxes and custom add controls are disabled until "None" is cleared.
 - **Machine Setup**: single-select dropdown with N/A option.
 - **Movement Analysis** section: Spinal Movement (multi-select, "None" disables other options while selected), Chain Type (multi-select with constraints + tooltips), Joint Loading (multi-select) — grouped under a heading with a separator.

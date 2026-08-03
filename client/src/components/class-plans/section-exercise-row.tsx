@@ -73,7 +73,7 @@ export function SectionExerciseRow({
 
   return (
     <>
-      <li className="rounded-2xl border border-border/80 bg-background/60 p-3 md:p-4">
+      <li className="rounded border border-border/80 bg-background/60 p-3 md:p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1 space-y-1.5">
             <p className="font-medium leading-snug text-foreground">{row.exercise.name}</p>
@@ -151,7 +151,7 @@ export function SectionExerciseRow({
       </li>
 
       <Dialog open={removeOpen} onOpenChange={setRemoveOpen}>
-        <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl sm:max-w-md">
+        <DialogContent className="rounded border-border bg-popover p-6 shadow-xl sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold tracking-[-0.02em]">
               Remove exercise?
@@ -167,7 +167,7 @@ export function SectionExerciseRow({
             <Button
               type="button"
               variant="outline"
-              className="rounded-full"
+              className="rounded"
               onClick={() => setRemoveOpen(false)}
               disabled={pending}
             >
@@ -176,7 +176,7 @@ export function SectionExerciseRow({
             <Button
               type="button"
               variant="destructive"
-              className="rounded-full"
+              className="rounded"
               disabled={pending}
               onClick={() => void confirmRemove()}
             >

@@ -64,7 +64,7 @@ export function SessionNotesSection({
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-border bg-muted/10 p-4">
+      <div className="rounded border border-border bg-muted/10 p-4">
         <p className="text-sm font-medium text-foreground">Session notes</p>
         <div className="mt-3 flex justify-center py-4">
           <div className="size-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -74,7 +74,7 @@ export function SessionNotesSection({
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-muted/10 p-4">
+    <div className="rounded border border-border bg-muted/10 p-4">
       <div>
         <h3 className="text-sm font-semibold text-foreground">Session notes</h3>
         <p className="mt-0.5 text-xs text-muted-foreground">

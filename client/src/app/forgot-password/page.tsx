@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
           footer={<AuthFooterLink prompt="Remember your password?" linkLabel="Sign in" href="/login" />}
         >
           <div className="flex flex-col items-center rounded-xl border border-dashed border-border/80 bg-muted/15 px-6 py-10 text-center">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <div className="flex size-12 items-center justify-center rounded bg-primary/10 text-primary">
               <Mail className="size-6" aria-hidden />
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
               href="/login"
               className={cn(
                 buttonVariants({ variant: "outline" }),
-                "mt-6 h-11 w-full rounded-full"
+                "mt-6 h-11 w-full rounded"
               )}
             >
               Back to sign in
@@ -113,7 +113,7 @@ export default function ForgotPasswordPage() {
             href="/login"
             className={cn(
               buttonVariants({ variant: "ghost" }),
-              "h-11 w-full gap-2 rounded-full"
+              "h-11 w-full gap-2 rounded"
             )}
           >
             <ArrowLeft className="size-4" aria-hidden />

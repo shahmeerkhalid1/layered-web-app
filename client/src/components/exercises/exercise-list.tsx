@@ -54,10 +54,10 @@ function ExerciseListSkeleton() {
           className="animate-pulse border-border bg-card"
         >
           <CardContent className="p-3">
-            <div className="aspect-4/3 rounded-2xl bg-muted" />
-            <div className="mt-4 h-4 w-2/3 rounded-full bg-muted" />
-            <div className="mt-3 h-3 w-full rounded-full bg-muted/70" />
-            <div className="mt-2 h-3 w-1/2 rounded-full bg-muted/70" />
+            <div className="aspect-4/3 rounded bg-muted" />
+            <div className="mt-4 h-4 w-2/3 rounded bg-muted" />
+            <div className="mt-3 h-3 w-full rounded bg-muted/70" />
+            <div className="mt-2 h-3 w-1/2 rounded bg-muted/70" />
           </CardContent>
         </Card>
       ))}
@@ -67,8 +67,8 @@ function ExerciseListSkeleton() {
 
 function ExerciseFilteredEmptyState({ onClearFilters }: { onClearFilters: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card px-6 py-14 text-center shadow-lg">
-      <div className="flex size-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
+    <div className="flex flex-col items-center justify-center rounded border  border-border bg-card px-6 py-14 text-center shadow-lg">
+      <div className="flex size-14 items-center justify-center rounded bg-muted text-muted-foreground">
         <SearchX className="size-6" />
       </div>
       <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-card-foreground">
@@ -80,7 +80,7 @@ function ExerciseFilteredEmptyState({ onClearFilters }: { onClearFilters: () => 
       <Button
         type="button"
         variant="secondary"
-        className="mt-4 rounded-full px-4"
+        className="mt-4 rounded px-4"
         onClick={onClearFilters}
       >
         Clear filters
@@ -91,8 +91,8 @@ function ExerciseFilteredEmptyState({ onClearFilters }: { onClearFilters: () => 
 
 function ExerciseEmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card px-6 py-14 text-center shadow-lg">
-      <div className="flex size-14 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+    <div className="flex flex-col items-center justify-center rounded border  border-border bg-muted/30 px-6 py-14 text-center">
+      <div className="flex size-14 items-center justify-center rounded bg-secondary text-secondary-foreground">
         <Dumbbell className="size-6" />
       </div>
       <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-card-foreground">
@@ -103,8 +103,7 @@ function ExerciseEmptyState() {
       </p>
       <Link href="/exercises/new" className="mt-4">
         <Button
-          size="sm"
-          className="rounded-full bg-primary px-4 text-primary-foreground hover:bg-primary/90"
+          className="rounded bg-primary px-4 text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="mr-2 size-4" />
           New Exercise

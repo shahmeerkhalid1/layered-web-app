@@ -53,9 +53,9 @@ export function ClientProfileView({ client }: ClientProfileViewProps) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
+      <section className="rounded border border-border bg-card p-5 sm:p-6">
         <div className="flex items-start gap-3">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
             <Mail className="size-5" aria-hidden />
           </div>
           <div className="min-w-0 space-y-1">
@@ -97,9 +97,9 @@ export function ClientProfileView({ client }: ClientProfileViewProps) {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
+      <section className="rounded border border-border bg-card p-5  sm:p-6">
         <div className="flex items-start gap-3">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
             <Calendar className="size-5" aria-hidden />
           </div>
           <div className="min-w-0 space-y-1">
@@ -115,7 +115,7 @@ export function ClientProfileView({ client }: ClientProfileViewProps) {
         </div>
 
         {client.enrollments.length === 0 ? (
-          <div className="mt-4 rounded-2xl border border-dashed border-border/80 bg-muted/15 px-4 py-8 text-center">
+          <div className="mt-4 rounded border border-dashed border-border/80 bg-muted/15 px-4 py-8 text-center">
             <p className="text-sm text-muted-foreground">
               Not enrolled in any classes yet.
             </p>
@@ -125,7 +125,7 @@ export function ClientProfileView({ client }: ClientProfileViewProps) {
             {client.enrollments.map((enrollment) => (
               <li
                 key={enrollment.id}
-                className="rounded-2xl border border-border bg-muted/10 p-4"
+                className="rounded border border-border bg-muted/10 p-4"
               >
                 <p className="font-medium text-foreground">{enrollment.class.title}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">

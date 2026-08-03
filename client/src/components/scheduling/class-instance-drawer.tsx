@@ -451,7 +451,7 @@ export function ClassInstanceDrawer({
       />
 
       <Dialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
-        <DialogContent className="max-w-sm rounded-3xl">
+        <DialogContent className="max-w-sm rounded">
           <DialogHeader>
             <DialogTitle>Reset to template?</DialogTitle>
             <DialogDescription>
@@ -463,7 +463,7 @@ export function ClassInstanceDrawer({
             <Button
               type="button"
               variant="outline"
-              className="rounded-full"
+              className="rounded"
               onClick={() => setResetConfirmOpen(false)}
               disabled={pending}
             >
@@ -471,7 +471,7 @@ export function ClassInstanceDrawer({
             </Button>
             <Button
               type="button"
-              className="rounded-full"
+              className="rounded"
               disabled={pending}
               onClick={() => void resetToTemplate()}
             >
@@ -482,7 +482,7 @@ export function ClassInstanceDrawer({
       </Dialog>
 
       <Dialog open={editSectionOpen} onOpenChange={setEditSectionOpen}>
-        <DialogContent className="max-w-sm rounded-3xl">
+        <DialogContent className="max-w-sm rounded">
           <DialogHeader>
             <DialogTitle>Rename section</DialogTitle>
           </DialogHeader>
@@ -499,11 +499,11 @@ export function ClassInstanceDrawer({
             </p>
           ) : null}
           <DialogFooter>
-            <Button variant="outline" className="rounded-full" onClick={() => setEditSectionOpen(false)}>
+            <Button variant="outline" className="rounded" onClick={() => setEditSectionOpen(false)}>
               Cancel
             </Button>
             <Button
-              className="rounded-full"
+              className="rounded"
               disabled={pending || !editSectionName.trim() || editSectionDuplicate}
               onClick={() => void submitEditSection()}
             >
@@ -528,7 +528,7 @@ export function ClassInstanceDrawer({
 
       <EditScopeDialog open={scopeOpen} onOpenChange={setScopeOpen} onChoose={(s) => void applyScope(s)} />
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
-        <DialogContent className="max-w-[calc(100%-2rem)] rounded-3xl sm:max-w-3xl">
+        <DialogContent className="max-w-[calc(100%-2rem)] rounded sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Attach template</DialogTitle>
             <DialogDescription>
@@ -584,7 +584,7 @@ export function ClassInstanceDrawer({
                         />
                         <span
                           className={cn(
-                            "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2",
+                            "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border-2",
                             selected
                               ? "border-primary bg-primary text-primary-foreground"
                               : "border-muted-foreground/40 bg-background"
@@ -592,7 +592,7 @@ export function ClassInstanceDrawer({
                           aria-hidden
                         >
                           {selected ? (
-                            <span className="size-1.5 rounded-full bg-current" />
+                            <span className="size-1.5 rounded bg-current" />
                           ) : null}
                         </span>
                         <span className="min-w-0 flex-1 text-left">
@@ -616,7 +616,7 @@ export function ClassInstanceDrawer({
             <Button
               type="button"
               variant="outline"
-              className="rounded-full"
+              className="rounded"
               onClick={() => setAssignOpen(false)}
               disabled={assigningId !== null}
             >
@@ -624,7 +624,7 @@ export function ClassInstanceDrawer({
             </Button>
             <Button
               type="button"
-              className="rounded-full"
+              className="rounded"
               disabled={!activeSelectedTemplateId || assigningId !== null}
               onClick={() => {
                 if (activeSelectedTemplateId) void assign(activeSelectedTemplateId);
@@ -637,7 +637,7 @@ export function ClassInstanceDrawer({
       </Dialog>
 
       <Dialog open={addSectionOpen} onOpenChange={setAddSectionOpen}>
-        <DialogContent className="max-w-sm rounded-3xl">
+        <DialogContent className="max-w-sm rounded">
           <DialogHeader>
             <DialogTitle>Add section</DialogTitle>
           </DialogHeader>
@@ -654,11 +654,11 @@ export function ClassInstanceDrawer({
             </p>
           ) : null}
           <DialogFooter>
-            <Button variant="outline" className="rounded-full" onClick={() => setAddSectionOpen(false)}>
+            <Button variant="outline" className="rounded" onClick={() => setAddSectionOpen(false)}>
               Cancel
             </Button>
             <Button
-              className="rounded-full"
+              className="rounded"
               disabled={pending || !newSectionName.trim() || addSectionDuplicate}
               onClick={() => void submitAddSection()}
             >
@@ -725,7 +725,7 @@ export function ClassInstanceDrawer({
               <>
                 <div className="space-y-2">
                   {isOpen && isPast && (
-                    <div className="rounded-2xl border border-amber-500/30 bg-amber-50/80 px-4 py-3 dark:bg-amber-950/20">
+                    <div className="rounded border border-amber-500/30 bg-amber-50/80 px-4 py-3 dark:bg-amber-950/20">
                       <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
                         This session is past its scheduled date
                       </p>
@@ -746,7 +746,7 @@ export function ClassInstanceDrawer({
                       type="button"
                       size="sm"
                       variant="default"
-                      className="rounded-full"
+                      className="rounded"
                       disabled={pending || detail.status !== "SCHEDULED"}
                       onClick={async () => {
                         setPending(true);
@@ -767,7 +767,7 @@ export function ClassInstanceDrawer({
                       type="button"
                       size="sm"
                       variant="outline"
-                      className="rounded-full"
+                      className="rounded"
                       disabled={pending || !canEditPlanAndSchedule}
                       onClick={() => void openAssign()}
                     >
@@ -777,7 +777,7 @@ export function ClassInstanceDrawer({
                       type="button"
                       size="sm"
                       variant="outline"
-                      className="rounded-full"
+                      className="rounded"
                       disabled={pending || !canEditPlanAndSchedule}
                       onClick={() => setAddSectionOpen(true)}
                     >
@@ -788,7 +788,7 @@ export function ClassInstanceDrawer({
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="rounded-full"
+                        className="rounded"
                         disabled={pending || isPast}
                         onClick={() => setEditClassOpen(true)}
                       >
@@ -799,7 +799,7 @@ export function ClassInstanceDrawer({
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="rounded-full"
+                        className="rounded"
                         disabled={pending || isPast}
                         onClick={() => setEditClassOpen(true)}
                       >
@@ -811,7 +811,7 @@ export function ClassInstanceDrawer({
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="rounded-full"
+                        className="rounded"
                         disabled={pending || !canEditPlanAndSchedule || !detail.isCustomised}
                         onClick={() => setResetConfirmOpen(true)}
                       >
@@ -822,7 +822,7 @@ export function ClassInstanceDrawer({
                       type="button"
                       size="sm"
                       variant="destructive"
-                      className="rounded-full"
+                      className="rounded"
                       disabled={pending || !isOpen}
                       onClick={() => setCancelConfirmOpen(true)}
                     >
@@ -831,7 +831,7 @@ export function ClassInstanceDrawer({
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                <div className="rounded border border-border bg-muted/20 p-4">
                   <h3 className="text-sm font-semibold text-foreground">Date and time</h3>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {detail.class.isRecurring
@@ -879,7 +879,7 @@ export function ClassInstanceDrawer({
                   <Button
                     type="button"
                     size="sm"
-                    className="mt-3 rounded-full"
+                    className="mt-3 rounded"
                     disabled={pending || !canEditPlanAndSchedule}
                     onClick={() => void saveReschedule()}
                   >
@@ -918,7 +918,7 @@ export function ClassInstanceDrawer({
                         const exSorted = sortSectionExercises(section.exercises ?? []);
                         const sortedAll = sortSections(detail.sections ?? []);
                         return (
-                          <li key={section.id} className="rounded-2xl border border-border bg-card p-3 shadow-sm">
+                          <li key={section.id} className="rounded border border-border bg-card p-3 shadow-sm">
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0 flex-1">
                                 <p className="text-xs font-medium text-muted-foreground">
@@ -1004,7 +1004,7 @@ export function ClassInstanceDrawer({
                               type="button"
                               variant="outline"
                               size="sm"
-                              className="mt-3 rounded-full border-dashed border-border"
+                              className="mt-3 rounded border-dashed border-border"
                               disabled={pending || !canEditPlanAndSchedule}
                               onClick={() => setPickerSectionId(section.id)}
                             >

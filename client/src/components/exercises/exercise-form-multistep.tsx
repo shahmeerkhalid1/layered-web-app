@@ -156,7 +156,7 @@ function isExerciseFormStepComplete(
 }
 
 const selectTriggerClass =
-  "box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground";
+  "box-border h-12 min-h-12 w-full min-w-0 shrink-0 justify-between rounded border-input bg-background/80 px-4 py-0 leading-snug shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground";
 
 export interface ExerciseFormMultistepProps {
   exercise?: Exercise;
@@ -810,7 +810,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
             <SelectContent
               align="start"
               sideOffset={6}
-              className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+              className="max-h-72 min-w-(--anchor-width) rounded border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
             >
               <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
                 <span className="text-muted-foreground">{nonePlaceholder}</span>
@@ -848,7 +848,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                 placeholder="e.g. Short spine massage"
                 aria-invalid={errors.name || duplicateExerciseName ? true : undefined}
                 className={cn(
-                  "h-12 rounded-2xl border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35",
+                  "h-12 rounded border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35",
                   duplicateExerciseName && "border-destructive"
                 )}
               />
@@ -881,7 +881,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                     placeholder="Describe the movement, setup, and intention..."
                     rows={4}
                     bulletsEnabled={false}
-                    className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                    className="rounded border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                   />
                 )}
               />
@@ -906,7 +906,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                     placeholder="e.g. Supine, headpiece flat, straps in hands"
                     rows={3}
                     bulletsEnabled={false}
-                    className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                    className="rounded border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                   />
                 )}
               />
@@ -925,14 +925,14 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                   >
                     <SelectTrigger
                       id="ms-folder"
-                      className="h-12 w-full min-w-0 rounded-2xl border-input bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
+                      className="h-12 w-full min-w-0 rounded border-input bg-background/70 px-4 shadow-none focus-visible:ring-ring/35 data-placeholder:text-muted-foreground"
                     >
                       <SelectValue placeholder="No folder">{folderTriggerLabel}</SelectValue>
                     </SelectTrigger>
                     <SelectContent
                       align="start"
                       sideOffset={6}
-                      className="max-h-72 rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                      className="max-h-72 rounded border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
                     >
                       <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
                         No folder
@@ -972,7 +972,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                       onDrop={(e) => handleDropReorder(e, index)}
                       onDragEnd={handleDragEnd}
                       className={cn(
-                        "group relative aspect-square overflow-hidden rounded-2xl border bg-muted transition-all",
+                        "group relative aspect-square overflow-hidden rounded border bg-muted transition-all",
                         dragOverIdx === index
                           ? "border-primary ring-2 ring-primary/30"
                           : "border-border"
@@ -1000,13 +1000,13 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                         />
                       </a>
                       <div className="pointer-events-none absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100" />
-                      <div className="pointer-events-none absolute left-1.5 top-1.5 flex size-6 cursor-grab items-center justify-center rounded-full bg-black text-white opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing">
+                      <div className="pointer-events-none absolute left-1.5 top-1.5 flex size-6 cursor-grab items-center justify-center rounded bg-black text-white opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing">
                         <GripVertical className="size-3.5" aria-hidden />
                       </div>
                       <button
                         type="button"
                         onClick={() => setImageRemoveTarget(item)}
-                        className="pointer-events-auto absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                        className="pointer-events-auto absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded bg-destructive text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
                         aria-label="Remove image"
                       >
                         <X className="size-3.5 text-white" />
@@ -1025,7 +1025,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                 <div
                   {...getRootProps()}
                   className={cn(
-                    "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-8 transition-colors",
+                    "flex cursor-pointer flex-col items-center justify-center gap-2 rounded border-2 border-dashed px-4 py-8 transition-colors",
                     isDragActive
                       ? "border-primary bg-primary/5"
                       : "border-input bg-background/70 hover:border-muted-foreground/40",
@@ -1096,7 +1096,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                   id="ms-springs"
                   {...register("springs")}
                   placeholder="e.g. Medium (2 red) or N/A"
-                  className="box-border h-12 min-h-12 w-full min-w-0 rounded-2xl border-input bg-background/80 px-4 py-0 leading-snug shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 sm:flex-1"
+                  className="box-border h-12 min-h-12 w-full min-w-0 rounded border-input bg-background/80 px-4 py-0 leading-snug shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 sm:flex-1"
                 />
                 <Button
                   type="button"
@@ -1104,7 +1104,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                   onClick={() =>
                     setValue("springs", "N/A", { shouldDirty: true, shouldValidate: true })
                   }
-                  className="h-12 w-full shrink-0 rounded-2xl border-input px-4 text-sm font-medium sm:w-auto sm:min-w-22"
+                  className="h-12 w-full shrink-0 rounded border-input px-4 text-sm font-medium sm:w-auto sm:min-w-22"
                 >
                   N/A
                 </Button>
@@ -1180,14 +1180,14 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                         addCustomEquipment();
                       }
                     }}
-                    className="box-border h-12 min-h-12 w-full min-w-0 rounded-2xl border-input bg-background/80 px-4 py-0 text-sm leading-snug shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 sm:flex-1 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="box-border h-12 min-h-12 w-full min-w-0 rounded border-input bg-background/80 px-4 py-0 text-sm leading-snug shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35 sm:flex-1 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   <Button
                     type="button"
                     variant="outline"
                     onClick={addCustomEquipment}
                     disabled={(wEquipment ?? []).includes(noneEquipmentValue)}
-                    className="h-12 w-full shrink-0 rounded-2xl border-input px-4 text-sm font-medium sm:w-auto sm:min-w-22 disabled:cursor-not-allowed"
+                    className="h-12 w-full shrink-0 rounded border-input px-4 text-sm font-medium sm:w-auto sm:min-w-22 disabled:cursor-not-allowed"
                   >
                     Add
                   </Button>
@@ -1221,7 +1221,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                     }
                     append({ content: "", isFinisher: false });
                   }}
-                  className="h-9 gap-1.5 rounded-full border-input px-4 text-sm font-medium"
+                  className="h-9 gap-1.5 rounded border-input px-4 text-sm font-medium"
                 >
                   <Plus className="size-4 shrink-0" aria-hidden />
                   Add layer
@@ -1300,7 +1300,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                                 : "Build on the previous layer..."
                           }
                           rows={showFinisherStyle ? 4 : 3}
-                          className="min-h-22 resize-y rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                          className="min-h-22 resize-y rounded border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                         />
                       )}
                     />
@@ -1319,7 +1319,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                 id="ms-transition"
                 {...register("transitionCues")}
                 placeholder="e.g. Coming down from lunge"
-                className="h-12 rounded-2xl border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                className="h-12 rounded border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
               />
             </div>
             <div className="space-y-2">
@@ -1342,7 +1342,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                     placeholder="Key coaching points, modifications, breathing cues..."
                     rows={3}
                     bulletsEnabled={false}
-                    className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                    className="rounded border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                   />
                 )}
               />
@@ -1453,13 +1453,13 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                       addTag();
                     }
                   }}
-                  className="h-12 min-w-0 flex-1 rounded-2xl border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                  className="h-12 min-w-0 flex-1 rounded border-input bg-background/70 px-4 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   onClick={addTag}
-                  className="h-12 shrink-0 gap-2 rounded-2xl border-input bg-background/70 px-5 text-sm font-medium text-foreground shadow-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring/35"
+                  className="h-12 shrink-0 gap-2 rounded border-input bg-background/70 px-5 text-sm font-medium text-foreground shadow-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring/35"
                 >
                   <Plus className="size-5 shrink-0" aria-hidden />
                   Add
@@ -1511,7 +1511,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                     placeholder="How to make this exercise harder (load, range, tempo, props…)"
                     rows={3}
                     bulletsEnabled={false}
-                    className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                    className="rounded border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                   />
                 )}
               />
@@ -1536,7 +1536,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                     placeholder="How to make this exercise easier (modifications, support, range…)"
                     rows={3}
                     bulletsEnabled={false}
-                    className="rounded-2xl border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
+                    className="rounded border-input bg-background/70 px-4 py-3.5 shadow-none placeholder:text-muted-foreground focus-visible:ring-ring/35"
                   />
                 )}
               />
@@ -1566,7 +1566,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                     <SelectContent
                       align="start"
                       sideOffset={6}
-                      className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
+                      className="max-h-72 min-w-(--anchor-width) rounded border-border bg-popover p-1.5 shadow-lg ring-1 ring-border/50"
                     >
                       <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
                         None — this is the easiest step (root)
@@ -1608,7 +1608,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
   return (
     <>
     <form onSubmit={onFormSubmit} className="w-full min-w-0">
-      <Card className="gap-0 border-border bg-card py-0 shadow-xl">
+      <Card className="gap-0 border-border bg-card py-0 rounded">
         <CardContent className="p-0">
           <div className="border-b border-border bg-muted/15">
             <div
@@ -1640,7 +1640,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                   >
                     <span
                       className={cn(
-                        "flex  size-8 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold tabular-nums",
+                        "flex  size-8 shrink-0 items-center justify-center rounded border text-[11px] font-bold tabular-nums",
                         active
                           ? "border-secondary bg-secondary text-secondary-foreground"
                           : showComplete
@@ -1679,7 +1679,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">{STEPS[stepIndex]?.caption}</p>
               </div>
-              <div className="flex items-center gap-1.5 rounded-full border border-border bg-muted/30 px-2 py-1 text-xs font-medium text-muted-foreground">
+              <div className="flex items-center gap-1.5 rounded border border-border bg-muted/30 px-2 py-1 text-xs font-medium text-muted-foreground">
                 Step {stepIndex + 1} of {STEPS.length}
               </div>
             </div>
@@ -1693,7 +1693,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-2xl"
+                  className="rounded"
                   disabled={stepIndex === 0}
                   onClick={goPrev}
                 >
@@ -1701,14 +1701,14 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                   Back
                 </Button>
                 {!lastStep ? (
-                  <Button type="button" className="rounded-2xl" onClick={() => void goNext()}>
+                  <Button type="button" className="rounded" onClick={() => void goNext()}>
                     Continue
                     <ChevronRight className="ml-1 size-4" />
                   </Button>
                 ) : (
                   <Button
                     type="button"
-                    className="rounded-2xl"
+                    className="rounded"
                     disabled={isSubmitting || duplicateExerciseName}
                     onClick={() => void submitForm()}
                   >
@@ -1719,7 +1719,7 @@ export function ExerciseFormMultistep({ exercise }: ExerciseFormMultistepProps) 
                 <Button
                   type="button"
                   variant="ghost"
-                  className="rounded-2xl text-muted-foreground"
+                  className="rounded text-muted-foreground"
                   onClick={() => router.back()}
                 >
                   Cancel

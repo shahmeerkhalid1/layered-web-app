@@ -166,7 +166,7 @@ export function EditClassPlanDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          "flex max-h-[min(90vh,40rem)] w-full flex-col gap-0 overflow-hidden rounded-3xl border border-border bg-popover p-0 shadow-xl sm:max-w-lg"
+          "flex max-h-[min(90vh,40rem)] w-full flex-col gap-0 overflow-hidden rounded border border-border bg-popover p-0 shadow-xl sm:max-w-lg"
         )}
       >
         <DialogHeader className="shrink-0 space-y-1 border-b border-border/60 px-6 pt-6 pr-12 pb-4">
@@ -195,7 +195,7 @@ export function EditClassPlanDialog({
                 id="edit-plan-title"
                 placeholder="e.g. Reformer Flow — Tuesday"
                 className={cn(
-                  "h-11 rounded-2xl border-input bg-background/70 shadow-none focus-visible:ring-ring/35",
+                  "h-11 rounded border-input bg-background/70 shadow-none focus-visible:ring-ring/35",
                   (errors.name || duplicatePlanName) && "border-destructive"
                 )}
                 aria-invalid={errors.name || duplicatePlanName ? true : undefined}
@@ -225,7 +225,7 @@ export function EditClassPlanDialog({
                     >
                       <SelectTrigger
                         className={cn(
-                          "box-border h-11 w-full justify-between rounded-2xl border-input bg-background/70 px-3 shadow-none focus-visible:ring-ring/35",
+                          "box-border h-11 w-full justify-between rounded border-input bg-background/70 px-3 shadow-none focus-visible:ring-ring/35",
                           errors.classType && "border-destructive"
                         )}
                         aria-invalid={errors.classType ? true : undefined}
@@ -250,7 +250,7 @@ export function EditClassPlanDialog({
                       <SelectContent
                         align="start"
                         sideOffset={6}
-                        className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg"
+                        className="max-h-72 min-w-(--anchor-width) rounded border-border bg-popover p-1.5 shadow-lg"
                       >
                         <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
                           <span className="text-muted-foreground">Optional</span>
@@ -282,7 +282,7 @@ export function EditClassPlanDialog({
                     >
                       <SelectTrigger
                         className={cn(
-                          "box-border h-11 w-full justify-between rounded-2xl border-input bg-background/70 px-3 shadow-none focus-visible:ring-ring/35",
+                          "box-border h-11 w-full justify-between rounded border-input bg-background/70 px-3 shadow-none focus-visible:ring-ring/35",
                           errors.classStyle && "border-destructive"
                         )}
                         aria-invalid={errors.classStyle ? true : undefined}
@@ -307,7 +307,7 @@ export function EditClassPlanDialog({
                       <SelectContent
                         align="start"
                         sideOffset={6}
-                        className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg"
+                        className="max-h-72 min-w-(--anchor-width) rounded border-border bg-popover p-1.5 shadow-lg"
                       >
                         <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
                           <span className="text-muted-foreground">Optional</span>
@@ -337,7 +337,7 @@ export function EditClassPlanDialog({
                 min={1}
                 step={1}
                 className={cn(
-                  "h-11 rounded-2xl border-input bg-background/70 shadow-none focus-visible:ring-ring/35",
+                  "h-11 rounded border-input bg-background/70 shadow-none focus-visible:ring-ring/35",
                   errors.durationMinutesStr && "border-destructive"
                 )}
                 aria-invalid={errors.durationMinutesStr ? true : undefined}
@@ -357,7 +357,7 @@ export function EditClassPlanDialog({
                   <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "none")}>
                     <SelectTrigger
                       className={cn(
-                        "box-border h-11 w-full justify-between rounded-2xl border-input bg-background/70 px-3 shadow-none focus-visible:ring-ring/35",
+                        "box-border h-11 w-full justify-between rounded border-input bg-background/70 px-3 shadow-none focus-visible:ring-ring/35",
                         errors.folderId && "border-destructive"
                       )}
                       aria-invalid={errors.folderId ? true : undefined}
@@ -371,7 +371,7 @@ export function EditClassPlanDialog({
                     <SelectContent
                       align="start"
                       sideOffset={6}
-                      className="max-h-72 min-w-(--anchor-width) rounded-2xl border-border bg-popover p-1.5 shadow-lg"
+                      className="max-h-72 min-w-(--anchor-width) rounded border-border bg-popover p-1.5 shadow-lg"
                     >
                       <SelectItem value="none" className="rounded-xl py-2.5 pl-3">
                         No folder
@@ -402,7 +402,7 @@ export function EditClassPlanDialog({
                       onClick={() => togglePreset(preset)}
                       disabled={!on && tags.length >= MAX_TAGS}
                       className={cn(
-                        "inline-flex h-7 items-center rounded-full border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                        "inline-flex h-7 items-center rounded border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
                         on
                           ? "border-transparent bg-primary text-primary-foreground hover:bg-primary/90"
                           : "border-border bg-muted/40 text-foreground hover:bg-accent"
@@ -426,7 +426,7 @@ export function EditClassPlanDialog({
                   placeholder="Custom tag + Enter"
                   maxLength={MAX_TAG_LEN}
                   className={cn(
-                    "h-10 flex-1 rounded-2xl border-input bg-background/70 text-sm shadow-none focus-visible:ring-ring/35",
+                    "h-10 flex-1 rounded border-input bg-background/70 text-sm shadow-none focus-visible:ring-ring/35",
                     errors.tags && "border-destructive"
                   )}
                   aria-invalid={errors.tags ? true : undefined}
@@ -435,7 +435,7 @@ export function EditClassPlanDialog({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="shrink-0 rounded-full"
+                  className="shrink-0 rounded"
                   onClick={() => void addCustomTag()}
                   disabled={tags.length >= MAX_TAGS || !customTag.trim()}
                 >
@@ -459,14 +459,14 @@ export function EditClassPlanDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="rounded-full border-border"
+              className="rounded border-border"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting || !plan || duplicatePlanName}
-              className="rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90"
+              className="rounded bg-primary px-5 text-primary-foreground hover:bg-primary/90"
             >
               {isSubmitting ? "Saving…" : "Save changes"}
             </Button>

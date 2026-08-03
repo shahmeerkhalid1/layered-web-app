@@ -26,80 +26,56 @@ export function CalendarHeader({
   onNext,
   onToday,
   onNewClass,
-  classCount = 0,
-  isCurrentPeriod = false,
 }: CalendarHeaderProps) {
-  const statsLabel =
-    classCount === 0
-      ? `No classes in this ${mode === "week" ? "week" : "month"}`
-      : `${classCount} class${classCount === 1 ? "" : "es"} scheduled`;
-
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between rounded-3xl border border-border px-4 py-5 md:px-6 md:py-6 bg-card shadow-lg">
-      
-      <div className="flex min-w-0 items-start gap-3">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
-          <Calendar className="size-5" aria-hidden />
-        </div>
-        <div className="min-w-0 space-y-1">
-          <h1 className="font-heading text-xl font-semibold tracking-[-0.02em] text-foreground md:text-lg uppercase">
-            Calendar
-          </h1>
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="text-xs text-muted-foreground">
-            {statsLabel}
-            <span className="text-muted-foreground/50"> · </span>
-            {mode === "week" ? "Week view" : "Month view"}
-            <span className="text-muted-foreground/50"> · </span>
-            Click an empty slot to quick-schedule
-          </p>
-        </div>
-      </div>
+    <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <header className="space-y-2">
+        <p className="layered-eyebrow">Calendar</p>
+        <h1 className="layered-display-headline">{title}</h1>
+      </header>
 
-      <div className="flex flex-wrap md:flex-nowrap items-center gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="rounded-full"
-          onClick={onPrev}
-          aria-label={mode === "week" ? "Previous week" : "Previous month"}
-        >
-          <ChevronLeft className="size-4" />
-        </Button>
-        <Button
-          type="button"
-          variant={isCurrentPeriod ? "secondary" : "outline"}
-          className="rounded-full"
-          onClick={onToday}
-          disabled={isCurrentPeriod}
-        >
-          Today
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="rounded-full"
-          onClick={onNext}
-          aria-label={mode === "week" ? "Next week" : "Next month"}
-        >
-          <ChevronRight className="size-4" />
-        </Button>
-
-        <div
-          className="mx-0.5 hidden h-6 w-px bg-border sm:block"
-          aria-hidden
-        />
-
-        <div className="flex rounded-full border border-border bg-muted/30 p-0.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center rounded ">
           <Button
             type="button"
-            variant={mode === "week" ? "default" : "ghost"}
+            variant="ghost"
+            size="icon"
+            className="size-9 rounded-none border-r border-border"
+            onClick={onPrev}
+            aria-label={mode === "week" ? "Previous week" : "Previous month"}
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-9 rounded-none px-4 text-sm border border-border border-r-0 border-l-0 font-semibold"
+            onClick={onToday}
+          >
+            Today
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-9 rounded-none border-l border-border"
+            onClick={onNext}
+            aria-label={mode === "week" ? "Next week" : "Next month"}
+          >
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+
+        <div className="flex rounded border border-border p-0.5">
+          <Button
+            type="button"
+            variant="ghost"
             size="sm"
             className={cn(
-              "h-7 rounded-full px-3 text-xs font-medium shadow-none",
-              mode !== "week" && "text-muted-foreground hover:text-foreground"
+              "h-8 rounded px-4 text-xs font-medium",
+              mode === "week"
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "text-muted-foreground hover:text-foreground",
             )}
             onClick={() => onModeChange("week")}
           >
@@ -107,11 +83,13 @@ export function CalendarHeader({
           </Button>
           <Button
             type="button"
-            variant={mode === "month" ? "default" : "ghost"}
+            variant="ghost"
             size="sm"
             className={cn(
-              "h-7 rounded-full px-3 text-xs font-medium shadow-none",
-              mode !== "month" && "text-muted-foreground hover:text-foreground"
+              "h-8 rounded px-4 text-xs font-medium",
+              mode === "month"
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "text-muted-foreground hover:text-foreground",
             )}
             onClick={() => onModeChange("month")}
           >
@@ -119,10 +97,43 @@ export function CalendarHeader({
           </Button>
         </div>
 
-        <Button type="button" className="rounded-full" onClick={onNewClass}>
+        <Button
+          type="button"
+          className="h-9 rounded bg-primary px-4 text-primary-foreground hover:bg-primary/90"
+          onClick={onNewClass}
+        >
           <Plus className="size-4" aria-hidden />
           New class
         </Button>
+      </div>
+    </div>
+  );
+}
+
+export function CalendarStatusBanner({
+  mode,
+  classCount,
+}: {
+  mode: CalendarViewMode;
+  classCount: number;
+}) {
+  const populated = classCount > 0;
+  const periodLabel = mode === "week" ? "week" : "month";
+
+  return (
+    <div className="flex items-start gap-4 rounded bg-primary dark:bg-primary p-5 text-white">
+      <Calendar className="mt-0.5 size-5 shrink-0" aria-hidden />
+      <div>
+        <p className="font-semibold">
+          {populated
+            ? `${classCount} class${classCount === 1 ? "" : "es"} this ${periodLabel}`
+            : "No classes in this period"}
+        </p>
+        <p className="mt-1 text-sm text-white/70">
+          {populated
+            ? `${mode === "week" ? "Week" : "Month"} view · click a class to open its plan.`
+            : "Click any time slot in the grid below to schedule, or add a new class."}
+        </p>
       </div>
     </div>
   );

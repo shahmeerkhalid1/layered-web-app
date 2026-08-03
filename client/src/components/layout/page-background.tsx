@@ -18,7 +18,8 @@ const PAGE_BACKGROUND_PATHS = new Set([
 
 export function usePageBackground(): boolean {
   const pathname = usePathname();
-  return PAGE_BACKGROUND_PATHS.has(pathname);
+  // return PAGE_BACKGROUND_PATHS.has(pathname);
+  return false;
 }
 
 export function PageBackgroundContent({

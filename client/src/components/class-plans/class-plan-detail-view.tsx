@@ -294,22 +294,22 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
 
   if (loading) {
     return (
-      <div className="space-y-6 rounded-3xl border border-border bg-card p-8 shadow-lg">
-        <div className="h-4 w-32 animate-pulse rounded-full bg-muted" />
+      <div className="space-y-6 rounded border border-border bg-card p-8 shadow-lg">
+        <div className="h-4 w-32 animate-pulse rounded bg-muted" />
         <div className="h-9 w-3/4 max-w-md animate-pulse rounded-lg bg-muted" />
-        <div className="h-20 animate-pulse rounded-2xl bg-muted/80" />
-        <div className="h-40 animate-pulse rounded-2xl bg-muted/60" />
+        <div className="h-20 animate-pulse rounded bg-muted/80" />
+        <div className="h-40 animate-pulse rounded bg-muted/60" />
       </div>
     );
   }
 
   if (error || !plan) {
     return (
-      <div className="space-y-6 rounded-3xl border border-border bg-card p-8 shadow-lg">
+      <div className="space-y-6 rounded border border-border bg-card p-8 shadow-lg">
         <p className="text-sm text-destructive">{error ?? "Plan not found."}</p>
         <Link
           href="/class-plans"
-          className={cn(buttonVariants({ variant: "outline" }), "inline-flex rounded-full")}
+          className={cn(buttonVariants({ variant: "outline" }), "inline-flex rounded")}
         >
           <ChevronLeft className="mr-1 size-4" aria-hidden />
           Back to class plans
@@ -332,7 +332,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
           durationMinutes: plan.durationMinutes,
         }}
       />
-      <div className="rounded-3xl border border-border bg-card p-6 shadow-lg md:p-8">
+      <div className="rounded border border-border bg-card p-6  md:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-2">
             <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
@@ -377,7 +377,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
               type="button"
               size="sm"
               variant="outline"
-              className="rounded-full"
+              className="rounded"
               onClick={() => setScheduleOpen(true)}
               disabled={pending}
             >
@@ -388,7 +388,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
               href="/class-plans"
               className={cn(
                 buttonVariants({ variant: "outline", size: "sm" }),
-                "rounded-full border-border"
+                "rounded border-border"
               )}
             >
               <ChevronLeft className="mr-1 size-4" aria-hidden />
@@ -398,7 +398,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
               type="button"
               size="sm"
               variant="outline"
-              className="rounded-full border-border"
+              className="rounded border-border"
               onClick={() => setEditPlanOpen(true)}
               disabled={pending}
             >
@@ -408,7 +408,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
             <Button
               type="button"
               size="sm"
-              className="rounded-full"
+              className="rounded"
               onClick={openAdd}
               disabled={pending}
             >
@@ -430,7 +430,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
                 structure.
               </p>
             </div>
-            <Button type="button" className="rounded-full" onClick={openAdd} disabled={pending}>
+            <Button type="button" className="rounded" onClick={openAdd} disabled={pending}>
               <Plus className="mr-1 size-4" aria-hidden />
               Add first section
             </Button>
@@ -442,8 +442,8 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
             const exSorted = sortSectionExercises(section.exercises ?? []);
             return (
               <li key={section.id}>
-                <Card className="overflow-hidden border-border shadow-md py-0">
-                  <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 border-b border-border/60 bg-muted/25 px-4 py-5 md:px-5">
+                <Card className="overflow-hidden border-border py-0">
+                  <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 border-b border-border/60 bg-muted/30 px-4 py-5 md:px-5">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-medium text-muted-foreground">
                         Section {index + 1}
@@ -538,7 +538,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="rounded-full border-dashed border-border"
+                      className="rounded border-dashed border-border"
                       disabled={pending}
                       onClick={() => setPickerSectionId(section.id)}
                     >
@@ -554,7 +554,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
       )}
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl sm:max-w-md">
+        <DialogContent className="rounded border-border bg-popover p-6 shadow-xl sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold tracking-[-0.02em]">
               New section
@@ -568,7 +568,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
               onChange={(e) => setNewSectionName(e.target.value)}
               placeholder="e.g. Warm-up, Flow, Stretch"
               aria-invalid={addSectionDuplicate ? true : undefined}
-              className={cn("rounded-2xl", addSectionDuplicate && "border-destructive")}
+              className={cn("rounded", addSectionDuplicate && "border-destructive")}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -582,11 +582,11 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
               </p>
             ) : null}
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2">
             <Button
               type="button"
               variant="outline"
-              className="rounded-full"
+              className="rounded"
               onClick={() => setAddOpen(false)}
               disabled={pending}
             >
@@ -594,7 +594,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
             </Button>
             <Button
               type="button"
-              className="rounded-full"
+              className="rounded"
               disabled={pending || !newSectionName.trim() || addSectionDuplicate}
               onClick={() => void submitAdd()}
             >
@@ -605,7 +605,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
       </Dialog>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl sm:max-w-md">
+        <DialogContent className="rounded border-border bg-popover p-6 shadow-xl sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold tracking-[-0.02em]">
               Rename section
@@ -618,7 +618,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
               value={editSectionName}
               onChange={(e) => setEditSectionName(e.target.value)}
               aria-invalid={editSectionDuplicate ? true : undefined}
-              className={cn("rounded-2xl", editSectionDuplicate && "border-destructive")}
+              className={cn("rounded", editSectionDuplicate && "border-destructive")}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -632,11 +632,11 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
               </p>
             ) : null}
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2 items-center">
             <Button
               type="button"
               variant="outline"
-              className="rounded-full"
+              className="rounded"
               onClick={() => {
                 setEditOpen(false);
                 setEditingSection(null);
@@ -647,7 +647,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
             </Button>
             <Button
               type="button"
-              className="rounded-full"
+              className="rounded"
               disabled={pending || !editSectionName.trim() || editSectionDuplicate}
               onClick={() => void submitEdit()}
             >
@@ -658,7 +658,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
       </Dialog>
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="rounded-3xl border-border bg-popover p-6 shadow-xl sm:max-w-md">
+        <DialogContent className="rounded border-border bg-popover p-6 shadow-xl sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold tracking-[-0.02em]">
               Delete section?
@@ -673,7 +673,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
             <Button
               type="button"
               variant="outline"
-              className="rounded-full"
+              className="rounded"
               onClick={() => {
                 setDeleteOpen(false);
                 setDeletingSection(null);
@@ -685,7 +685,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
             <Button
               type="button"
               variant="destructive"
-              className="rounded-full"
+              className="rounded"
               disabled={pending || !deletingSection}
               onClick={() => void submitDelete()}
             >

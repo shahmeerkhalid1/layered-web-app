@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Plus, Users } from "lucide-react";
+import { Plus } from "lucide-react";
 import { ExerciseSearch } from "@/components/exercises/exercise-search";
 import { buttonVariants } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 export interface ClientLibraryHeaderProps {
@@ -33,36 +32,26 @@ export function ClientLibraryHeader({
   const totalKnown = totalClients !== undefined;
   const total = totalClients ?? 0;
 
-  return (
-    <div className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-5 shadow-lg sm:p-6">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
-        <div className="min-w-0 max-w-2xl space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
-              <Users className="size-5" aria-hidden />
-            </div>
-            <div>
-              <h2 className="font-heading text-xl font-semibold tracking-[-0.03em] text-card-foreground sm:text-lg uppercase">
-                Clients
-              </h2>
-              <p
-                className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground"
-                aria-live="polite"
-              >
-                {!totalKnown && loading && <span>Loading roster…</span>}
-                {totalKnown && (
-                  <span className="font-medium text-foreground">
-                    {hasActiveFilters
-                      ? `Showing ${visibleClientCount} of ${total} client${total === 1 ? "" : "s"}`
-                      : `${total} client${total === 1 ? "" : "s"}`}
-                  </span>
-                )}
-              </p>
-            </div>
-          </div>
-        </div>
+  const subtitle = totalKnown
+    ? hasActiveFilters
+      ? `Showing ${visibleClientCount} of ${total} client${total === 1 ? "" : "s"}`
+      : `${total} client${total === 1 ? "" : "s"}`
+    : loading
+      ? "Loading roster…"
+      : "0 clients";
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <header className="space-y-2">
+          <p className="layered-eyebrow">Clients</p>
+          <h1 className="layered-display-headline">Clients</h1>
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            {subtitle}
+          </p>
+        </header>
+
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
           {onNewClient ? (
             <button
               type="button"
@@ -70,9 +59,9 @@ export function ClientLibraryHeader({
               disabled={createDisabled}
               title={createDisabled ? createDisabledTitle : undefined}
               className={cn(
-                buttonVariants({ size: "sm" }),
-                "rounded-full px-4",
-                createDisabled && "pointer-events-none opacity-50"
+                buttonVariants({ variant: "default" }),
+                "inline-flex h-10 items-center justify-center rounded bg-primary px-5 text-primary-foreground shadow-none hover:bg-primary/90",
+                createDisabled && "pointer-events-none opacity-50",
               )}
             >
               <Plus className="mr-2 size-4" />
@@ -81,7 +70,10 @@ export function ClientLibraryHeader({
           ) : (
             <Link
               href="/clients/new"
-              className={cn(buttonVariants({ size: "sm" }), "rounded-full px-4")}
+              className={cn(
+                buttonVariants({ variant: "default" }),
+                "inline-flex h-10 items-center justify-center rounded bg-primary px-5 text-primary-foreground shadow-none hover:bg-primary/90",
+              )}
             >
               <Plus className="mr-2 size-4" />
               New client
@@ -90,11 +82,8 @@ export function ClientLibraryHeader({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-start gap-3 border-t border-border pt-5">
-        <div className="min-w-0 flex-1 basis-52 space-y-2 sm:basis-72">
-          <Label htmlFor="client-search" className="text-muted-foreground">
-            Search
-          </Label>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-[260px] flex-1">
           <ExerciseSearch
             id="client-search"
             value={search}

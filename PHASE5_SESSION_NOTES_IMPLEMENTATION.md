@@ -378,7 +378,7 @@ flowchart LR
 
 - Soft deletes: `deletedAt` on `SessionNote`.
 - Zod validation via `validate()` middleware; client uses shared patterns in `@/services/*` and `api` with credentials.
-- UI: `rounded-3xl` cards, `font-heading`, filter patterns aligned with exercise/class-plan libraries.
+- UI: `rounded` cards, `font-heading`, filter patterns aligned with exercise/class-plan libraries.
 - Pagination component: `ExerciseLibraryPagination` with controlled `page` / `totalPages` / `onPageChange`.
 
 ---
