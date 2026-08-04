@@ -164,7 +164,7 @@ export function ClientList({
 
   const selectedClients = clients.filter((client) => selectedIds.has(client.id));
   const archiveDescription = Array.isArray(archiveTarget)
-    ? `${archiveTarget.length} client${archiveTarget.length === 1 ? "" : "s"} will be removed from your roster. Enrollments and attendance history remain linked in the database.`
+    ? `${archiveTarget.length} client${archiveTarget.length === 1 ? "" : "s"} will be removed from your roster. Enrollments and attendance history remain linked.`
     : archiveTarget
       ? `${clientDisplayName(archiveTarget)} will be removed from your roster. Enrollments and attendance history remain linked.`
       : "";

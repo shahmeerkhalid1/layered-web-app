@@ -182,9 +182,9 @@ export function WeekOverviewPanel({
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <header className="space-y-2 w-full">
           <p className="layered-eyebrow">Scheduling</p>
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-end justify-between gap-2">
           <h1 className="layered-display-headline">Week overview</h1>
-          <div className="flex items-center rounded">
+          <div className="flex items-center rounded mb-1">
             <Button
               type="button"
               variant="ghost"
@@ -246,7 +246,7 @@ export function WeekOverviewPanel({
                 className={cn(
                   "h-auto min-h-0 min-w-17 flex-col gap-0 rounded px-2 py-2 font-normal shadow-none",
                   isToday
-                    ? "border-[var(--layered-navy)]/30 bg-[var(--layered-light-blue)]/60 text-foreground hover:border-[var(--layered-navy)]/50 hover:bg-[var(--layered-light-blue)]"
+                    ? "border-[var(--layered-navy)]/30 bg-[var(--layered-light-blue)]/60 dark:bg-[var(--layered-light-blue)] text-foreground dark:text-primary dark:hover:ring-[var(--layered-light-blue)] dark:hover:bg-[var(--layered-light-blue)]"
                     : "bg-muted/30 text-muted-foreground hover:text-foreground",
                 )}
               >

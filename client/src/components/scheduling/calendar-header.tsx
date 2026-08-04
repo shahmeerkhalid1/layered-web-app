@@ -26,6 +26,7 @@ export function CalendarHeader({
   onNext,
   onToday,
   onNewClass,
+  isCurrentPeriod,
 }: CalendarHeaderProps) {
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -51,6 +52,7 @@ export function CalendarHeader({
             variant="ghost"
             className="h-9 rounded-none px-4 text-sm border border-border border-r-0 border-l-0 font-semibold"
             onClick={onToday}
+            disabled={isCurrentPeriod}
           >
             Today
           </Button>
