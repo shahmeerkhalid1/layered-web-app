@@ -1,18 +1,47 @@
-import { betterAuth } from "better-auth";
+import { betterAuth, type Auth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin } from "better-auth/plugins/admin";
 import { adminAc, userAc } from "better-auth/plugins/admin/access";
-import { isMailConfigured, sendPasswordResetEmail } from "./mail";
+import {
+  isMailConfigured,
+  sendEmailVerificationEmail,
+  sendPasswordResetEmail,
+} from "./mail";
 import { prisma } from "./prisma";
 
-export const auth = betterAuth({
+// Admin plugin types reference internal better-auth modules; cast to Auth for portable .d.ts emit.
+export const auth: Auth = betterAuth({
   trustedOrigins: [process.env.CLIENT_URL || "http://localhost:3000"],
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+  emailVerification: {
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 60 * 60,
+    sendVerificationEmail: async ({ user, url }) => {
+      const result = await sendEmailVerificationEmail({
+        to: user.email,
+        verifyLink: url,
+      });
+      if (!result.ok) {
+        if (!isMailConfigured()) {
+          console.warn(
+            `[auth] Verification email not sent (SMTP not configured). Verify link for ${user.email}: ${url}`
+          );
+          return;
+        }
+        console.error(
+          `[auth] Failed to send verification email to ${user.email}: ${result.message}`
+        );
+      }
+    },
+  },
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
+    requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {
       const result = await sendPasswordResetEmail({
         to: user.email,
@@ -102,9 +131,13 @@ export const auth = betterAuth({
         window: 60,
         max: 30,
       },
+      "/send-verification-email": {
+        window: 15 * 60,
+        max: 3,
+      },
     },
   },
   advanced: {
     cookiePrefix: "pilates",
   },
-});
+}) as unknown as Auth;

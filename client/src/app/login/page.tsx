@@ -5,8 +5,6 @@ import { useAuth } from "@/context/auth-context";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 
 import {
   AuthField,
@@ -16,6 +14,8 @@ import {
   AuthLoadingCard,
   AuthPageShell,
   AuthSubmitButton,
+  AuthTextLink,
+  authInputClassName,
 } from "@/components/auth/auth-page-shell";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ import {
   loginFormSchema,
   type LoginFormValues,
 } from "@/lib/validation/auth-schemas";
+import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
   return (
@@ -40,7 +41,7 @@ export default function LoginPage() {
 }
 
 function LoginPageContent() {
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const { login, isAuthenticated, isEmailVerified, isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const passwordResetSuccess = searchParams.get("reset") === "success";
@@ -55,10 +56,10 @@ function LoginPageContent() {
   });
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.replace("/");
-    }
-  }, [isLoading, isAuthenticated, router]);
+    if (isLoading) return;
+    if (!isAuthenticated) return;
+    router.replace(isEmailVerified ? "/" : "/verify-email");
+  }, [isLoading, isAuthenticated, isEmailVerified, router]);
 
   if (isLoading || isAuthenticated) {
     return (
@@ -74,6 +75,11 @@ function LoginPageContent() {
       router.replace("/");
       router.refresh();
     } catch (err) {
+      const status = (err as Error & { status?: number }).status;
+      if (status === 403) {
+        router.replace(`/verify-email?email=${encodeURIComponent(values.email)}`);
+        return;
+      }
       setError("root", {
         message: err instanceof Error ? err.message : "Login failed",
       });
@@ -82,14 +88,14 @@ function LoginPageContent() {
 
   return (
     <AuthPageShell>
-      {/* <p className="text-sm text-muted-foreground text-center w-72 mx-auto"></p> */}
       <AuthFormCard
-      description="Welcome Back, enter your credentials to open your workspace."
+        title="Welcome back"
+        description="Enter your credentials to open your workspace."
         footer={
           <AuthFooterLink prompt="Don't have an account?" linkLabel="Create one" href="/register" />
         }
       >
-        <form onSubmit={onSubmit} className="space-y-5">
+        <form onSubmit={onSubmit} className="space-y-4">
           {passwordResetSuccess ? (
             <div
               role="status"
@@ -100,49 +106,42 @@ function LoginPageContent() {
           ) : null}
           {errors.root ? <AuthFormAlert>{errors.root.message}</AuthFormAlert> : null}
 
-          <AuthField id="email" label="Email" error={errors.email?.message}>
+          <AuthField id="email" label="Email" hideLabel error={errors.email?.message}>
             <Input
               id="email"
               type="email"
               autoComplete="email"
+              placeholder="Email"
               aria-invalid={errors.email ? true : undefined}
-              className={`h-11 rounded`}
+              className={cn(authInputClassName, errors.email && "border-destructive")}
               {...register("email")}
             />
           </AuthField>
 
-          <AuthField
-            id="password"
-            label="Password"
-            error={errors.password?.message}
-          >
+          <AuthField id="password" label="Password" hideLabel error={errors.password?.message}>
             <PasswordInput
               id="password"
               autoComplete="current-password"
+              placeholder="Password"
               aria-invalid={errors.password ? true : undefined}
-              className={`h-11 rounded`}
+              className={cn(authInputClassName, errors.password && "border-destructive")}
               {...register("password")}
             />
           </AuthField>
 
-          <div className="flex justify-between items-center">
-          <label className="flex justify-between cursor-pointer items-center gap-2.5 text-sm text-foreground">
-            <Checkbox id="rememberMe" {...register("rememberMe")} />
-            Remember me
-            
-          </label>
-          <Link
-                href="/forgot-password"
-                className="text-sm text-[var(--layered-navy)] underline-offset-4 transition-colors hover:text-foreground hover:underline"
-              >
-                Forgot Password
-              </Link>
-              </div>
+          <div className="flex items-center justify-between pt-1">
+            <label className="flex cursor-pointer items-center gap-2.5 text-sm text-muted-foreground">
+              <Checkbox id="rememberMe" {...register("rememberMe")} />
+              Remember me
+            </label>
+            <AuthTextLink href="/forgot-password">Forgot password</AuthTextLink>
+          </div>
 
-          <AuthSubmitButton disabled={isSubmitting}>
-            {isSubmitting ? "Signing in…" : "Sign In"}
-            {!isSubmitting ? <ArrowRight className="size-4" aria-hidden /> : null}
-          </AuthSubmitButton>
+          <div className="pt-2">
+            <AuthSubmitButton disabled={isSubmitting}>
+              {isSubmitting ? "Signing in…" : "Sign in"}
+            </AuthSubmitButton>
+          </div>
         </form>
       </AuthFormCard>
     </AuthPageShell>

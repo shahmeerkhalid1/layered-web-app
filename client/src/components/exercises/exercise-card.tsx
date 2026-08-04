@@ -24,8 +24,8 @@ export function ExerciseCard({ exercise, onRequestDelete }: ExerciseCardProps) {
   return (
     <Card
       className={cn(
-        "group relative h-full gap-0 overflow-hidden border-border bg-card py-0 shadow-lg ring-1 ring-foreground/10",
-        "transition-all duration-300 hover:-translate-y-0.5 hover:border-ring hover:shadow-xl",
+        "group relative h-full gap-0 overflow-hidden border-border bg-card py-0 ring-1 ring-foreground/10",
+        "transition-all duration-300 hover:-translate-y-0.5 hover:border-ring hover:shadow-sm",
       )}
     >
       <div className="relative flex h-full min-h-0 flex-col">

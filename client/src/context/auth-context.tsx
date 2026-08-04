@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { authClient } from "@/lib/auth-client";
+import { getAuthCallbackUrl } from "@/lib/auth-callback";
 
 interface Instructor {
   id: string;
@@ -14,15 +15,18 @@ interface Instructor {
   name: string;
   role: string;
   image: string | null;
+  emailVerified: boolean;
 }
 
 interface AuthContextType {
   instructor: Instructor | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isEmailVerified: boolean;
   isAdmin: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
+  resendVerificationEmail: (email: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -38,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: string;
         role?: string;
         image?: string | null;
+        emailVerified?: boolean;
       }
     | undefined;
 
@@ -48,22 +53,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: user.name,
         role: user.role ?? "INSTRUCTOR",
         image: user.image?.trim() || null,
+        emailVerified: user.emailVerified === true,
       }
     : null;
 
   const isAdmin = instructor?.role === "ADMIN";
+  const isEmailVerified = instructor?.emailVerified ?? false;
 
   const login = useCallback(async (email: string, password: string, rememberMe?: boolean) => {
     const { error } = await authClient.signIn.email({ email, password, rememberMe });
     if (error) {
-      throw new Error(error.message ?? "Login failed");
+      const authError = error as { message?: string; status?: number };
+      const err = new Error(authError.message ?? "Login failed") as Error & { status?: number };
+      err.status = authError.status;
+      throw err;
     }
   }, []);
 
   const register = useCallback(async (email: string, password: string, name: string) => {
-    const { error } = await authClient.signUp.email({ email, password, name });
+    const { error } = await authClient.signUp.email({
+      email,
+      password,
+      name,
+      callbackURL: getAuthCallbackUrl("/"),
+    });
     if (error) {
       throw new Error(error.message ?? "Registration failed");
+    }
+  }, []);
+
+  const resendVerificationEmail = useCallback(async (email: string) => {
+    const { error } = await authClient.sendVerificationEmail({
+      email,
+      callbackURL: getAuthCallbackUrl("/"),
+    });
+    if (error) {
+      const authError = error as { message?: string; status?: number };
+      const err = new Error(authError.message ?? "Could not send verification email") as Error & {
+        status?: number;
+      };
+      err.status = authError.status;
+      throw err;
     }
   }, []);
 
@@ -77,9 +107,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         instructor,
         isLoading: isPending,
         isAuthenticated: !!session?.user,
+        isEmailVerified,
         isAdmin,
         login,
         register,
+        resendVerificationEmail,
         logout,
       }}
     >

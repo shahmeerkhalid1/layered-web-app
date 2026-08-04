@@ -161,47 +161,35 @@ export function WeekOverviewPanel({
     });
   };
 
-  return (
-    <div className="px-4">
-      {/* Header */}
-      <div className="border-b border-border/70 px-4 py-5 md:px-6 md:py-6 rounded bg-card ">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/80 text-secondary-foreground">
-              <CalendarDays className="size-5" aria-hidden />
-            </div>
-            <div className="min-w-0 space-y-1">
-              <h1 className="font-heading text-xl font-semibold tracking-[-0.02em] text-foreground md:text-lg uppercase">
-                Week overview
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {weekStart.toLocaleDateString(undefined, {
-                  month: "long",
-                  day: "numeric",
-                })}{" "}
-                –{" "}
-                {weekEnd.toLocaleDateString(undefined, {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </p>
-              {!loading && !error ? (
-                <p className="text-xs text-muted-foreground">
-                  {stats.totalClasses === 0
-                    ? "No classes this week"
-                    : `${stats.totalClasses} class${stats.totalClasses === 1 ? "" : "es"} across ${stats.daysWithClasses} day${stats.daysWithClasses === 1 ? "" : "s"}`}
-                </p>
-              ) : null}
-            </div>
-          </div>
+  const dateRangeLabel = `${weekStart.toLocaleDateString(undefined, {
+    month: "long",
+    day: "numeric",
+  })} – ${weekEnd.toLocaleDateString(undefined, {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  })}`;
 
-          <div className="flex flex-wrap items-center gap-2">
+  const statsLabel =
+    loading || error
+      ? null
+      : stats.totalClasses === 0
+        ? "No classes this week"
+        : `${stats.totalClasses} class${stats.totalClasses === 1 ? "" : "es"} across ${stats.daysWithClasses} day${stats.daysWithClasses === 1 ? "" : "s"}`;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <header className="space-y-2 w-full">
+          <p className="layered-eyebrow">Scheduling</p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="layered-display-headline">Week overview</h1>
+          <div className="flex items-center rounded">
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="rounded"
+              className="size-9 rounded-none border-r border-border"
               onClick={() => onWeekStartChange((d) => addDays(d, -7))}
               aria-label="Previous week"
             >
@@ -209,8 +197,8 @@ export function WeekOverviewPanel({
             </Button>
             <Button
               type="button"
-              variant={isCurrentWeek ? "secondary" : "outline"}
-              className="rounded"
+              variant="ghost"
+              className="h-9 rounded-none border border-border border-r-0 border-l-0 px-4 text-sm font-semibold"
               onClick={() => onWeekStartChange(startOfWeekMonday(new Date()))}
               disabled={isCurrentWeek}
             >
@@ -218,9 +206,9 @@ export function WeekOverviewPanel({
             </Button>
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="rounded"
+              className="size-9 rounded-none border-l border-border"
               onClick={() => onWeekStartChange((d) => addDays(d, 7))}
               aria-label="Next week"
             >
@@ -228,56 +216,66 @@ export function WeekOverviewPanel({
             </Button>
           </div>
         </div>
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            {dateRangeLabel}
+            {statsLabel ? (
+              <>
+                <span className="text-muted-foreground/50"> · </span>
+                {statsLabel}
+              </>
+            ) : null}
+          </p>
+        </header>
 
-        {/* Day strip */}
-        {!loading && !error ? (
-          <div className="mt-5 -mx-1 flex gap-1.5  pb-1 flex-wrap">
-            {days.map((d) => {
-              const ymd = formatYmdLocal(d);
-              const count = grouped.get(ymd)?.length ?? 0;
-              const isToday = ymd === todayYmd;
-              const weekday = d.toLocaleDateString(undefined, { weekday: "short" });
-              return (
-                <Button
-                  key={ymd}
-                  type="button"
-                  variant="outline"
-                  onClick={() => scrollToDay(ymd)}
-                  className={cn(
-                    "h-auto min-h-0 min-w-17 flex-col gap-0 rounded px-2 py-2 font-normal shadow-none",
-                    isToday
-                      ? "border-primary/30 bg-[var(--layered-light-blue)] dark:bg-primary text-foreground hover:border-primary/50 hover:bg-primary/15 hover:text-foreground"
-                      : "bg-muted/30 text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <span className="text-[10px] font-medium uppercase tracking-wide">
-                    {weekday}
-                  </span>
-                  <span
-                    className={cn(
-                      "mt-0.5 text-lg font-semibold tabular-nums leading-none",
-                      isToday && "text-primary dark:text-primary-foreground"
-                    )}
-                  >
-                    {d.getDate()}
-                  </span>
-                  <span
-                    className={cn(
-                      "mt-1 text-[10px] font-medium",
-                      count > 0 ? "text-foreground" : "text-muted-foreground/70"
-                    )}
-                  >
-                    {count === 0 ? "—" : `${count}`}
-                  </span>
-                </Button>
-              );
-            })}
-          </div>
-        ) : null}
+        
       </div>
 
-      {/* Body */}
-      <div className=" py-5 md:py-6">
+      {!loading && !error ? (
+        <div className="flex flex-wrap gap-1.5">
+          {days.map((d) => {
+            const ymd = formatYmdLocal(d);
+            const count = grouped.get(ymd)?.length ?? 0;
+            const isToday = ymd === todayYmd;
+            const weekday = d.toLocaleDateString(undefined, { weekday: "short" });
+            return (
+              <Button
+                key={ymd}
+                type="button"
+                variant="outline"
+                onClick={() => scrollToDay(ymd)}
+                className={cn(
+                  "h-auto min-h-0 min-w-17 flex-col gap-0 rounded px-2 py-2 font-normal shadow-none",
+                  isToday
+                    ? "border-[var(--layered-navy)]/30 bg-[var(--layered-light-blue)]/60 text-foreground hover:border-[var(--layered-navy)]/50 hover:bg-[var(--layered-light-blue)]"
+                    : "bg-muted/30 text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <span className="text-[10px] font-medium uppercase tracking-wide">
+                  {weekday}
+                </span>
+                <span
+                  className={cn(
+                    "mt-0.5 text-lg font-semibold tabular-nums leading-none",
+                    isToday && "text-[var(--layered-navy)]",
+                  )}
+                >
+                  {d.getDate()}
+                </span>
+                <span
+                  className={cn(
+                    "mt-1 text-[10px] font-medium",
+                    count > 0 ? "text-foreground" : "text-muted-foreground/70",
+                  )}
+                >
+                  {count === 0 ? "—" : `${count}`}
+                </span>
+              </Button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      <div>
         {loading ? (
           <div className="space-y-4" aria-busy aria-label="Loading week">
             <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
@@ -300,7 +298,7 @@ export function WeekOverviewPanel({
         ) : null}
 
         {!loading && !error && stats.totalClasses === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded border border-dashed border-border bg-muted/30 px-6 py-14 text-center">
+          <div className="flex flex-col items-center justify-center rounded border border-border bg-muted/30 px-6 py-14 text-center">
             <CalendarDays className="size-10 text-secondary-foreground/80" aria-hidden />
             <p className="mt-4 font-medium text-foreground">Nothing scheduled this week</p>
             <p className="mt-1 max-w-sm text-sm text-muted-foreground">
@@ -379,7 +377,7 @@ export function WeekOverviewPanel({
                       {/* Classes */}
                       <div className="min-w-0 flex-1">
                         {rows.length === 0 ? (
-                          <div className="flex items-center gap-2 rounded-xl border border-dashed border-border/80 bg-[var(--layered-cream)] dark:bg-muted/30 px-4 py-5 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2 rounded-xl border  border-border/80 bg-[var(--layered-cream)] dark:bg-muted/30 px-4 py-5 text-sm text-muted-foreground">
                             <Clock className="size-4 shrink-0 opacity-60" aria-hidden />
                             No classes scheduled
                           </div>

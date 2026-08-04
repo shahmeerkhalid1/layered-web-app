@@ -245,7 +245,7 @@ export function Sidebar() {
             alt="Layered Planning Logo"
             width={180}
             height={100}
-            className="ms-2 h-auto w-[140px] dark:filter dark:invert"
+            className="ms-2 h-auto w-[110px] dark:filter dark:invert"
             priority
           />
           </>

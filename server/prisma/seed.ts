@@ -176,7 +176,7 @@ async function main() {
 
       await prisma.instructor.update({
         where: { id: response.user.id },
-        data: { role: "ADMIN" },
+        data: { role: "ADMIN", emailVerified: true },
       });
 
       console.log(`Created admin user: ${ADMIN_EMAIL}`);
@@ -198,7 +198,7 @@ async function main() {
 
     await prisma.instructor.update({
       where: { id: firstUser.id },
-      data: { role: "ADMIN" },
+      data: { role: "ADMIN", emailVerified: true },
     });
     console.log(`Promoted first user to ADMIN: ${firstUser.email}`);
   } else {

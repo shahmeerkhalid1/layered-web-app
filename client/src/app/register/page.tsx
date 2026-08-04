@@ -5,7 +5,7 @@ import { useAuth } from "@/context/auth-context";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, Lock, Mail } from "lucide-react";
+import { Lock, Mail } from "lucide-react";
 
 import {
   AuthField,
@@ -15,6 +15,7 @@ import {
   AuthLoadingCard,
   AuthPageShell,
   AuthSubmitButton,
+  authInputClassName,
 } from "@/components/auth/auth-page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -35,7 +36,7 @@ export default function RegisterPage() {
   return (
     <Suspense
       fallback={
-        <AuthPageShell>
+        <AuthPageShell backHref="/login">
           <AuthLoadingCard />
         </AuthPageShell>
       }
@@ -46,7 +47,7 @@ export default function RegisterPage() {
 }
 
 function RegisterPageContent() {
-  const { register: signUp, isAuthenticated, isLoading } = useAuth();
+  const { register: signUp, isAuthenticated, isEmailVerified, isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -91,14 +92,14 @@ function RegisterPageContent() {
   }, [token, setValue]);
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.replace("/");
-    }
-  }, [isLoading, isAuthenticated, router]);
+    if (isLoading) return;
+    if (!isAuthenticated) return;
+    router.replace(isEmailVerified ? "/" : "/verify-email");
+  }, [isLoading, isAuthenticated, isEmailVerified, router]);
 
   if (isLoading || isAuthenticated) {
     return (
-      <AuthPageShell>
+      <AuthPageShell backHref="/login">
         <AuthLoadingCard />
       </AuthPageShell>
     );
@@ -106,7 +107,7 @@ function RegisterPageContent() {
 
   if (checking) {
     return (
-      <AuthPageShell>
+      <AuthPageShell backHref="/login">
         <AuthLoadingCard />
       </AuthPageShell>
     );
@@ -114,7 +115,7 @@ function RegisterPageContent() {
 
   if (!signupAllowed && !invite) {
     return (
-      <AuthPageShell>
+      <AuthPageShell backHref="/login">
         <AuthFormCard
           title="Registration closed"
           description={
@@ -123,7 +124,7 @@ function RegisterPageContent() {
           }
           footer={<AuthFooterLink prompt="Already have an account?" linkLabel="Sign in" href="/login" />}
         >
-          <div className="flex flex-col items-center rounded-xl border border-dashed border-border/80 bg-muted/15 px-6 py-10 text-center">
+          <div className="flex flex-col items-center rounded-xl border border-dashed border-border/80 bg-white/50 px-6 py-10 text-center">
             <div className="flex size-12 items-center justify-center rounded bg-muted text-muted-foreground">
               <Mail className="size-6" aria-hidden />
             </div>
@@ -140,15 +141,14 @@ function RegisterPageContent() {
     setPageError("");
     try {
       await signUp(values.email, values.password, values.name);
-      router.replace("/");
-      router.refresh();
+      router.replace(`/verify-email?email=${encodeURIComponent(values.email)}`);
     } catch (err) {
       setPageError(err instanceof Error ? err.message : "Registration failed");
     }
   });
 
   const inviteBadge = invite ? (
-    <div className="flex flex-wrap items-center justify-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <Badge variant="secondary" className="rounded px-3 py-1 text-xs font-medium">
         Invitation
       </Badge>
@@ -159,28 +159,30 @@ function RegisterPageContent() {
   ) : null;
 
   return (
-    <AuthPageShell>
+    <AuthPageShell backHref="/login">
       <AuthFormCard
+        title="Create an account"
         description={
           invite
-            ? "You're joining Layered. via invitation — finish setting up your profile."
-            : "Create your account and organize your teaching in one place."
+            ? "You're joining Layered via invitation — finish setting up your profile."
+            : "Enter your details to get started."
         }
         badge={inviteBadge}
         footer={
           <AuthFooterLink prompt="Already have an account?" linkLabel="Sign in" href="/login" />
         }
       >
-        <form onSubmit={onSubmit} className="space-y-5">
+        <form onSubmit={onSubmit} className="space-y-4">
           {pageError ? <AuthFormAlert>{pageError}</AuthFormAlert> : null}
 
-          <AuthField id="name" label="Full name" error={errors.name?.message}>
+          <AuthField id="name" label="Full name" hideLabel error={errors.name?.message}>
             <Input
               id="name"
               type="text"
               autoComplete="name"
+              placeholder="Full name"
               aria-invalid={errors.name ? true : undefined}
-              className={cn("h-11 rounded-xl", errors.name && "border-destructive")}
+              className={cn(authInputClassName, errors.name && "border-destructive")}
               {...register("name")}
             />
           </AuthField>
@@ -188,6 +190,7 @@ function RegisterPageContent() {
           <AuthField
             id="email"
             label="Email"
+            hideLabel
             hint={invite ? "From your invitation" : undefined}
             error={errors.email?.message}
           >
@@ -202,10 +205,11 @@ function RegisterPageContent() {
                 id="email"
                 type="email"
                 autoComplete="email"
+                placeholder="Email"
                 readOnly={!!invite}
                 aria-invalid={errors.email ? true : undefined}
                 className={cn(
-                  "h-11 rounded-xl",
+                  authInputClassName,
                   invite && "bg-muted/40 pl-9",
                   errors.email && "border-destructive"
                 )}
@@ -217,22 +221,24 @@ function RegisterPageContent() {
           <AuthField
             id="password"
             label="Password"
-            hint="Min. 8 characters"
+            hideLabel
             error={errors.password?.message}
           >
             <PasswordInput
               id="password"
               autoComplete="new-password"
+              placeholder="Password"
               aria-invalid={errors.password ? true : undefined}
-              className={cn("h-11 rounded-xl", errors.password && "border-destructive")}
+              className={cn(authInputClassName, errors.password && "border-destructive")}
               {...register("password")}
             />
           </AuthField>
 
-          <AuthSubmitButton disabled={isSubmitting}>
-            {isSubmitting ? "Creating account…" : "Create Account"}
-            {!isSubmitting ? <ArrowRight className="size-4" aria-hidden /> : null}
-          </AuthSubmitButton>
+          <div className="pt-2">
+            <AuthSubmitButton disabled={isSubmitting}>
+              {isSubmitting ? "Creating account…" : "Sign up"}
+            </AuthSubmitButton>
+          </div>
         </form>
       </AuthFormCard>
     </AuthPageShell>

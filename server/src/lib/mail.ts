@@ -56,6 +56,15 @@ export type SendPasswordResetEmailResult =
   | { ok: true }
   | { ok: false; message: string };
 
+export type SendEmailVerificationInput = {
+  to: string;
+  verifyLink: string;
+};
+
+export type SendEmailVerificationResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
 export async function sendInviteEmail(input: SendInviteEmailInput): Promise<SendInviteEmailResult> {
   const from = process.env.MAIL_FROM?.trim();
   if (!from || !isMailConfigured()) {
@@ -88,6 +97,57 @@ export async function sendInviteEmail(input: SendInviteEmailInput): Promise<Send
     </table>
     <p style="margin:0 0 4px;font-size:13px;color:#9ca3af;">This invitation expires in 7 days.</p>
     <p style="margin:0;font-size:13px;color:#9ca3af;">If you did not expect this email, you can safely ignore it.</p>
+  `;
+  const html = emailLayout(body);
+
+  try {
+    const transport = createTransport();
+    await transport.sendMail({
+      from,
+      to: input.to,
+      subject,
+      text,
+      html,
+    });
+    return { ok: true };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Failed to send email";
+    return { ok: false, message };
+  }
+}
+
+export async function sendEmailVerificationEmail(
+  input: SendEmailVerificationInput
+): Promise<SendEmailVerificationResult> {
+  const from = process.env.MAIL_FROM?.trim();
+  if (!from || !isMailConfigured()) {
+    return { ok: false, message: "SMTP is not configured" };
+  }
+
+  const subject = "Verify your email for Layered Planning";
+  const text = [
+    "Welcome to Layered Planning.",
+    "",
+    "Confirm your email address by opening this link:",
+    input.verifyLink,
+    "",
+    "If you did not create an account, you can ignore this email.",
+  ].join("\n");
+
+  const hrefAttr = input.verifyLink.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  const body = `
+    <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#111827;">Verify your email</h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#6b7280;">One quick step before you can access your workspace</p>
+    <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6;">Thanks for signing up for <strong>Layered Planning</strong>. Click the button below to confirm this email address belongs to you.</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+      <tr>
+        <td style="background-color:#1b3c9b;border-radius:9999px;padding:14px 32px;">
+          <a href="${hrefAttr}" style="color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;display:inline-block;">Verify email</a>
+        </td>
+      </tr>
+    </table>
+    <p style="margin:0 0 4px;font-size:13px;color:#9ca3af;">This link expires in 1 hour.</p>
+    <p style="margin:0;font-size:13px;color:#9ca3af;">If you did not create an account, you can safely ignore this email.</p>
   `;
   const html = emailLayout(body);
 

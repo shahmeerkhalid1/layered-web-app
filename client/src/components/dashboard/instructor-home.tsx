@@ -29,6 +29,11 @@ import { dashboardApi } from "@/services/dashboard-api";
 
 const TYPICAL_DAY_CAPACITY = 5;
 const DOT_GRID_TOTAL = 20;
+/** Target roster size for the clients donut progress ring. */
+const CLIENT_ROSTER_GOAL = 100;
+/** Target library size for the exercises donut progress ring. */
+const EXERCISE_LIBRARY_GOAL = 100;
+const DONUT_CIRCUMFERENCE = 264;
 
 function DotGrid({ count, loading }: { count: number; loading?: boolean }) {
   const filled = Math.min(count, DOT_GRID_TOTAL);
@@ -74,9 +79,17 @@ function DotGrid({ count, loading }: { count: number; loading?: boolean }) {
   );
 }
 
-function ClientsDonut({ count, loading }: { count: number; loading?: boolean }) {
+function StatDonut({
+  count,
+  loading,
+  goal,
+}: {
+  count: number;
+  loading?: boolean;
+  goal: number;
+}) {
   const display = loading ? "—" : (count ?? 0);
-  const pct = loading ? 0 : Math.min(count / Math.max(count, 10), 1);
+  const pct = loading ? 0 : Math.min(count / goal, 1);
 
   return (
     <div className="relative mx-auto size-[4.5rem]">
@@ -99,7 +112,7 @@ function ClientsDonut({ count, loading }: { count: number; loading?: boolean }) 
             stroke="currentColor"
             strokeWidth="8"
             strokeLinecap="round"
-            strokeDasharray={`${pct * 264} 264`}
+            strokeDasharray={`${pct * DONUT_CIRCUMFERENCE} ${DONUT_CIRCUMFERENCE}`}
             className="text-[var(--layered-navy)]"
           />
         ) : null}
@@ -394,7 +407,7 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
           href="/calendar"
           className="layered-card-interactive flex flex-col gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-3 py-[14.5px]">
             <span className="text-2xl font-light text-muted-foreground">—</span>
           </div>
           <div>
@@ -420,7 +433,8 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
           href="/class-plans"
           className="layered-card-interactive flex flex-col gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <div className="flex items-start justify-end">
+          <div className="flex items-center justify-between">
+          <span className="text-2xl font-light text-muted-foreground">—</span>
             <DotGrid count={templateCount} loading={loadingStats} />
           </div>
           <div>
@@ -471,33 +485,45 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
           </div>
         </div>
 
-        <Link
-          href="/clients"
-          className="layered-card-interactive !px-4 !py-3 flex flex-col gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <p className="text-sm text-muted-foreground capitalize">clients</p>
+        <div className="layered-card !px-4 !py-3 relative flex flex-col gap-1.5">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm text-muted-foreground capitalize">clients</p>
+            <Link
+              href="/clients"
+              className="flex size-6 items-center justify-center rounded bg-[var(--layered-black)] text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="View clients"
+            >
+              <ArrowUpRight className="size-3" aria-hidden />
+            </Link>
+          </div>
           <div className="flex justify-center py-0.5">
-            <ClientsDonut
+            <StatDonut
               count={stats?.totalClients ?? 0}
               loading={loadingStats}
+              goal={CLIENT_ROSTER_GOAL}
             />
           </div>
-        </Link>
+        </div>
 
-        <Link
-          href="/exercises"
-          className="layered-card-interactive !px-4 !py-3 relative flex flex-col gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
+        <div className="layered-card !px-4 !py-3 relative flex flex-col gap-1.5">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm text-muted-foreground capitalize">exercises saved</p>
-            <span className="flex size-6 items-center justify-center rounded bg-[var(--layered-black)] text-white">
+            <Link
+              href="/exercises"
+              className="flex size-6 items-center justify-center rounded bg-[var(--layered-black)] text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="View exercises"
+            >
               <ArrowUpRight className="size-3" aria-hidden />
-            </span>
+            </Link>
           </div>
-          <p className="text-3xl font-semibold tabular-nums tracking-tight text-foreground">
-            {loadingStats ? "—" : (stats?.totalExercises ?? 0)}
-          </p>
-        </Link>
+          <div className="flex justify-center py-0.5">
+            <StatDonut
+              count={stats?.totalExercises ?? 0}
+              loading={loadingStats}
+              goal={EXERCISE_LIBRARY_GOAL}
+            />
+          </div>
+        </div>
 
         <div className="lg:col-span-2">
           <DashboardMiniCalendar variant="dark" />

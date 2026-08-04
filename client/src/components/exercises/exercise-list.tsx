@@ -67,7 +67,7 @@ function ExerciseListSkeleton() {
 
 function ExerciseFilteredEmptyState({ onClearFilters }: { onClearFilters: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded border  border-border bg-card px-6 py-14 text-center shadow-lg">
+    <div className="flex flex-col items-center justify-center rounded border  border-border bg-card px-6 py-14 text-center ">
       <div className="flex size-14 items-center justify-center rounded bg-muted text-muted-foreground">
         <SearchX className="size-6" />
       </div>

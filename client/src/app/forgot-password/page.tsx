@@ -62,7 +62,7 @@ export default function ForgotPasswordPage() {
           description="We sent a link to reset your password."
           footer={<AuthFooterLink prompt="Remember your password?" linkLabel="Sign in" href="/login" />}
         >
-          <div className="flex flex-col items-center rounded-xl border border-dashed border-border/80 bg-muted/15 px-6 py-10 text-center">
+          <div className="flex flex-col items-center rounded-xl border  border-border bg-background px-6 py-10 text-center">
             <div className="flex size-12 items-center justify-center rounded bg-primary/10 text-primary">
               <Mail className="size-6" aria-hidden />
             </div>
@@ -72,8 +72,8 @@ export default function ForgotPasswordPage() {
             <Link
               href="/login"
               className={cn(
-                buttonVariants({ variant: "outline" }),
-                "mt-6 h-11 w-full rounded"
+                buttonVariants({ variant: "default" }),
+                "mt-6 h-11 w-full rounded-full"
               )}
             >
               Back to sign in
@@ -87,7 +87,8 @@ export default function ForgotPasswordPage() {
   return (
     <AuthPageShell>
       <AuthFormCard
-        description="Enter the email on your Layered. account and we will send you a reset link."
+        title="Reset password"
+        description="Enter your email to receive a reset link."
         footer={<AuthFooterLink prompt="Remember your password?" linkLabel="Sign in" href="/login" />}
       >
         <form onSubmit={onSubmit} className="space-y-5">
@@ -113,7 +114,7 @@ export default function ForgotPasswordPage() {
             href="/login"
             className={cn(
               buttonVariants({ variant: "ghost" }),
-              "h-11 w-full gap-2 rounded"
+              "h-11 w-full gap-2 rounded-full"
             )}
           >
             <ArrowLeft className="size-4" aria-hidden />

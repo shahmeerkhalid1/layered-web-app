@@ -8,14 +8,18 @@ import { PageBackgroundContent } from "./page-background";
 import { Sidebar } from "./sidebar";
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isEmailVerified, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace("/login");
+      return;
     }
-  }, [isLoading, isAuthenticated, router]);
+    if (!isLoading && isAuthenticated && !isEmailVerified) {
+      router.replace("/verify-email");
+    }
+  }, [isLoading, isAuthenticated, isEmailVerified, router]);
 
   if (isLoading) {
     return (
@@ -25,7 +29,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !isEmailVerified) {
     return null;
   }
 

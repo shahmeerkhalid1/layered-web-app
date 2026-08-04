@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "../lib/auth";
-import { UnauthorizedError } from "../lib/errors";
+import { ForbiddenError, UnauthorizedError } from "../lib/errors";
 
 export interface AuthPayload {
   instructorId: string;
@@ -24,6 +24,11 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
 
   if (!session?.user) {
     throw new UnauthorizedError("Not authenticated");
+  }
+
+  const sessionUser = session.user as { emailVerified?: boolean };
+  if (!sessionUser.emailVerified) {
+    throw new ForbiddenError("Email address not verified");
   }
 
   req.user = {
