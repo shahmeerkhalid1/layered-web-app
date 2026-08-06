@@ -15,6 +15,7 @@ import {
   FileText,
   KeyRound,
   LogOut,
+  Monitor,
   Moon,
   Sun,
   User,
@@ -33,7 +34,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -69,8 +75,8 @@ const adminNavItems = [
   { href: "/admin/users", label: "User Management", icon: UserPlus },
 ];
 
-function ThemeToggleMenuItem() {
-  const { resolvedTheme, setTheme } = useTheme();
+function ThemeSelectorMenuItem() {
+  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -86,25 +92,42 @@ function ThemeToggleMenuItem() {
     );
   }
 
-  const isDark = resolvedTheme === "dark";
+  const activeTheme = theme ?? "light";
+  const ThemeIcon =
+    activeTheme === "light"
+      ? Sun
+      : activeTheme === "dark"
+        ? Moon
+        : Monitor;
 
   return (
-    <DropdownMenuItem
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="rounded-xl my-1.5"
-    >
-      {isDark ? (
-        <>
-          <Sun className="mr-2 size-4" />
-          Light mode
-        </>
-      ) : (
-        <>
-          <Moon className="mr-2 size-4" />
-          Dark mode
-        </>
-      )}
-    </DropdownMenuItem>
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger className="rounded-xl my-1.5">
+        <ThemeIcon className="mr-2 size-4" />
+        Theme
+      </DropdownMenuSubTrigger>
+      <DropdownMenuSubContent className="rounded border border-border/60 bg-popover p-2 shadow-xl">
+        <DropdownMenuRadioGroup
+          value={activeTheme}
+          onValueChange={(value) => {
+            if (value) setTheme(value);
+          }}
+        >
+          <DropdownMenuRadioItem value="light" className="rounded-xl">
+            <Sun className="mr-2 size-4" />
+            Light
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="dark" className="rounded-xl">
+            <Moon className="mr-2 size-4" />
+            Dark
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="system" className="rounded-xl">
+            <Monitor className="mr-2 size-4" />
+            System
+          </DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuSubContent>
+    </DropdownMenuSub>
   );
 }
 
@@ -416,7 +439,7 @@ export function Sidebar() {
               Change password
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <ThemeToggleMenuItem />
+            <ThemeSelectorMenuItem />
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={async () => {

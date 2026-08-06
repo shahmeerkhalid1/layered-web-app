@@ -112,7 +112,7 @@ function ClassPlanEmptyState({
   return (
     <div className="flex flex-col items-center justify-center rounded border  border-border bg-muted/30 px-6 py-14 text-center">
       <FileText className="size-10 text-muted-foreground/60" aria-hidden />
-      <h3 className="mt-5 text-2xl font-light tracking-tight text-foreground">
+      <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-card-foreground">
         No class plans yet
       </h3>
       <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">

@@ -388,9 +388,12 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
 
   const todayCount = stats?.todayClasses ?? 0;
   const templateCount = stats?.totalTemplates ?? 0;
-  const progressPct = loadingStats
+  const todayProgressPct = loadingStats
     ? 4
     : Math.max(4, (todayCount / TYPICAL_DAY_CAPACITY) * 100);
+  const templateProgressPct = loadingStats
+    ? 4
+    : Math.max(4, (templateCount / DOT_GRID_TOTAL) * 100);
 
   return (
     <div className="space-y-6">
@@ -424,7 +427,7 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
           <div className="mt-auto h-[3px] w-full overflow-hidden rounded bg-muted">
             <div
               className="h-full rounded bg-[var(--layered-navy)] transition-all duration-300"
-              style={{ width: `${Math.min(progressPct, 100)}%` }}
+              style={{ width: `${Math.min(todayProgressPct, 100)}%` }}
             />
           </div>
         </Link>
@@ -444,13 +447,24 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
             <p className="mt-1 text-4xl font-semibold tabular-nums tracking-tight text-foreground">
               {loadingStats ? "—" : templateCount}
             </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+                {templateCount === 0
+                ? "no class plans created"
+                : "class plans created"}
+            </p>
+          </div>
+          <div className="mt-auto h-[3px] w-full overflow-hidden rounded bg-muted">
+            <div
+              className="h-full rounded bg-[var(--layered-navy)] transition-all duration-300"
+              style={{ width: `${Math.min(templateProgressPct, 100)}%` }}
+            />
           </div>
         </Link>
       </div>
 
       {/* Row B — quick actions + stats + teaching days */}
       <div className="grid gap-4 lg:grid-cols-[minmax(240px,300px)_1fr_1fr]">
-        <div className="flex flex-col gap-3 rounded bg-[var(--layered-navy)] p-5 text-white lg:row-span-2 lg:self-stretch">
+        <div className="flex order-4 lg:order-1 flex-col gap-3 rounded bg-[var(--layered-navy)] p-5 text-white lg:row-span-2 lg:self-stretch">
           <div>
             <h2 className="layered-section-title text-white capitalize">Quick actions</h2>
             <p className="mt-0.5 text-sm text-white/70">
@@ -485,7 +499,7 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
           </div>
         </div>
 
-        <div className="layered-card !px-4 !py-3 relative flex flex-col gap-1.5">
+        <div className="layered-card !px-4 !py-3 relative flex order-1 lg:order-2 flex-col gap-1.5">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm text-muted-foreground capitalize">clients</p>
             <Link
@@ -505,7 +519,7 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
           </div>
         </div>
 
-        <div className="layered-card !px-4 !py-3 relative flex flex-col gap-1.5">
+        <div className="layered-card !px-4 !py-3 relative flex order-2 lg:order-3 flex-col gap-1.5">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm text-muted-foreground capitalize">exercises saved</p>
             <Link
@@ -525,7 +539,7 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
           </div>
         </div>
 
-        <div className="lg:col-span-2">
+        <div className="order-3 lg:order-3 lg:col-span-2">
           <DashboardMiniCalendar variant="dark" />
         </div>
       </div>

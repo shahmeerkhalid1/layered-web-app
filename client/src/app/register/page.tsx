@@ -12,6 +12,7 @@ import {
   AuthFooterLink,
   AuthFormAlert,
   AuthFormCard,
+  AuthLegalLinks,
   AuthLoadingCard,
   AuthPageShell,
   AuthSubmitButton,
@@ -122,7 +123,12 @@ function RegisterPageContent() {
             pageError ||
             "Public sign-up is disabled. Ask your administrator for an invitation link."
           }
-          footer={<AuthFooterLink prompt="Already have an account?" linkLabel="Sign in" href="/login" />}
+          footer={
+            <div>
+              <AuthFooterLink prompt="Already have an account?" linkLabel="Sign in" href="/login" />
+              <AuthLegalLinks />
+            </div>
+          }
         >
           <div className="flex flex-col items-center rounded-xl border border-dashed border-border/80 bg-white/50 px-6 py-10 text-center">
             <div className="flex size-12 items-center justify-center rounded bg-muted text-muted-foreground">
@@ -169,7 +175,10 @@ function RegisterPageContent() {
         }
         badge={inviteBadge}
         footer={
-          <AuthFooterLink prompt="Already have an account?" linkLabel="Sign in" href="/login" />
+          <div>
+            <AuthFooterLink prompt="Already have an account?" linkLabel="Sign in" href="/login" />
+            <AuthLegalLinks />
+          </div>
         }
       >
         <form onSubmit={onSubmit} className="space-y-4">

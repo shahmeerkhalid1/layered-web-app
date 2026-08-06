@@ -7,11 +7,12 @@ import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const AUTH_LINK_CLASS =
-  "font-medium text-[var(--layered-navy)] underline-offset-4 transition-colors hover:underline";
+  "font-medium text-[var(--layered-navy)] dark:text-white underline-offset-4 transition-colors hover:underline";
 
 export interface AuthPageShellProps {
   children: ReactNode;
   className?: string;
+  contentClassName?: string;
   backHref?: string;
   backLabel?: string;
 }
@@ -19,6 +20,7 @@ export interface AuthPageShellProps {
 export function AuthPageShell({
   children,
   className,
+  contentClassName,
   backHref,
   backLabel = "Back",
 }: AuthPageShellProps) {
@@ -31,7 +33,7 @@ export function AuthPageShell({
       )}
     >
       {backHref ? (
-        <div className="absolute top-6 left-6 sm:top-8 sm:left-8">
+        <div className="absolute top-6 left-6 z-10 sm:top-8 sm:left-8">
           <Link
             href={backHref}
             className="inline-flex items-center gap-1 rounded-lg bg-white/70 px-3 py-1.5 text-sm text-muted-foreground dark:text-foreground shadow-sm backdrop-blur-sm transition-colors hover:text-foreground"
@@ -42,7 +44,7 @@ export function AuthPageShell({
         </div>
       ) : null}
 
-      <main className="w-full max-w-100 text-center">{children}</main>
+      <main className={cn("w-full max-w-100 text-center", contentClassName)}>{children}</main>
     </div>
   );
 }
@@ -154,6 +156,22 @@ export function AuthFooterLink({
       {prompt}{" "}
       <Link href={href} className={AUTH_LINK_CLASS}>
         {linkLabel}
+      </Link>
+    </p>
+  );
+}
+
+export function AuthLegalLinks() {
+  return (
+    <p className="mt-3 text-center text-xs text-muted-foreground">
+      <Link href="/privacy" className={AUTH_LINK_CLASS}>
+        Privacy Policy
+      </Link>
+      <span className="mx-2 text-muted-foreground/60" aria-hidden>
+        |
+      </span>
+      <Link href="/terms" className={AUTH_LINK_CLASS}>
+        Terms &amp; Conditions
       </Link>
     </p>
   );
