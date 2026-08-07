@@ -192,10 +192,10 @@ export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
             className="flex flex-col gap-0"
           >
             <TabsList className="mb-4 w-full max-w-xl mx-auto shrink-0 p-0">
-              <TabsTrigger value="create" className={`flex-1 ${tab === "create" ? "bg-primary! text-white!" : ""}`}>
+              <TabsTrigger value="create" className={`flex-1 ${tab === "create" ? "bg-primary! text-white!" : "bg-muted/30"}`}>
                 Create new
               </TabsTrigger>
-              <TabsTrigger value="library" className={`flex-1 ${tab === "library" ? "bg-primary! text-white!" : ""}`}>
+              <TabsTrigger value="library" className={`flex-1 ${tab === "library" ? "bg-primary! text-white!" : "bg-muted/30"}`}>
                 Pick from library
               </TabsTrigger>
             </TabsList>
@@ -234,7 +234,7 @@ export function ExercisePickerDialog(props: ExercisePickerDialogProps) {
                     placeholder="Search by name or description…"
                   />
                 </div>
-                <div className="rounded bg-muted/15">
+                <div className="rounded bg-muted/30">
                   {loadingLibrary ? (
                     <div className="flex justify-center py-12">
                       <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />

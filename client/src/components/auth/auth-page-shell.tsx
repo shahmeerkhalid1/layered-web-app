@@ -27,8 +27,8 @@ export function AuthPageShell({
   return (
     <div
       className={cn(
-        "relative flex min-h-screen flex-col items-center justify-center px-6 py-10 sm:px-10",
-        "bg-gradient-to-b from-[#efebfe4] from-0% via-[#c4c5c8] via-50% to-[#aaacb2] to-80% dark:bg-[radial-gradient(ellipse_at_top_left,var(--tw-gradient-stops))]",
+        "relative flex h-dvh flex-col items-center justify-center px-6 py-10 sm:px-10",
+        "bg-gradient-to-b from-[#efebfe4] from-0% via-[#c4c5c8] via-50% to-[#aaacb2] to-80% dark:bg-none dark:bg-background",
         className
       )}
     >
@@ -59,7 +59,7 @@ export interface AuthFormCardProps {
 
 export function AuthFormCard({ title, description, children, badge, footer }: AuthFormCardProps) {
   return (
-    <div className="w-full">
+    <div className="w-full dark:bg-background min-h-screen flex flex-col justify-center ">
       {badge ? <div className="mb-5">{badge}</div> : null}
       <div className="space-y-2">
         <h1 className="font-heading text-3xl font-semibold tracking-[-0.02em] text-foreground">

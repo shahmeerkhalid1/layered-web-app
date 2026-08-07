@@ -420,7 +420,7 @@ export function ClassPlanDetailView({ planId }: ClassPlanDetailViewProps) {
       </div>
 
       {sortedSections.length === 0 ? (
-        <Card className="border-dashed border-border bg-muted/20 shadow-none">
+        <Card className="border-dashed border-border bg-muted/30 shadow-none">
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
             <Layers className="size-12 text-muted-foreground/60" aria-hidden />
             <div className="space-y-1">

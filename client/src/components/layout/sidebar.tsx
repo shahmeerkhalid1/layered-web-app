@@ -264,7 +264,7 @@ export function Sidebar() {
             ) : (
               <>
              <Image
-            src="/layered-dark-logo.png"
+            src="/sidebar-logo.png"
             alt="Layered Planning Logo"
             width={180}
             height={100}

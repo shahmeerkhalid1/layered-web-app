@@ -499,7 +499,7 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
           </div>
         </div>
 
-        <div className="layered-card !px-4 !py-3 relative flex order-1 lg:order-2 flex-col gap-1.5">
+        <div className="layered-card !px-4 !py-3 relative flex order-3 lg:order-2 flex-col gap-1.5">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm text-muted-foreground capitalize">clients</p>
             <Link
@@ -539,7 +539,7 @@ export function InstructorHome({ firstName }: InstructorHomeProps) {
           </div>
         </div>
 
-        <div className="order-3 lg:order-3 lg:col-span-2">
+        <div className="order-1 lg:order-3 lg:col-span-2">
           <DashboardMiniCalendar variant="dark" />
         </div>
       </div>

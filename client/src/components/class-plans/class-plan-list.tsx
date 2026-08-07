@@ -39,7 +39,13 @@ export function ClassPlanList({
     if (showFilteredEmpty && onClearFilters) {
       return <ClassPlanFilteredEmptyState onClearFilters={onClearFilters} />;
     }
-    return <ClassPlanEmptyState onNewPlan={onNewPlan} createDisabled={createDisabled} createDisabledTitle={createDisabledTitle} />;
+    return (
+      <ClassPlanEmptyState
+        onNewPlan={onNewPlan}
+        createDisabled={createDisabled}
+        createDisabledTitle={createDisabledTitle}
+      />
+    );
   }
 
   return (
@@ -76,17 +82,22 @@ function ClassPlanListSkeleton() {
   );
 }
 
-function ClassPlanFilteredEmptyState({ onClearFilters }: { onClearFilters: () => void }) {
+function ClassPlanFilteredEmptyState({
+  onClearFilters,
+}: {
+  onClearFilters: () => void;
+}) {
   return (
-    <div className="flex flex-col items-center justify-center rounded border  border-border bg-card px-6 py-14 text-center">
-      <div className="flex size-14 items-center justify-center rounded bg-muted text-muted-foreground">
+    <div className="flex flex-col items-center justify-center rounded border  border-border bg-muted/30 px-6 py-14 text-center">
+      <div className="flex size-14 items-center justify-center rounded bg-secondary text-muted-foreground">
         <SearchX className="size-6" />
       </div>
       <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-card-foreground">
         No plans match
       </h3>
       <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-        Try another folder or clear filters to see everything in your library again.
+        Try another folder or clear filters to see everything in your library
+        again.
       </p>
       <Button
         type="button"
@@ -111,13 +122,15 @@ function ClassPlanEmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center rounded border  border-border bg-muted/30 px-6 py-14 text-center">
-      <FileText className="size-10 text-muted-foreground/60" aria-hidden />
+      <div className="flex size-14 items-center justify-center rounded bg-secondary text-secondary-foreground">
+        <FileText className="size-6" />
+      </div>
       <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-card-foreground">
         No class plans yet
       </h3>
       <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-        Build reusable templates with sections and exercises—then schedule them when
-        the calendar is ready.
+        Build reusable templates with sections and exercises—then schedule them
+        when the calendar is ready.
       </p>
       <div className="mt-5">
         {onNewPlan && (

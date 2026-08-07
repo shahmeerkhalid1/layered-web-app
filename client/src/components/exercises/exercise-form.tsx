@@ -695,7 +695,7 @@ export function ExerciseForm({
   return (
     <>
     <form onSubmit={onSubmit} className="w-full min-w-0">
-      <Card className="border-border bg-card">
+      <Card className="shadow-none border-none ring-0">
         <CardContent className="space-y-6 p-5 sm:p-6">
           <div>
             <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
@@ -1748,13 +1748,13 @@ export function ExerciseForm({
           }}
           className="rounded border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         >
-          <ArrowLeft className="mr-2 size-4" />
+          <ArrowLeft className="mr-4 size-4" />
           Cancel
         </Button>
         <Button
           type="submit"
           disabled={duplicateExerciseName}
-          className="rounded bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
+          className="rounded bg-primary px-5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground mr-6"
         >
           {isSubmitting
             ? "Saving..."

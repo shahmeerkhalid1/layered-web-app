@@ -19,10 +19,6 @@ export default function TermsAndConditionsPage() {
   return (
     <LegalPageShell>
       <LegalHeader title="Layered Planning — Terms and Conditions" lastUpdated="05/08/26" />
-      <LegalNote>
-        This is a draft template, not legal advice. Have it reviewed by a New Zealand lawyer before
-        publishing.
-      </LegalNote>
       <LegalBody className="mt-6">
         <LegalSection title="1. Acceptance of these Terms">
           <p>
