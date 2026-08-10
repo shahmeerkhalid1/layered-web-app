@@ -27,7 +27,7 @@ export function AuthPageShell({
   return (
     <div
       className={cn(
-        "relative flex h-dvh flex-col items-center justify-center px-6 py-10 sm:px-10",
+        "relative flex min-h-screen flex-col items-center justify-center px-6 py-10 sm:px-10",
         "bg-gradient-to-b from-[#efebfe4] from-0% via-[#c4c5c8] via-50% to-[#aaacb2] to-80% dark:bg-none dark:bg-background",
         className
       )}
@@ -36,7 +36,7 @@ export function AuthPageShell({
         <div className="absolute top-6 left-6 z-10 sm:top-8 sm:left-8">
           <Link
             href={backHref}
-            className="inline-flex items-center gap-1 rounded-lg bg-white/70 px-3 py-1.5 text-sm text-muted-foreground dark:text-foreground shadow-sm backdrop-blur-sm transition-colors hover:text-foreground"
+            className="inline-flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-sm text-muted-foreground dark:text-foreground shadow-sm backdrop-blur-sm transition-colors hover:text-foreground"
           >
             <ChevronLeft className="size-4 shrink-0" aria-hidden />
             {backLabel}

@@ -138,33 +138,6 @@ export function BillingPageView() {
       ? `Billed annually · Save ${formatNzCurrency(annualSavings)} per year`
       : "Billed monthly";
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
-        <span className="sr-only">Loading billing…</span>
-      </div>
-    );
-  }
-
-  if (error || !status) {
-    return (
-      <div className="rounded border border-dashed border-border bg-muted/15 px-6 py-14 text-center">
-        <p className="text-sm text-muted-foreground">
-          {error ?? "Unable to load billing information."}
-        </p>
-        <Button
-          type="button"
-          variant="outline"
-          className="mt-4 h-10 rounded border-border px-4 shadow-none"
-          onClick={() => void refresh()}
-        >
-          Try again
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <header className="space-y-2">
@@ -174,6 +147,23 @@ export function BillingPageView() {
           Choose the plan that fits your teaching — all paid pricing in NZD.
         </p>
       </header>
+
+      {loading ? null : error || !status ? (
+        <div className="rounded border border-dashed border-border bg-muted/15 px-6 py-14 text-center">
+          <p className="text-sm text-muted-foreground">
+            {error ?? "Unable to load billing information."}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-4 h-10 rounded border-border px-4 shadow-none"
+            onClick={() => void refresh()}
+          >
+            Try again
+          </Button>
+        </div>
+      ) : (
+        <>
 
       <section className="layered-card">
         <h2 className="layered-section-title">Current plan</h2>
@@ -335,7 +325,9 @@ export function BillingPageView() {
         </>
       ) : null}
 
-      <BillingFaq />
+        <BillingFaq />
+        </>
+      )}
     </div>
   );
 }
@@ -428,3 +420,4 @@ function PlanCard({
     </article>
   );
 }
+

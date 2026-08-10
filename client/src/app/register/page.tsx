@@ -130,8 +130,8 @@ function RegisterPageContent() {
             </div>
           }
         >
-          <div className="flex flex-col items-center rounded-xl border border-dashed border-border/80 bg-white/50 px-6 py-10 text-center">
-            <div className="flex size-12 items-center justify-center rounded bg-muted text-muted-foreground">
+          <div className="flex flex-col items-center rounded-xl border border-border/80 bg-muted/30 px-6 py-10 text-center">
+            <div className="flex size-12 items-center justify-center rounded bg-secondary text-muted-foreground">
               <Mail className="size-6" aria-hidden />
             </div>
             <p className="mt-4 text-sm text-muted-foreground">

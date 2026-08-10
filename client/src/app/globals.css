@@ -160,7 +160,7 @@
 }
 
 .dark {
-  --layered-black: #000000;
+  --layered-black: #0a0909;
   --layered-white: #ffffff;
   --layered-cream: #f1ebdf;
   --layered-espresso: #433326;
@@ -170,7 +170,7 @@
   --layered-light-blue: #E1ECFC;
 
   /* Base */
-  --background:             oklch(0.14 0.01 260);
+  --background:var(--layered-black);
   --foreground:             oklch(0.98 0.005 260);
 
   /* Cards */
@@ -396,12 +396,17 @@
 input:-webkit-autofill{
   background-color: none !important;
   -webkit-text-fill-color: var(--foreground) !important;
-  -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
-  transition: background-color 5000s ease-in-out 0s !important;
-  -webkit-transition: background-color 5000s ease-in-out 0s !important;
-  -moz-transition: background-color 5000s ease-in-out 0s !important;
-  -ms-transition: background-color 5000s ease-in-out 0s !important;
-  -o-transition: background-color 5000s ease-in-out 0s !important;
-  transition: background-color 5000s ease-in-out 0s !important;
-  transition: background-color 5000s ease-in-out 0s !important;
+  -webkit-box-shadow: none !important;
+  transition: background-color 500s ease-in-out 0s !important;
+  -webkit-transition: background-color 500s ease-in-out 0s !important;
+  -moz-transition: background-color 500s ease-in-out 0s !important;
+  -ms-transition: background-color 500s ease-in-out 0s !important;
+  -o-transition: background-color 500s ease-in-out 0s !important;
+  transition: background-color 500s ease-in-out 0s !important;
+  transition: background-color 500s ease-in-out 0s !important;
+}
+
+input:-webkit-autofill:hover {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
 }
