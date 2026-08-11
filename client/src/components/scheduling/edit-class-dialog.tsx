@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -17,6 +17,11 @@ import {
   SCHEDULING_MAX_DURATION_MINUTES,
 } from "@/lib/validation/duration-minutes-form-schema";
 import { localDateAndTimeToUtcIso, localYmdToUtcIsoMidday } from "@/lib/datetime-local";
+import { currentHm, todayYmd } from "@/lib/calendar-utils";
+import {
+  requiresEditSeriesPastTimeCheck,
+  validateEditSeriesDateTime,
+} from "@/lib/validation/scheduling-past-guard";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -59,11 +64,6 @@ function clockFromIso(iso: string): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-function todayYmd(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
 export type EditClassDialogMode = "series" | "single";
 
 interface EditClassDialogProps {
@@ -71,7 +71,7 @@ interface EditClassDialogProps {
   mode?: EditClassDialogMode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+  onSuccess?: (updated: ScheduledClass) => void;
 }
 
 export function EditClassDialog({
@@ -118,6 +118,14 @@ export function EditClassDialog({
 
   const isRecurring = useWatch({ control, name: "isRecurring", defaultValue: false });
   const classType = useWatch({ control, name: "type", defaultValue: "GROUP" });
+  const startDate = useWatch({ control, name: "startDate", defaultValue: "" });
+
+  const minTime = useMemo(() => {
+    if (!requiresEditSeriesPastTimeCheck(isRecurring, startDate, daySet)) {
+      return undefined;
+    }
+    return currentHm();
+  }, [isRecurring, startDate, daySet]);
 
   useEffect(() => {
     if (!open || !classId) return;
@@ -219,14 +227,14 @@ export function EditClassDialog({
   const submitSingleUpdate = async (values: CreateClassFormValues) => {
     if (!classId) return;
 
-    await schedulingApi.updateClass(classId, {
+    const updated = await schedulingApi.updateClass(classId, {
       title: values.title.trim(),
       type: values.type,
       durationMinutes: parseDurationMinutesStr(values.durationMinutesStr),
     });
     toast.success("Class updated");
     onOpenChange(false);
-    onSuccess?.();
+    onSuccess?.(updated);
   };
 
   const submitUpdate = async (values: CreateClassFormValues) => {
@@ -255,12 +263,31 @@ export function EditClassDialog({
       const seriesStart = ymdFromIso(originalClass.startDate);
       const regenFrom = todayYmd() >= seriesStart ? todayYmd() : seriesStart;
       body.regenerateFutureInstancesFrom = regenFrom;
+      body.regenerateFutureInstancesFromAt = localDateAndTimeToUtcIso(regenFrom, "00:00");
     }
 
-    await schedulingApi.updateClass(classId, body);
+    const updated = await schedulingApi.updateClass(classId, body);
     toast.success("Class series updated");
     onOpenChange(false);
-    onSuccess?.();
+    onSuccess?.(updated);
+  };
+
+  const assertSchedulePastTimeValid = (values: CreateClassFormValues): boolean => {
+    if (!originalClass || !needsRegeneration(values, originalClass)) {
+      return true;
+    }
+    const pastTimeError = validateEditSeriesDateTime(
+      values.startDate,
+      values.clockTime,
+      values.isRecurring,
+      daySet
+    );
+    if (pastTimeError) {
+      setError("clockTime", { type: "manual", message: pastTimeError });
+      return false;
+    }
+    clearErrors("clockTime");
+    return true;
   };
 
   const onSubmit = async (values: CreateClassFormValues) => {
@@ -275,6 +302,10 @@ export function EditClassDialog({
     }
 
     if (values.isRecurring && !validateRecurringExtras()) {
+      return;
+    }
+
+    if (!assertSchedulePastTimeValid(values)) {
       return;
     }
 
@@ -294,6 +325,9 @@ export function EditClassDialog({
 
   const confirmRegeneration = async () => {
     if (!pendingValues) return;
+    if (!assertSchedulePastTimeValid(pendingValues)) {
+      return;
+    }
     setConfirmRegenOpen(false);
     try {
       await submitUpdate(pendingValues);
@@ -431,7 +465,11 @@ export function EditClassDialog({
                         <TimePicker
                           id="ec-clock"
                           value={field.value}
-                          onChange={field.onChange}
+                          onChange={(time) => {
+                            clearErrors("clockTime");
+                            field.onChange(time);
+                          }}
+                          minTime={minTime}
                           aria-invalid={!!errors.clockTime}
                         />
                       )}

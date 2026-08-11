@@ -4,7 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
-import type { ClassInstanceDetail, ClassPlanTemplate, PlanSectionDetail, PlanSectionExerciseRow } from "@/lib/types";
+import type {
+  ClassInstanceDetail,
+  ClassInstanceSummary,
+  ClassPlanTemplate,
+  PlanSectionDetail,
+  PlanSectionExerciseRow,
+  ScheduledClass,
+} from "@/lib/types";
 import { classPlanApi } from "@/services/class-plan-api";
 import { schedulingApi } from "@/services/scheduling-api";
 import {
@@ -38,11 +45,18 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { localDateAndTimeToUtcIso } from "@/lib/datetime-local";
-import { currentHm, isBeforeToday, isPastScheduleDateTime, todayYmd } from "@/lib/calendar-utils";
+import { dateToHm, localDateAndTimeToUtcIso } from "@/lib/datetime-local";
+import {
+  currentHm,
+  instanceLocalDayKey,
+  isBeforeToday,
+  isPastScheduleDateTime,
+  todayYmd,
+} from "@/lib/calendar-utils";
 import {
   PAST_SCHEDULE_TIME_MESSAGE,
 } from "@/lib/validation/scheduling-past-guard";
+import { shiftYmd, ymdDayDiff } from "@/lib/date-ymd";
 import { cn } from "@/lib/utils";
 import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 
@@ -69,6 +83,23 @@ const WEEKDAY_LABELS: Record<number, string> = {
   6: "Sat",
   7: "Sun",
 };
+
+function findReplacementInstance(
+  instances: ClassInstanceSummary[] | undefined,
+  anchor: { time: string },
+  preferDay?: string
+): ClassInstanceSummary | undefined {
+  const anchorDay = instanceLocalDayKey(anchor);
+  const targetDay = preferDay ?? anchorDay;
+  return (
+    instances?.find(
+      (i) => i.status === "SCHEDULED" && instanceLocalDayKey(i) === targetDay
+    ) ??
+    instances?.find(
+      (i) => i.status === "SCHEDULED" && instanceLocalDayKey(i) >= anchorDay
+    )
+  );
+}
 
 function formatRecurrenceSummary(cls: ClassInstanceDetail["class"]): string | null {
   if (!cls.isRecurring) return null;
@@ -123,7 +154,13 @@ export function ClassInstanceDrawer({
   const [editClassOpen, setEditClassOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [scopeOpen, setScopeOpen] = useState(false);
-  const pendingRef = useRef<{ anchorYmd: string; newIso: string; newDateStr: string } | null>(null);
+  const pendingRef = useRef<{
+    anchorUtcYmd: string;
+    rescheduleToUtcYmd: string;
+    regenerateFromAt: string;
+    newIso: string;
+    newDateStr: string;
+  } | null>(null);
   const [reschedule, setReschedule] = useState({ date: "", time: "" });
   const [rescheduleTimeError, setRescheduleTimeError] = useState<string | null>(null);
   const [attendanceRefreshKey, setAttendanceRefreshKey] = useState(0);
@@ -134,12 +171,9 @@ export function ClassInstanceDrawer({
     try {
       const d = await schedulingApi.getClassInstanceById(instanceId);
       setDetail(d);
-      const t = new Date(d.time);
-      const hh = String(t.getHours()).padStart(2, "0");
-      const mm = String(t.getMinutes()).padStart(2, "0");
       setReschedule({
-        date: d.date.slice(0, 10),
-        time: `${hh}:${mm}`,
+        date: instanceLocalDayKey(d),
+        time: dateToHm(new Date(d.time)),
       });
       setRescheduleTimeError(null);
     } catch {
@@ -160,6 +194,33 @@ export function ClassInstanceDrawer({
 
   const refresh = async () => {
     await load();
+    onUpdated?.();
+  };
+
+  const handleEditClassSuccess = (updated: ScheduledClass) => {
+    if (!detail || !instanceId) {
+      void refresh();
+      return;
+    }
+
+    const stillExists = updated.instances?.some((i) => i.id === instanceId);
+    if (stillExists) {
+      void refresh();
+      return;
+    }
+
+    const replacement = findReplacementInstance(updated.instances, detail);
+    if (replacement) {
+      if (onInstanceIdChange) {
+        onInstanceIdChange(replacement.id);
+      } else {
+        onOpenChange(false);
+      }
+      onUpdated?.();
+      return;
+    }
+
+    onOpenChange(false);
     onUpdated?.();
   };
 
@@ -208,7 +269,7 @@ export function ClassInstanceDrawer({
 
   const start = detail ? new Date(detail.time) : null;
   const isOpen = detail?.status === "SCHEDULED";
-  const isPast = detail ? isBeforeToday(new Date(detail.date)) : false;
+  const isPast = detail ? isBeforeToday(new Date(detail.time)) : false;
   const canEditPlanAndSchedule = isOpen && !isPast;
   const rescheduleMinTime = reschedule.date === todayYmd() ? currentHm() : undefined;
 
@@ -383,8 +444,13 @@ export function ClassInstanceDrawer({
       }
       return;
     }
+    const anchorLocalYmd = instanceLocalDayKey(detail);
+    const anchorUtcYmd = detail.date.slice(0, 10);
+    const localDayDelta = ymdDayDiff(anchorLocalYmd, reschedule.date);
     pendingRef.current = {
-      anchorYmd: detail.date.slice(0, 10),
+      anchorUtcYmd,
+      rescheduleToUtcYmd: shiftYmd(anchorUtcYmd, localDayDelta),
+      regenerateFromAt: localDateAndTimeToUtcIso(anchorLocalYmd, "00:00"),
       newIso,
       newDateStr: reschedule.date,
     };
@@ -409,20 +475,15 @@ export function ClassInstanceDrawer({
 
       const updated = await schedulingApi.updateClass(detail.class.id, {
         time: p.newIso,
-        regenerateFutureInstancesFrom: p.anchorYmd,
-        rescheduleToDate: p.newDateStr,
+        regenerateFutureInstancesFrom: p.anchorUtcYmd,
+        regenerateFutureInstancesFromAt: p.regenerateFromAt,
+        rescheduleToDate: p.rescheduleToUtcYmd,
       });
       toast.success("Schedule updated");
       pendingRef.current = null;
       onUpdated?.();
 
-      const replacement =
-        updated.instances?.find(
-          (i) => i.status === "SCHEDULED" && i.date.slice(0, 10) === p.newDateStr
-        ) ??
-        updated.instances?.find(
-          (i) => i.status === "SCHEDULED" && i.date.slice(0, 10) >= p.anchorYmd
-        );
+      const replacement = findReplacementInstance(updated.instances, detail, p.newDateStr);
 
       if (replacement) {
         if (onInstanceIdChange) {
@@ -447,7 +508,7 @@ export function ClassInstanceDrawer({
         mode={detail?.class.isRecurring ? "series" : "single"}
         open={editClassOpen}
         onOpenChange={setEditClassOpen}
-        onSuccess={() => void refresh()}
+        onSuccess={handleEditClassSuccess}
       />
 
       <Dialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
@@ -584,7 +645,7 @@ export function ClassInstanceDrawer({
                         />
                         <span
                           className={cn(
-                            "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border-2",
+                            "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2",
                             selected
                               ? "border-primary bg-primary text-primary-foreground"
                               : "border-muted-foreground/40 bg-background"
@@ -612,7 +673,7 @@ export function ClassInstanceDrawer({
               </ul>
             )}
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2">
             <Button
               type="button"
               variant="outline"

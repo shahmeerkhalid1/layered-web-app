@@ -244,11 +244,11 @@ export function CalendarEventBlock({ instance, onSelect, layout, columnHeightPx 
 
   const blockContent = veryTight ? (
     <span className={cn("min-w-0 truncate text-[10px] leading-tight font-semibold", titleClassName)}>
+      {displayTitle}
+      <span className={isScheduled ? "text-white/50" : "opacity-50"}> · </span>
       <span className={cn("tabular-nums", isScheduled ? "text-white/70 font-normal" : "opacity-80")}>
         {timeStr}
       </span>
-      <span className={isScheduled ? "text-white/50" : "opacity-50"}> · </span>
-      {displayTitle}
     </span>
   ) : compact ? (
     <>

@@ -274,6 +274,8 @@ export interface UpdateClassBody {
   durationMinutes?: number;
   templateId?: string | null;
   regenerateFutureInstancesFrom?: string;
+  /** Local-midnight UTC instant — delete/regenerate from this occurrence onward. */
+  regenerateFutureInstancesFromAt?: string;
   rescheduleToDate?: string;
 }
 

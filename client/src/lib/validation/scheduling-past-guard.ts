@@ -33,3 +33,38 @@ export function validateScheduleDateTime(
   }
   return null;
 }
+
+/**
+ * Edit series: future regen from today can reschedule today's occurrence when the series
+ * has already started and today's weekday is in the recurrence rule.
+ */
+export function requiresEditSeriesPastTimeCheck(
+  isRecurring: boolean,
+  startDateYmd: string,
+  recurringDays?: Iterable<number>
+): boolean {
+  if (!isRecurring) return true;
+  const today = todayYmd();
+  if (startDateYmd > today) return false;
+  const weekday = localIsoWeekdayFromYmd(today);
+  for (const d of recurringDays ?? []) {
+    if (d === weekday) return true;
+  }
+  return false;
+}
+
+export function validateEditSeriesDateTime(
+  startDateYmd: string,
+  clockTime: string,
+  isRecurring: boolean,
+  recurringDays?: Iterable<number>
+): string | null {
+  if (!requiresEditSeriesPastTimeCheck(isRecurring, startDateYmd, recurringDays)) {
+    return null;
+  }
+  const dateYmd = isRecurring ? todayYmd() : startDateYmd;
+  if (isPastScheduleDateTime(dateYmd, clockTime)) {
+    return PAST_SCHEDULE_TIME_MESSAGE;
+  }
+  return null;
+}

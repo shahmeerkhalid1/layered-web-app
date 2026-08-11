@@ -311,7 +311,7 @@ export async function quickSchedule(instructorId: string, body: QuickScheduleInp
     const instance = await tx.classInstance.create({
       data: {
         classId: cls.id,
-        date: toDateOnlyUTC(startAt),
+        date: parseYmd(body.date),
         time: startAt,
         instructorId,
         templateId,
@@ -486,12 +486,8 @@ export async function updateClass(classId: string, instructorId: string, data: U
 
     if (data.regenerateFutureInstancesFrom && updatedRow.isRecurring) {
       const anchor = parseYmd(data.regenerateFutureInstancesFrom);
-      const targetDate = data.rescheduleToDate
-        ? parseYmd(data.rescheduleToDate)
-        : data.time !== undefined
-          ? utcCalendarDate(data.time)
-          : anchor;
-      const deltaDays = calendarDayDiff(anchor, targetDate);
+      const targetDate = data.rescheduleToDate ? parseYmd(data.rescheduleToDate) : anchor;
+      const deltaDays = data.rescheduleToDate ? calendarDayDiff(anchor, targetDate) : 0;
 
       let recurrenceRule = updatedRow.recurrenceRule;
       if (deltaDays !== 0) {
@@ -508,12 +504,13 @@ export async function updateClass(classId: string, instructorId: string, data: U
         });
       }
 
+      const deleteFrom = data.regenerateFutureInstancesFromAt ?? anchor;
       await tx.classInstance.deleteMany({
         where: {
           classId,
           status: "SCHEDULED",
           deletedAt: null,
-          date: { gte: toDateOnlyUTC(anchor) },
+          time: { gte: deleteFrom },
         },
       });
 
@@ -649,15 +646,16 @@ export async function updateClassInstance(
   const inst = await getInstanceWithClass(instanceId, instructorId);
 
   let nextTime = inst.time;
-  if (data.date !== undefined) {
-    const d = parseYmd(data.date);
-    const clock = data.time !== undefined ? data.time : inst.time;
-    nextTime = applyUTCTimeToDay(d, clock);
-  } else if (data.time !== undefined) {
+  let nextDate = toDateOnlyUTC(inst.time);
+
+  if (data.time !== undefined) {
     nextTime = data.time;
   }
-
-  const nextDate = toDateOnlyUTC(nextTime);
+  if (data.date !== undefined) {
+    nextDate = parseYmd(data.date);
+  } else if (data.time !== undefined) {
+    nextDate = toDateOnlyUTC(nextTime);
+  }
 
   return prisma.classInstance.update({
     where: { id: instanceId },

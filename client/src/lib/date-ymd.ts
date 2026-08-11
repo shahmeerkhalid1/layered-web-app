@@ -19,3 +19,19 @@ export function formatYmdLabel(ymd: string, placeholder = "Pick a date"): string
   if (!date) return placeholder;
   return format(date, "MMM d, yyyy");
 }
+
+/** Signed calendar-day difference (`to` − `from`) for `YYYY-MM-DD` strings. */
+export function ymdDayDiff(from: string, to: string): number {
+  const start = ymdToDate(from);
+  const end = ymdToDate(to);
+  if (!start || !end) return 0;
+  return Math.round((end.getTime() - start.getTime()) / 86_400_000);
+}
+
+/** Shift a `YYYY-MM-DD` value by `days` (negative allowed). */
+export function shiftYmd(ymd: string, days: number): string {
+  const date = ymdToDate(ymd);
+  if (!date) return ymd;
+  date.setDate(date.getDate() + days);
+  return dateToYmd(date);
+}
