@@ -89,18 +89,14 @@ function utcIsoWeekday(d: Date): number {
   return w === 0 ? 7 : w;
 }
 
-function applyUTCTimeToDay(day: Date, clock: Date): Date {
-  return new Date(
-    Date.UTC(
-      day.getUTCFullYear(),
-      day.getUTCMonth(),
-      day.getUTCDate(),
-      clock.getUTCHours(),
-      clock.getUTCMinutes(),
-      clock.getUTCSeconds(),
-      clock.getUTCMilliseconds()
-    )
-  );
+/** Milliseconds from UTC midnight on `anchorDay` to the intended start instant. */
+function clockOffsetFromAnchorDay(anchorDay: Date, clock: Date): number {
+  return clock.getTime() - utcCalendarDate(anchorDay).getTime();
+}
+
+/** Apply the anchor clock offset to a UTC calendar day (preserves local wall-clock intent). */
+function timeOnUtcDay(day: Date, clockOffsetMs: number): Date {
+  return new Date(utcCalendarDate(day).getTime() + clockOffsetMs);
 }
 
 function parseYmd(ymd: string): Date {
@@ -176,9 +172,12 @@ function buildOccurrenceSlots(
 ): { date: Date; time: Date }[] {
   const slots: { date: Date; time: Date }[] = [];
 
+  const anchorDay = utcCalendarDate(startDate);
+  const clockOffsetMs = clockOffsetFromAnchorDay(startDate, timeClock);
+
   if (!isRecurring) {
-    const day = utcCalendarDate(startDate);
-    slots.push({ date: day, time: applyUTCTimeToDay(day, timeClock) });
+    const time = timeOnUtcDay(anchorDay, clockOffsetMs);
+    slots.push({ date: utcCalendarDate(time), time });
     return slots;
   }
 
@@ -192,7 +191,7 @@ function buildOccurrenceSlots(
 
   eachUtcCalendarDay(from, to, (day) => {
     if (daySet.has(utcIsoWeekday(day))) {
-      slots.push({ date: day, time: applyUTCTimeToDay(day, timeClock) });
+      slots.push({ date: day, time: timeOnUtcDay(day, clockOffsetMs) });
     }
   });
 
@@ -335,7 +334,6 @@ export async function quickSchedule(instructorId: string, body: QuickScheduleInp
 }
 
 export async function createClass(instructorId: string, data: CreateClassInput) {
-  console.log('data', data);
   let templateId: string | null = data.templateId ?? null;
   if (templateId) await assertTemplateOwned(templateId, instructorId);
 
@@ -347,7 +345,6 @@ export async function createClass(instructorId: string, data: CreateClassInput) 
     data.recurrenceRule
   );
 
-  console.log("slots", slots);
 
   if (slots.length === 0) {
     throw new ValidationError("No class occurrences match the recurrence rule and date range");

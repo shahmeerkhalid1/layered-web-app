@@ -233,11 +233,10 @@ export function QuickScheduleDialog({
         });
         toast.success("Recurring class created");
       } else {
-        const body = toQuickScheduleApiBody(
-          { ...values, time: timeIso },
-          templatePrefill?.id
-        );
-        await schedulingApi.quickSchedule(body);
+        await schedulingApi.quickSchedule({
+          ...toQuickScheduleApiBody(values, templatePrefill?.id),
+          time: timeIso,
+        });
         toast.success("Class scheduled!", {
           description: (
             <span>

@@ -33,18 +33,12 @@ function utcIsoWeekday(d: Date): number {
   return w === 0 ? 7 : w;
 }
 
-function applyUTCTimeToDay(day: Date, clock: Date): Date {
-  return new Date(
-    Date.UTC(
-      day.getUTCFullYear(),
-      day.getUTCMonth(),
-      day.getUTCDate(),
-      clock.getUTCHours(),
-      clock.getUTCMinutes(),
-      clock.getUTCSeconds(),
-      clock.getUTCMilliseconds()
-    )
-  );
+function clockOffsetFromAnchorDay(anchorDay: Date, clock: Date): number {
+  return clock.getTime() - utcCalendarDateFromDate(anchorDay).getTime();
+}
+
+function timeOnUtcDay(day: Date, clockOffsetMs: number): Date {
+  return new Date(utcCalendarDateFromDate(day).getTime() + clockOffsetMs);
 }
 
 function parseScheduleUtc(dateYmd: string, timeHm: string): Date {
@@ -81,7 +75,10 @@ function assertStartTimeNotPast(
   const startDay = utcCalendarDateFromDate(data.startDate);
   if (!days.includes(utcIsoWeekday(startDay))) return;
 
-  const slotTime = applyUTCTimeToDay(startDay, data.time);
+  const slotTime = timeOnUtcDay(
+    startDay,
+    clockOffsetFromAnchorDay(data.startDate, data.time)
+  );
   if (isPastInstant(slotTime)) {
     ctx.addIssue({
       code: "custom",
