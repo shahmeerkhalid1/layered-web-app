@@ -321,6 +321,7 @@ export async function createCheckoutSession(
     mode: "subscription",
     customer: stripeCustomerId,
     line_items: [{ price: priceId, quantity: 1 }],
+    allow_promotion_codes: true,
     success_url: `${clientUrl}/billing?success=true`,
     cancel_url: `${clientUrl}/billing?canceled=true`,
     metadata: { instructorId },
