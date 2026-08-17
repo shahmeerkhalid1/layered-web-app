@@ -57,7 +57,7 @@ export function PlatformSettingsSection() {
   return (
     <section
       id="platform-settings"
-      className="w-full scroll-mt-6 rounded border border-border bg-card p-5 shadow-lg sm:p-6"
+      className="w-full scroll-mt-6 rounded border border-border bg-card p-5  sm:p-6"
     >
       <div className="flex items-start gap-3">
         <div className="flex size-10 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
@@ -113,13 +113,13 @@ export function PlatformSettingsSection() {
                 disabled={saving}
                 onClick={() => void toggleSignup(!signupEnabled)}
                 className={cn(
-                  "relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded border border-transparent p-1 transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
+                  "relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border border-transparent p-1 transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
                   signupEnabled ? "bg-primary" : "bg-muted",
                 )}
               >
                 <span
                   className={cn(
-                    "pointer-events-none block size-6 translate-x-0 rounded bg-background shadow-sm transition-transform",
+                    "pointer-events-none block size-6 translate-x-0 rounded-full bg-background shadow-sm transition-transform",
                     signupEnabled && "translate-x-6",
                   )}
                 />
